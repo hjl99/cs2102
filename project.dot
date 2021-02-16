@@ -1,0 +1,83 @@
+digraph project {
+    newrank=true;
+	overlap=false;
+	splines=false;
+
+    node [shape=box]; Courses;
+    node [shape=ellipse]; courseId;
+    node [shape=ellipse]; title;
+    node [shape=ellipse]; description;
+    node [shape=ellipse]; courseArea;
+    node [shape=ellipse]; duration;
+
+    node [shape=box]; CourseOfferings;
+    node [shape=ellipse]; offeringFees;
+    node [shape=ellipse]; targetNumber;
+    node [shape=ellipse]; launchDate;
+    node [shape=ellipse]; registrationDeadline;
+
+    node [shape=box]; Customers;
+    node [shape=ellipse]; customerId;
+    node [shape=ellipse]; name;
+    node [shape=ellipse]; address;
+    node [shape=ellipse]; contactNumber;
+    node [shape=ellipse]; email;
+
+    node [shape=box]; CreditCards;
+    node [shape=ellipse]; cardNumber;
+    node [shape=ellipse]; expiryDate;
+    node [shape=ellipse]; cvv;
+
+    node [shape=box]; LectureRooms;
+    node [shape=ellipse]; roomId;
+    node [shape=ellipse]; floor;
+    node [shape=ellipse]; roomNumber;
+    node [shape=ellipse]; maxCapacity;
+
+    node [shape=box]; CoursePackages;
+    node [shape=ellipse]; packageId;
+    node [shape=ellipse]; name;
+    node [shape=ellipse]; noFreeSessions;
+    node [shape=ellipse]; startDate;
+    node [shape=ellipse]; endDate;
+    node [shape=ellipse]; price; 
+
+    node [shape=box]; Employees;
+    node [shape=ellipse]; employeeId;
+    node [shape=ellipse]; name;
+    node [shape=ellipse]; address;
+    node [shape=ellipse]; contactNumber;
+    node [shape=ellipse]; address;
+    node [shape=ellipse]; dateJoined;
+    node [shape=ellipse]; dateDeparted;
+
+    node [shape=box]; FullTimeEmployees;
+    node [shape=ellipse]; monthlySalary;
+
+    node [shape=box]; PartTime Employees;
+    node [shape=ellipse]; hourlyRate;
+
+    node [shape=box]; Managers;
+
+    node [shape=box]; Administrators;
+
+    node [shape=box]; Instructors;
+    node [shape=ellipse]; courseArea;
+
+    node [shape=box]; Salary Payment;
+    node [shape=ellipse]; date;
+    node [shape=ellipse]; noWorkDays;
+    node [shape=ellipse]; 
+
+    node [shape=box]; FullTime Salary Payment;
+    node [shape=ellipse]; salary;
+
+    node [shape=box]; PartTime Salary Payment;
+    node [shape=ellipse]; amount;
+    
+    node [shape=box]; Sessions;
+    node [shape=ellipse]; day;
+    node [shape=ellipse]; time;
+
+    
+}
