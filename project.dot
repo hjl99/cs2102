@@ -267,13 +267,7 @@ digraph project {
     CA -> Manages [color="black:white:black"];
     Manages -> Managers [dir=none];
 
-<<<<<<< HEAD
     // end
     //
     
-=======
-    node [shape=diamond]; Offers;
-
-    node [shape=diamond]; Consists;
->>>>>>> 9f0156c0a7a045be2ac9bdc27c2b8ea0adae4ae7
 }
