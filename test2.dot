@@ -1,11 +1,14 @@
 digraph project {
     newrank=true;
 	overlap=false;
-	splines=false;
+    //splines=false;
+    ordering=out;
     rankdir=TB;
 
-    subgraph cluster1 {
-        rank=max;
+    {
+        rank=min;
+        ordering=out;
+        style="invis";
         // Courses
         node [shape=box]; Courses;
         // node [shape=ellipse]; courseId;
@@ -41,8 +44,10 @@ digraph project {
         // Employees -> dateDeparted [dir=none];
     }
 
-    subgraph cluster2 {
+    {
         rank=same;
+        ordering=out;
+        style="invis";
 
         // Offers
         node [shape=diamond]; Offers [peripheries=2];
@@ -52,8 +57,10 @@ digraph project {
         node [shape=diamond]; Accepts;
     }
 
-    subgraph cluster3 {
+    {
         rank=same;
+        ordering=out;
+        style="invis";
         // Full Time Payments
         node [shape=box]; FTP [label="Full Time\nPayments"];
         // node [shape=ellipse]; salary;
@@ -67,9 +74,10 @@ digraph project {
         node [style="",shape=triangle]; isa_Employee_1 [label="ISA"];
     }
 
-    subgraph cluster4 {
+    {
         rank=same;
         ordering=out;
+        style="invis";
         // Course Offerings
         node [shape=box]; CO [label="Course\nOfferings"] [peripheries=2];
         // node [shape=ellipse]; fees;
@@ -90,8 +98,18 @@ digraph project {
         node [shape=diamond]; Receives;
     }
 
-    subgraph cluster5 {
-        rank=same;
+    {
+        rank=5;
+        ordering=out;
+        style="invis";
+
+        // Consists
+        node [shape=diamond]; Consists [peripheries=2];
+        node [style="",shape=triangle]; isa_FTE_1 [label="ISA"];
+        node [style="",shape=triangle]; isa_PTE_1 [label="ISA"];
+
+        // Handles
+        node [shape=diamond]; Handles;
 
         node [shape=box]; FTE [label="Full Time\nEmployees"];
         // node [shape=ellipse]; monthlySalary;
@@ -103,14 +121,10 @@ digraph project {
         // PTE -> hourlyRate [dir=none];
     }
 
-    subgraph cluster6 {
-        // Consists
-        node [shape=diamond]; Consists [peripheries=2];
-        node [style="",shape=triangle]; isa_FTE_1 [label="ISA"];
-        node [style="",shape=triangle]; isa_PTE_1 [label="ISA"];
-
-        // Handles
-        node [shape=diamond]; Handles;
+    {
+        rank=6;
+        ordering=out;
+        style="invis";
 
         // Sessions
         node [shape=box]; Sessions [peripheries=2];
@@ -124,8 +138,6 @@ digraph project {
         // Manages
         node [shape=diamond]; Manages;
 
-        // Administrators
-        node [shape=box]; Administrators;
 
         // Instructors
         node [shape=box]; Instructors;
@@ -134,10 +146,15 @@ digraph project {
 
         // Managers
         node [shape=box]; Managers;
+
+        // Administrators
+        node [shape=box]; Administrators;
     }
 
-    subgraph cluster7 {
+    {
         rank=same;
+        ordering=out;
+        style="invis";
         // Conducts
         node [shape=diamond]; Conducts;
 
@@ -145,9 +162,10 @@ digraph project {
         node [shape=diamond]; Specializes;
     }
 
-    subgraph cluster8 {
+    {
         rank=same;
         ordering=out;
+        style="invis";
         // In
         node [shape=diamond]; In;
 
@@ -186,8 +204,10 @@ digraph project {
         // CP -> price [dir=none];
     }
 
-    subgraph cluster9 {
-        rank=min;
+    {
+        rank=max;
+        ordering=out;
+        style="invis";
 
         // Lecture Rooms
         node [shape=box]; LR [label="Lecture\nRooms"];
