@@ -79,5 +79,7 @@ digraph project {
     node [shape=ellipse]; day;
     node [shape=ellipse]; time;
 
-    
+    node [shape=diamond]; Offers;
+
+    node [shape=diamond]; Consists;
 }
