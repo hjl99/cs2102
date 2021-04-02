@@ -18,7 +18,7 @@ CREATE TABLE Rooms (
 
 CREATE TABLE Course_areas (
     name CHAR(256) PRIMARY KEY,
-    eid INTEGER NOT NULL PRIMARY KEY REFERENCES Managers
+    eid INTEGER NOT NULL REFERENCES Managers
 )
 
 
