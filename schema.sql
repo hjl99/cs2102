@@ -83,8 +83,6 @@ CREATE TABLE Course_packages (
     price FLOAT
 );
 
-
-
 CREATE TABLE Course_areas (
     name TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
