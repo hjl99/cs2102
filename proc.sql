@@ -153,14 +153,18 @@ AS
 BEGIN
 	DECLARE @partTime BOOLEAN;
 	SET @partTime = EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE P.eid=PTE.eid);
+	INSERT INTO @salTable 
 	SELECT eid, 
-		(SELECT name FROM Employees E WHERE E.eid=P.eid) name,
-		(CASE 
-			WHEN @partTime THEN 'part-time'
-			ELSE THEN 'full-time') estatus,
-		(CASE 
-			WHEN @partTime THEN NULL
-			ELSE THEN (SELECT )) estatus,
+		(SELECT name FROM Employees E WHERE E.eid=P.eid) ename,
+		(CASE WHEN @partTime THEN 'part-time' ELSE 'full-time') estatus,
+		CASE WHEN @partTime THEN NULL ELSE num_work_days,
+		CASE WHEN @partTime THEN num_work_hours ELSE NULL,
+		CASE WHEN @partTime THEN (
+			SELECT hourly_rate FROM Part_time_emp PTE WHERE PTE.eid=P.eid) 
+			ELSE NULL,
+		CASE WHEN @partTime THEN NULL 
+			ELSE (SELECT monthly_salary FROM Full_time_emp FTE WHERE FTE.eid=P.eid),
+		amount
 	FROM Pay_slips P
 	ORDER BY eid ASC;
 END;
