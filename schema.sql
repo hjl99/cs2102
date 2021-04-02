@@ -3,8 +3,7 @@ Course_packages, Credit_cards, Courses, Offerings,
 Sessions, Employees, Part_time_emp,
 Full_time_emp, Instructors, Part_time_instructors, 
 Full_time_instructors, Administrators, Managers, Pay_slips,
-Cancels, Buys, Registers, Specializes, Redeems, Conducts
-CASCADE;
+Cancels, Buys, Registers, Specializes, Redeems, Conducts CASCADE;
 
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
@@ -194,4 +193,4 @@ CREATE TABLE Conducts (
     sid INTEGER,
     FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
     PRIMARY KEY (rid, eid, course_id, launch_date, sid)
-)
+);

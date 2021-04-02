@@ -1,13 +1,8 @@
-<<<<<<< HEAD
-
-=======
-CREATE OR REPLACE ROUTINE add_course()
 
 
 
 
 /* 3 */
->>>>>>> 40bc6ddb30dd27a97569cacedc3157887af21d1c
 CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
@@ -37,3 +32,11 @@ AS $$
 BEGIN
 END;
 $$ LANGUAGE plpgsql;
+
+/* 12 */
+CREATE OR REPLACE FUNCTION get_available_course_packages()
+RETURNS SETOF Course_packages AS $$
+	SELECT * 
+	FROM Course_packages
+	WHERE sale_end_date >= CURRENT_DATE;
+$$ LANGUAGE sql;
