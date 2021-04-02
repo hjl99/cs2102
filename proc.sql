@@ -76,6 +76,20 @@ AS $$
   END;
 $$ LANGUAGE plpgsql;
 
+/* 2 */
+CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) 
+AS $$
+	BEGIN
+		IF ((SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
+		   or (SELECT COUNT(*) FROM Conducts C WHERE reid = C.eid and depart_date < C.launch_date) > 0
+		   or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0)
+		THEN RAISE EXCEPTION 'Employee cannot be removed!';
+		ELSE
+			UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+		END IF;
+	END;
+$$ LANGUAGE plpgsql;
+
 /* 3 */
 CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
