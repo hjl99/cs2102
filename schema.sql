@@ -1,5 +1,62 @@
-/* Missing roles, most relationships */
+DROP TABLE IF EXISTS Customers, Rooms, Course_areas,
+Course_packages, Credit_cards, Courses, Offerings,
+Sessions, Employees, Part_time_emp,
+Full_time_emp, Instructors, Part_time_instructors, 
+Full_time_instructors, Administrators, Managers, Pay_slips,
+Cancels, Buys, Registers, Specializes, Redeems, Conducts
+CASCADE;
 
+ --<----------------------- company side ----------------------->
+CREATE TABLE Employees (
+    eid SERIAL PRIMARY KEY,
+    name TEXT,
+    phone INTEGER,
+    email TEXT,
+    join_date DATE,
+    address TEXT,
+    depart_date DATE
+);
+
+CREATE TABLE Part_time_emp (
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    hourly_rate FLOAT
+);
+
+CREATE TABLE Full_time_emp (
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    monthly_salary FLOAT
+);
+
+CREATE TABLE Instructors (
+    eid INTEGER PRIMARY KEY REFERENCES Employees
+);
+
+CREATE TABLE Part_time_instructors (
+    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Instructors 
+    ON DELETE CASCADE
+);
+
+CREATE TABLE Full_time_instructors (
+    eid INTEGER PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp 
+    ON DELETE CASCADE
+);
+
+CREATE TABLE Administrators (
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+);
+
+CREATE TABLE Managers (
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+);
+
+CREATE TABLE Pay_slips (
+    eid INTEGER REFERENCES Employees ON DELETE CASCADE,
+    payment_date DATE,
+    amount FLOAT,
+    num_work_hours INTEGER,
+    num_work_days INTEGER,
+    PRIMARY KEY (eid, payment_date)
+);
 -- <---------------------- Customer side ---------------------->
 
 CREATE TABLE Customers (
@@ -17,12 +74,6 @@ CREATE TABLE Rooms (
 );
 
 
-CREATE TABLE Course_areas (
-    name TEXT PRIMARY KEY,
-    eid INTEGER NOT NULL REFERENCES Managers
-)
-
-
 CREATE TABLE Course_packages (
     package_id SERIAL PRIMARY KEY,
     sale_start_date DATE,
@@ -32,13 +83,11 @@ CREATE TABLE Course_packages (
     price FLOAT
 );
 
-/* Contains the owns relationship to enforce key and total participation on credit cards */
-CREATE TABLE Credit_cards (
-    number INTEGER PRIMARY KEY,
-    CVV INTEGER,
-    expiry_date DATE,
-    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
-    from_date DATE DEFAULT CURRENT_DATE
+
+
+CREATE TABLE Course_areas (
+    name TEXT PRIMARY KEY,
+    eid INTEGER NOT NULL REFERENCES Managers
 );
 
 CREATE TABLE Courses (
@@ -47,7 +96,7 @@ CREATE TABLE Courses (
     description TEXT,
     title TEXT,
     name TEXT NOT NULL REFERENCES Course_areas
-)
+);
 
 /* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
@@ -70,68 +119,15 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
+    rid SERIAL NOT NULL REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (course_id, launch_date, sid) 
 );
- --<----------------------- company side ----------------------->
-CREATE TABLE Employees (
-    eid SERIAL PRIMARY KEY,
-    name TEXT,
-    phone INTEGER,
-    email TEXT,
-    join_date DATE,
-    address TEXT,
-    depart_date DATE
-);
-
-CREATE TABLE Part_time_emp (
-    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
-    hourly_rate FLOAT
-)
-
-CREATE TABLE Full_time_emp (
-    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
-    monthly_salary FLOAT
-)
-
-CREATE TABLE Instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Employees
-)
-
-CREATE TABLE Part_time_instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Instructors 
-    ON DELETE CASCADE
-)
-
-CREATE TABLE Full_time_instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp 
-    ON DELETE CASCADE
-)
-
-CREATE TABLE Administrators (
-    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
-)
-
-CREATE TABLE Managers (
-    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
-)
-
-CREATE TABLE Pay_slips (
-    eid INTEGER REFERENCES Employees ON DELETE CASCADE,
-    payment_date DATE,
-    amount FLOAT,
-    num_work_hours INTEGER,
-    num_work_days INTEGER
-    PRIMARY KEY (eid, payment_date)
-);
-
-
 
 -- <----------------------associations----------------------->
 CREATE TABLE Cancels (
-    date DATE PRIMARY KEY,
+    date DATE ,
     refund_amt INTEGER,
     package_credit INTEGER,
     cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
@@ -139,16 +135,25 @@ CREATE TABLE Cancels (
     launch_date DATE,
     sid INTEGER,
     FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
-    PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
+    PRIMARY KEY (date, cust_id, course_id, launch_date, sid)
+);
+
+/* Contains the owns relationship to enforce key and total participation on credit cards */
+CREATE TABLE Credit_cards (
+    number INTEGER PRIMARY KEY,
+    CVV INTEGER,
+    expiry_date DATE,
+    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
+    from_date DATE DEFAULT CURRENT_DATE
 );
 
 /* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
     package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
-    number INTEGER REFERENCES Credit_card ON DELETE CASCADE,
+    number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
     b_date DATE,
     num_remaining_redemptions INTEGER,
-    PRIMARY KEY (package_id, number, date)
+    PRIMARY KEY (package_id, number, b_date)
 );
 
 /* Requires triggers to enforce that each customer can register for at most one sesion of a course */
