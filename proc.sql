@@ -1,4 +1,13 @@
+<<<<<<< HEAD
 
+=======
+CREATE OR REPLACE ROUTINE add_course()
+
+
+
+
+/* 3 */
+>>>>>>> 40bc6ddb30dd27a97569cacedc3157887af21d1c
 CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
@@ -9,5 +18,22 @@ BEGIN
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);
+END;
+$$ LANGUAGE plpgsql;
+
+/* 4 */
+CREATE OR REPLACE FUNCTION update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+	RETURNS VOID 
+AS $$
+BEGIN
+	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
+	VALUES (cid, cexpiry_date, ccvv, cid);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+	RETURNS VOID 
+AS $$
+BEGIN
 END;
 $$ LANGUAGE plpgsql;
