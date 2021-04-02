@@ -116,7 +116,7 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid SERIAL NOT NULL REFERENCES Rooms ON DELETE CASCADE,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (course_id, launch_date, sid) 
@@ -141,14 +141,14 @@ CREATE TABLE Credit_cards (
     CVV INTEGER,
     expiry_date DATE,
     cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
-    from_date DATE DEFAULT CURRENT_DATE
+    from_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 /* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
     package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
     number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
-    b_date DATE,
+    b_date DATE DEFAULT CURRENT_DATE,
     num_remaining_redemptions INTEGER,
     PRIMARY KEY (package_id, number, b_date)
 );

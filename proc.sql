@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-
-
-
-
-=======
->>>>>>> 25b2836dd94b48d9967e0c829000086f53f55067
 /* 3 */
 CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
@@ -43,3 +36,19 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 	FROM Course_packages
 	WHERE sale_end_date >= CURRENT_DATE and CURRENT_DATE >= sale_start_date;
 $$ LANGUAGE sql;
+
+/* 13 */
+CREATE OR REPLACE FUNCTION buy_course_package(cid INTEGER, pid INTEGER)
+RETURNS VOID AS $$
+DECLARE
+	cnum INTEGER;
+	rnum INTEGER;
+BEGIN
+	cnum := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
+	IF NOT EXISTS (SELECT * FROM Buys WHERE number=cnum and num_remaining_redemptions > 0) and 
+		(pid IN (SELECT package_id FROM get_course_packages())) THEN
+		rnum := (SELECT num_free_registrations FROM get_course_packages() WHERE package_id=pid);
+		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
+	END IF;
+END;
+$$ LANGUAGE plpgsql;
