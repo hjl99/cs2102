@@ -148,7 +148,12 @@ CREATE TABLE Buys (
 
 CREATE TABLE Registers (
     number INTEGER REFERENCES Credit_cards,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
     date DATE,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    PRIMARY KEY (course_id, launch_date, sid, number, date)
 );
 
 CREATE TABLE  Specializes (
