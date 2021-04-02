@@ -96,11 +96,11 @@ CREATE TABLE Full_time_emp (
 )
 
 CREATE TABLE Instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Employees
 )
 
 CREATE TABLE Part_time_instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp 
+    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Instructors 
     ON DELETE CASCADE
 )
 
