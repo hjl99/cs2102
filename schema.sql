@@ -3,9 +3,9 @@
 -- <---------------------- Customer side ---------------------->
 CREATE TABLE Customers (
     cust_id INTEGER PRIMARY KEY,
-    name VARCHAR(256),
+    name TEXT,
     phone INTEGER,
-    email VARCHAR(256),
+    email TEXT,
     address TEXT,
 );
 
@@ -17,7 +17,7 @@ CREATE TABLE Rooms (
 
 
 CREATE TABLE Course_areas (
-    name CHAR(256) PRIMARY KEY,
+    name TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
 )
 
@@ -27,7 +27,7 @@ CREATE TABLE Course_packages (
     sale_start_date DATE,
     num_free_registrations INTEGER,
     sale_end_date DATE,
-    name VARCHAR(256),
+    name TEXT,
     price FLOAT
 );
 
@@ -44,8 +44,8 @@ CREATE TABLE Courses (
     course_id INTEGER PRIMARY KEY,
     duration FLOAT,
     description TEXT,
-    title CHAR(256),
-    name CHAR(256) NOT NULL REFERENCES Course_areas
+    title TEXT,
+    name TEXT NOT NULL REFERENCES Course_areas
 )
 
 /* dk why is seating_capacity here tbh */
@@ -77,9 +77,9 @@ CREATE TABLE Sessions (
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
     eid INTEGER PRIMARY KEY,
-    name VARCHAR(256),
+    name TEXT,
     phone INTEGER,
-    email VARCHAR(256),
+    email TEXT,
     join_date DATE,
     address TEXT,
     depart_date DATE
@@ -96,11 +96,11 @@ CREATE TABLE Full_time_emp (
 )
 
 CREATE TABLE Instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Employees
 )
 
 CREATE TABLE Part_time_instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp 
+    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Instructors 
     ON DELETE CASCADE
 )
 
@@ -163,7 +163,7 @@ CREATE TABLE Registers (
 
 CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
-    name CHAR(256) REFERENCES Course_areas,
+    name TEXT REFERENCES Course_areas,
     PRIMARY KEY (eid, name)
 );
 
