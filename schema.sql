@@ -134,12 +134,11 @@ CREATE TABLE Cancels (
     date DATE PRIMARY KEY,
     refund_amt INTEGER,
     package_credit INTEGER,
-    cust_id INTEGER REFERENCES Customers,
+    cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    rid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid, rid) REFERENCES Sessions,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, /* hmm */
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
