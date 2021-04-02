@@ -17,7 +17,8 @@ CREATE TABLE Rooms (
 
 
 CREATE TABLE Course_areas (
-    name CHAR(256)
+    name CHAR(256) PRIMARY KEY,
+    eid INTEGER NOT NULL PRIMARY KEY REFERENCES Managers
 )
 
 
@@ -40,7 +41,8 @@ CREATE TABLE Courses (
     course_id INTEGER PRIMARY KEY,
     duration FLOAT,
     description TEXT,
-    title VARCHAR(256)
+    title CHAR(256),
+    name CHAR(256) NOT NULL REFERENCES Course_areas
 )
 
 /* dk why is seating_capacity here tbh */
@@ -53,6 +55,7 @@ CREATE TABLE Offerings (
     target_number_registrations INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
+    eid INTEGER NOT NULL REFERENCES Administrators,
     PRIMARY KEY (course_id, launch_date)
 );
 
@@ -63,10 +66,9 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid INTEGER REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
-    PRIMARY KEY (course_id, launch_date, sid, rid) --this is annoying
+    PRIMARY KEY (course_id, launch_date, sid) --this is annoying
 );
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
@@ -80,34 +82,36 @@ CREATE TABLE Employees (
 );
 
 CREATE TABLE Part_time_emp (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     hourly_rate FLOAT
 )
 
 CREATE TABLE Full_time_emp (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     monthly_salary FLOAT
 )
 
 CREATE TABLE Instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees,
+    eid INTEGER PRIMARY KEY REFERENCES Employees
         
 )
 
 CREATE TABLE Part_time_instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp 
+    ON DELETE CASCADE
 )
 
 CREATE TABLE Full_time_instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp 
+    ON DELETE CASCADE
 )
 
 CREATE TABLE Administrators (
-    eid CHAR(256) PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
 )
 
 CREATE TABLE Managers (
-    eid CHAR(256) PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
 )
 
 CREATE TABLE Pay_slips (
@@ -137,5 +141,17 @@ CREATE TABLE Cancels (
 
 
 CREATE TABLE  Specializes (
-
+    eid INTEGER REFERENCES Instructors, /*total participation*/
+    name CHAR(256) REFERENCES Course_areas,
+    PRIMARY KEY (eid, name)
 );
+
+CREATE TABLE Conducts (
+    rid INTEGER REFERENCES Rooms,
+    eid INTEGER REFERENCES Instructors,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    PRIMARY KEY (rid, eid, course_id, launch_date, sid)
+)
