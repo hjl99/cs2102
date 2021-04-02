@@ -114,10 +114,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 6 */
 CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
 BEGIN
+END;
+$$ LANGUAGE plpgsql;
+
+/* 8 */
+CREATE OR REPLACE FUNCTION find_rooms(session_date DATE, start_hour TIME, duration INTEGER) 
+RETURNS TABLE(rid INTEGER) AS $$
+DECLARE
+	end_hour TIME;
+BEGIN
+	end_hour := start_hour + duration * INTERVAL '1 hour';
+	SELECT rid 
+	FROM Rooms R
+	WHERE NOT EXISTS (SELECT 1 
+					  FROM Sessions S 
+					  WHERE R.rid = S.rid 
+					  and ((end_hour > S.start_time and end_hour <= S.end_time)
+						   or (start_hour >= S.start_time and start_hour < S.end_time))
+					 );
 END;
 $$ LANGUAGE plpgsql;
 
