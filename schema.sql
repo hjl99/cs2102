@@ -18,7 +18,7 @@ CREATE TABLE Rooms (
 
 CREATE TABLE Course_areas (
     name CHAR(256) PRIMARY KEY,
-    eid INTEGER NOT NULL PRIMARY KEY REFERENCES Managers
+    eid INTEGER NOT NULL REFERENCES Managers
 )
 
 
@@ -96,8 +96,7 @@ CREATE TABLE Full_time_emp (
 )
 
 CREATE TABLE Instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Employees
-        
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE
 )
 
 CREATE TABLE Part_time_instructors (
@@ -134,30 +133,31 @@ CREATE TABLE Cancels (
     date DATE PRIMARY KEY,
     refund_amt INTEGER,
     package_credit INTEGER,
-    cust_id INTEGER REFERENCES Customers,
+    cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    rid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid, rid) references Sessions,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
+/* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
-    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, /* Package might not be offered but customer should be able to finish their remaining redemptions*/
+    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
     number INTEGER REFERENCES Credit_card ON DELETE CASCADE,
-    date DATE,
+    b_date DATE,
     num_remaining_redemptions INTEGER,
     PRIMARY KEY (package_id, number, date)
 );
 
+/* Requires triggers to enforce that each customer can register for at most one sesion of a course */
 CREATE TABLE Registers (
-    number INTEGER REFERENCES Credit_cards,
+    number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
     date DATE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, 
     PRIMARY KEY (course_id, launch_date, sid, number, date)
 );
 
@@ -165,6 +165,19 @@ CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
     name CHAR(256) REFERENCES Course_areas,
     PRIMARY KEY (eid, name)
+);
+
+CREATE TABLE Redeems (
+    package_id INTEGER, 
+    number INTEGER,
+    b_date DATE,
+    r_date DATE,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
+    FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION,
+    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date)
 );
 
 CREATE TABLE Conducts (
