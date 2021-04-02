@@ -45,3 +45,26 @@ INSERT INTO "Rooms" (rid,location,seating_capacity) VALUES (13300765899,'P.O. Bo
 -------- Insert Course_areas
 
 -- Positve insertions for Course_areas
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Science', 978192384);
+INSERT INTO Course_areas (name, eid) VALUES ('Product Management', 320212438);
+INSERT INTO Course_areas (name, eid) VALUES ('Sales', 785784942);
+INSERT INTO Course_areas (name, eid) VALUES ('Medicine', 357763074);
+INSERT INTO Course_areas (name, eid) VALUES ('Food Science', 516230644);
+INSERT INTO Course_areas (name, eid) VALUES ('Chemical Engineering', 641174894);
+INSERT INTO Course_areas (name, eid) VALUES ('Music Production', 522407555);
+INSERT INTO Course_areas (name, eid) VALUES ('Finance', 150478853);
+INSERT INTO Course_areas (name, eid) VALUES ('Law', 768160495);
+INSERT INTO Course_areas (name, eid) VALUES ('Philosophy', 992679413);
+
+-- Negative insertions for Rooms
+INSERT INTO Course_areas (name, eid) VALUES (NULL, 978192384);
+INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 320212438);
+INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 785784942);
+INSERT INTO Course_areas (name, eid) VALUES ('Sociology', NULL);
+
+
+-------- Insert Course_packages
+
+-- Positve insertions for Course_packages
+
+
