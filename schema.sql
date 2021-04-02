@@ -3,7 +3,7 @@
 -- <---------------------- Customer side ---------------------->
 
 CREATE TABLE Customers (
-    cust_id INTEGER PRIMARY KEY,
+    cust_id SERIAL PRIMARY KEY,
     name TEXT,
     phone INTEGER,
     email TEXT,
@@ -11,7 +11,7 @@ CREATE TABLE Customers (
 );
 
 CREATE TABLE Rooms (
-    rid INTEGER PRIMARY KEY,
+    rid SERIAL PRIMARY KEY,
     location TEXT,
     seating_capacity INTEGER
 );
@@ -24,7 +24,7 @@ CREATE TABLE Course_areas (
 
 
 CREATE TABLE Course_packages (
-    package_id INTEGER PRIMARY KEY,
+    package_id SERIAL PRIMARY KEY,
     sale_start_date DATE,
     num_free_registrations INTEGER,
     sale_end_date DATE,
@@ -42,7 +42,7 @@ CREATE TABLE Credit_cards (
 );
 
 CREATE TABLE Courses (
-    course_id INTEGER PRIMARY KEY,
+    course_id SERIAL PRIMARY KEY,
     duration FLOAT,
     description TEXT,
     title TEXT,
@@ -77,7 +77,7 @@ CREATE TABLE Sessions (
 );
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
-    eid INTEGER PRIMARY KEY,
+    eid SERIAL PRIMARY KEY,
     name TEXT,
     phone INTEGER,
     email TEXT,
