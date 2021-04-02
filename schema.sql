@@ -69,6 +69,7 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (course_id, launch_date, sid) 
