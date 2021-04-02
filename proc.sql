@@ -18,7 +18,7 @@ CREATE OR REPLACE FUNCTION update_credit_card(cid INTEGER, cnumber INTEGER, cexp
 AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
-	VALUES (cid, cexpiry_date, ccvv, cid);
+	VALUES (cnumber, cexpiry_date, ccvv, cid);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -46,8 +46,8 @@ DECLARE
 BEGIN
 	cnum := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
 	IF NOT EXISTS (SELECT * FROM Buys WHERE number=cnum and num_remaining_redemptions > 0) and 
-		(pid IN (SELECT package_id FROM get_course_packages())) THEN
-		rnum := (SELECT num_free_registrations FROM get_course_packages() WHERE package_id=pid);
+		(pid IN (SELECT package_id FROM get_available_course_packages())) THEN
+		rnum := (SELECT num_free_registrations FROM get_available_course_packages() WHERE package_id=pid);
 		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
 	END IF;
 END;
