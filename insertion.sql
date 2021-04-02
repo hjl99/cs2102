@@ -2,21 +2,21 @@
 -------- Insert Customers
 
 -- Positve insertions for Employees hierarchy
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Nell T. Calderon',76044067,'Nunc.lectus@orci.ca','2447 Enim. Avenue');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Merritt C. Wagner',61281669,'tristique.senectus.et@luctuslobortisClass.org','P.O. Box 752, 5557 Neque Av.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Adara M. Bailey',89253939,'augue.scelerisque@mauris.net','Ap #329-1731 Et Rd.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Adara M. Bailey',89686053,'a@aliquameuaccumsan.edu','P.O. Box 105, 9504 Tristique St.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Oren C. Byrd',30999101,'mi.felis.adipiscing@Fusce.ca','3840 Mauris Street');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Brian Z. Osborn',30999101,'ut.nulla@amalesuadaid.com','241-1798 Fusce Av.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('James L. Barrett',1323854,'tempor.arcu@mauriselit.com','P.O. Box 590, 5859 Quam Av.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Abbot C. Woods',93308560,'adipiscing@augueeutellus.com','878-1689 Natoque Rd.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Burton O. Langley',24345387,'Aliquam@ut.ca','878-1689 Natoque Rd.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Dorothy K. Nguyen',22745671,'a@ullamcorper.net','Ap #365-1251 Pede Ave');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Nell T. Calderon',76044067,'Nunc.lectus@orci.ca','2447 Enim. Avenue');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Merritt C. Wagner',61281669,'tristique.senectus.et@luctuslobortisClass.org','P.O. Box 752, 5557 Neque Av.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Adara M. Bailey',89253939,'augue.scelerisque@mauris.net','Ap #329-1731 Et Rd.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Adara M. Bailey',89686053,'a@aliquameuaccumsan.edu','P.O. Box 105, 9504 Tristique St.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Oren C. Byrd',30999101,'mi.felis.adipiscing@Fusce.ca','3840 Mauris Street');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Brian Z. Osborn',30999101,'ut.nulla@amalesuadaid.com','241-1798 Fusce Av.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('James L. Barrett',1323854,'tempor.arcu@mauriselit.com','P.O. Box 590, 5859 Quam Av.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Abbot C. Woods',93308560,'adipiscing@augueeutellus.com','878-1689 Natoque Rd.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Burton O. Langley',24345387,'Aliquam@ut.ca','878-1689 Natoque Rd.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Dorothy K. Nguyen',22745671,'a@ullamcorper.net','Ap #365-1251 Pede Ave');
 
 -- Negative insertions for Employees hierarchy
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Conan H. Hewitt',83453879,'lorem@nonarcu.edu','P.O. Box 159, 6870 Fusce Rd.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('John Z. Witt',37291142,'blandit.Nam.nulla@nonfeugiat.ca','8822 Magna. Rd.');
-INSERT INTO Customers (cust_id,name,phone,email,address) VALUES ('Cameron T. Castillo',92187324,'lacinia@eget.org','224-9477 Vitae Road');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Conan H. Hewitt',83453879,'lorem@nonarcu.edu','P.O. Box 159, 6870 Fusce Rd.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('John Z. Witt',37291142,'blandit.Nam.nulla@nonfeugiat.ca','8822 Magna. Rd.');
+INSERT INTO Customers (name,phone,email,address) VALUES ('Cameron T. Castillo',92187324,'lacinia@eget.org','224-9477 Vitae Road');
 
 
 -------- Insert Rooms
