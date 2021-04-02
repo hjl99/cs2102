@@ -81,5 +81,33 @@ INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations
 INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79933123, '2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
 INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79933123, '2021-01-30', 7, '2021-12-15', 'Philosophy Package 1', 190.33);
 INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (NULL, '2020-05-26', 13, '2021-01-20', 'Philosophy Package 2', 444.77);
-INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (49832456, '2020-01-03', -1, '2021-05-20', 'Philosophy Package 3', 296.48);
-INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (42345615, '2020-06-02', 3, '2021-05-08', 'Food Science Package 1', -345.45);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (49832456, '2020-01-03', -1, '2021-05-20', 'Philosophy Package 3', -296.48);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (42345615, '2020-06-00', 3, '2021-05-765', 'Food Science Package 1', 123.32);
+
+
+-------- Insert Credit_cards
+
+-- Positve insertions for Credit_cards
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (5207757125861655, 712,'21-12-21', 1676030602899);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (1449389814987739, 448,'21-01-08', 1670121565299);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (4772425519204232, 468,'21-09-28', 1602032836299);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (2238406833054283, 132,'20-12-03', 1678011764099);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (8405238874121091, 906,'21-07-18', 1655120277499);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (5404411412295264, 320,'20-06-22', 1682121904099);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (7268272469910540, 834,'22-02-27', 1681120138899);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (7531491645485563, 258,'20-09-10', 1640120779699);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (5204373474155087, 442,'20-09-09', 1625072041899);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (2065629961409359, 377,'20-05-08', 1623012646899);
+
+-- Negative insertions for Credit_cards
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (NULL, 831,'20-08-29', 1623012623456);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (3551375609223241, 547,1623765436899);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (3551375609223241, 641,'20-08-30', 1623012609865);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (1326261219057330, 368,'21-09-17', NULL);
+INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (9612070681780448, 438,'20-12-22', 1633417626899);
+
+
+
+
+
+
