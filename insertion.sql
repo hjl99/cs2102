@@ -45,3 +45,41 @@ INSERT INTO "Rooms" (rid,location,seating_capacity) VALUES (13300765899,'P.O. Bo
 -------- Insert Course_areas
 
 -- Positve insertions for Course_areas
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Science', 978192384);
+INSERT INTO Course_areas (name, eid) VALUES ('Product Management', 320212438);
+INSERT INTO Course_areas (name, eid) VALUES ('Sales', 785784942);
+INSERT INTO Course_areas (name, eid) VALUES ('Medicine', 357763074);
+INSERT INTO Course_areas (name, eid) VALUES ('Food Science', 516230644);
+INSERT INTO Course_areas (name, eid) VALUES ('Chemical Engineering', 641174894);
+INSERT INTO Course_areas (name, eid) VALUES ('Music Production', 522407555);
+INSERT INTO Course_areas (name, eid) VALUES ('Finance', 150478853);
+INSERT INTO Course_areas (name, eid) VALUES ('Law', 768160495);
+INSERT INTO Course_areas (name, eid) VALUES ('Philosophy', 992679413);
+
+-- Negative insertions for Rooms
+INSERT INTO Course_areas (name, eid) VALUES (NULL, 978192384);
+INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 320212438);
+INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 785784942);
+INSERT INTO Course_areas (name, eid) VALUES ('Sociology', NULL);
+
+
+-------- Insert Course_packages
+
+-- Positve insertions for Course_packages
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (55615684, '2020-01-15', 0, '2020-03-06', 'Computer Science Package 1', 402.47);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79264924, '2020-01-19', 1, '2021-03-18', 'Computer Science Package 2', 198.44);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (17193750, '2020-03-23', 4, '2021-03-22', 'Computer Science Package 3', 262.46);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (61432879, '2020-04-08', 15, '2021-05-03', 'Sociology Package 1', 485.51);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (10728548, '2020-06-03', 16, '2021-03-31', 'Sociology Package 2', 391.21);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79933267, '2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (59981916, '2021-01-30', 7, '2021-12-15', 'Philosophy Package 1', 190.33);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (32126145, '2020-05-26', 13, '2021-01-20', 'Philosophy Package 2', 444.77);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (49830056, '2020-01-03', 11, '2021-05-20', 'Philosophy Package 3', 296.48);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (48028615, '2020-06-02', 3, '2021-05-08', 'Food Science Package 1', 401.46);
+
+-- Negative insertions for Course_packages
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79933123, '2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (79933123, '2021-01-30', 7, '2021-12-15', 'Philosophy Package 1', 190.33);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (NULL, '2020-05-26', 13, '2021-01-20', 'Philosophy Package 2', 444.77);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (49832456, '2020-01-03', -1, '2021-05-20', 'Philosophy Package 3', 296.48);
+INSERT INTO Course_packages (package_id, sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES (42345615, '2020-06-02', 3, '2021-05-08', 'Food Science Package 1', -345.45);
