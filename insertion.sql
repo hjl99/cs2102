@@ -56,7 +56,7 @@ INSERT INTO Course_areas (name, eid) VALUES ('Finance', 150478853);
 INSERT INTO Course_areas (name, eid) VALUES ('Law', 768160495);
 INSERT INTO Course_areas (name, eid) VALUES ('Philosophy', 992679413);
 
--- Negative insertions for Rooms
+-- Negative insertions for Course_areas
 INSERT INTO Course_areas (name, eid) VALUES (NULL, 978192384);
 INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 320212438);
 INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 785784942);
@@ -107,6 +107,24 @@ INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES
 INSERT INTO "Credit_cards" (number, CVV, expiry_date, cust_id, from_date) VALUES (9612070681780448, 438,'20-12-22', 1633417626899);
 
 
+-------- Insert Courses
+
+-- Positve insertions for Courses
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (1, 69.0, 'Morbi quis tortor id nulla ultrices aliquet. Maecenas leo odio, condimentum id, luctus nec, molestie sed, justo. Pellentesque viverra pede ac diam. Cras pellentesque volutpat dui. Maecenas tristique, est et tempus semper, est quam pharetra magna, ac consequat metus sapien ut nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti.', 'vestibulum eget vulputate ut ultrices vel augue vestibulum ante', 'Computer Science');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (2, 62.4, 'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti. Nullam porttitor lacus at turpis. Donec posuere metus vitae ipsum. Aliquam non mauris. Morbi non lectus. Aliquam sit amet diam in magna bibendum imperdiet. Nullam orci pede, venenatis non, sodales sed, tincidunt eu, felis. Fusce posuere felis sed lacus.', 'luctus et ultrices', 'Product Management');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (3, 86.8, 'In eleifend quam a odio. In hac habitasse platea dictumst. Maecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem.', 'donec vitae nisi nam ultrices', 'Sales');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (4, 79.9, 'Nulla justo. Aliquam quis turpis eget elit sodales scelerisque. Mauris sit amet eros. Suspendisse accumsan tortor quis turpis. Sed ante. Vivamus tortor.', 'tortor quis turpis sed ante vivamus', 'Medicine');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (5, 67.9, 'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros.', 'nulla nisl nunc nisl duis', 'Food Science';
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (6, 76.9, 'Praesent lectus. Vestibulum quam sapien, varius ut, blandit non, interdum in, ante. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Duis faucibus accumsan odio. Curabitur convallis. Duis consequat dui nec nisi volutpat eleifend.', 'id mauris vulputate', 'Chemical Engineering');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (7, 65.7, 'Maecenas leo odio, condimentum id, luctus nec, molestie sed, justo. Pellentesque viverra pede ac diam. Cras pellentesque volutpat dui. Maecenas tristique, est et tempus semper, est quam pharetra magna, ac consequat metus sapien ut nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti. Nullam porttitor lacus at turpis. Donec posuere metus vitae ipsum. Aliquam non mauris. Morbi non lectus.', 'in quam fringilla rhoncus mauris enim', 'Music Production');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (8, 64.5, 'Proin eu mi. Nulla ac enim.', 'ipsum primis in faucibus orci luctus', 'Finance');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (9, 64.4, 'Integer pede justo, lacinia eget, tincidunt eget, tempus vel, pede. Morbi porttitor lorem id ligula. Suspendisse ornare consequat lectus.', 'dignissim vestibulum vestibulum ante ipsum primis in faucibus', 'Law');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (10, 73.5, 'Quisque erat eros, viverra eget, congue eget, semper rutrum, nulla. Nunc purus. Phasellus in felis. Donec semper sapien a libero. Nam dui. Proin leo odio, porttitor id, consequat in, consequat ut, nulla. Sed accumsan felis.', 'etiam faucibus cursus urna ut', 'Philosophy');
+
+-- Negative insertions for Courses
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (11, 70.1, 'Nam nulla. Integer pede justo, lacinia eget, tincidunt eget, tempus vel, pede. Morbi porttitor lorem id ligula. Suspendisse ornare consequat lectus. In est risus, auctor sed, tristique in, tempus sit amet, sem.', 'at turpis donec posuere metus vitae ipsum aliquam non mauris', 'Music Production');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (11, 98.4, 'Duis consequat dui nec nisi volutpat eleifend. Donec ut dolor. Morbi vel lectus in quam fringilla rhoncus. Mauris enim leo, rhoncus sed, vestibulum sit amet, cursus id, turpis. Integer aliquet, massa id lobortis convallis, tortor risus dapibus augue, vel accumsan tellus nisi eu orci. Mauris lacinia sapien quis libero. Nullam sit amet turpis elementum ligula vehicula consequat.', 'aliquam non mauris morbi non lectus aliquam sit amet diam', 'Philosophy');
+INSERT INTO Courses (course_id, duration, description, title, name) VALUES (12, 67.2, 'Nam dui.', 'iaculis congue vivamus', NULL);
 
 
 
