@@ -52,3 +52,25 @@ BEGIN
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+/* 25 */
+CREATE OR REPLACE FUNCTION pay_salary()
+RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
+	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
+AS 
+BEGIN
+	DECLARE @partTime BOOLEAN;
+	SET @partTime = EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE P.eid=PTE.eid);
+	SELECT eid, 
+		(SELECT name FROM Employees E WHERE E.eid=P.eid) name,
+		(CASE 
+			WHEN @partTime THEN 'part-time'
+			ELSE THEN 'full-time') estatus,
+		(CASE 
+			WHEN @partTime THEN NULL
+			ELSE THEN (SELECT )) estatus,
+	FROM Pay_slips P
+	ORDER BY eid ASC;
+END;
+$$ LANGUAGE plpgsql;
+
