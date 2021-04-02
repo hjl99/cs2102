@@ -17,7 +17,8 @@ CREATE TABLE Rooms (
 
 
 CREATE TABLE Course_areas (
-    name CHAR(256)
+    name CHAR(256) PRIMARY KEY,
+    eid INTEGER NOT NULL PRIMARY KEY REFERENCES Managers
 )
 
 
@@ -30,17 +31,21 @@ CREATE TABLE Course_packages (
     price FLOAT
 );
 
+/* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
     CVV INTEGER,
-    expiry_date DATE
+    expiry_date DATE,
+    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
+    from_date DATE
 )
 
 CREATE TABLE Courses (
     course_id INTEGER PRIMARY KEY,
     duration FLOAT,
     description TEXT,
-    title VARCHAR(256)
+    title CHAR(256),
+    name CHAR(256) NOT NULL REFERENCES Course_areas
 )
 
 /* dk why is seating_capacity here tbh */
@@ -53,6 +58,7 @@ CREATE TABLE Offerings (
     target_number_registrations INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
+    eid INTEGER NOT NULL REFERENCES Administrators,
     PRIMARY KEY (course_id, launch_date)
 );
 
@@ -63,10 +69,10 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid INTEGER REFERENCES Rooms ON DELETE CASCADE,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
-    PRIMARY KEY (course_id, launch_date, sid, rid) --this is annoying
+    PRIMARY KEY (course_id, launch_date, sid) 
 );
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
@@ -80,34 +86,36 @@ CREATE TABLE Employees (
 );
 
 CREATE TABLE Part_time_emp (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     hourly_rate FLOAT
 )
 
 CREATE TABLE Full_time_emp (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     monthly_salary FLOAT
 )
 
 CREATE TABLE Instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Employees,
+    eid INTEGER PRIMARY KEY REFERENCES Employees
         
 )
 
 CREATE TABLE Part_time_instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Part_time_emp REFERENCES Full_time_emp 
+    ON DELETE CASCADE
 )
 
 CREATE TABLE Full_time_instructors (
-    eid CHAR(256) PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Instructors REFERENCES Full_time_emp 
+    ON DELETE CASCADE
 )
 
 CREATE TABLE Administrators (
-    eid CHAR(256) PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
 )
 
 CREATE TABLE Managers (
-    eid CHAR(256) PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
+    eid INTEGER PRIMARY KEY REFERENCES Full_time_emp ON DELETE CASCADE
 )
 
 CREATE TABLE Pay_slips (
@@ -135,7 +143,36 @@ CREATE TABLE Cancels (
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
+CREATE TABLE Buys (
+    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, /* Package might not be offered but customer should be able to finish their remaining redemptions*/
+    number INTEGER REFERENCES Credit_card ON DELETE CASCADE,
+    date DATE,
+    num_remaining_redemptions INTEGER,
+    PRIMARY KEY (package_id, number, date)
+);
+
+CREATE TABLE Registers (
+    number INTEGER REFERENCES Credit_cards,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
+    date DATE,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    PRIMARY KEY (course_id, launch_date, sid, number, date)
+);
 
 CREATE TABLE  Specializes (
-
+    eid INTEGER REFERENCES Instructors, /*total participation*/
+    name CHAR(256) REFERENCES Course_areas,
+    PRIMARY KEY (eid, name)
 );
+
+CREATE TABLE Conducts (
+    rid INTEGER REFERENCES Rooms,
+    eid INTEGER REFERENCES Instructors,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    PRIMARY KEY (rid, eid, course_id, launch_date, sid)
+)
