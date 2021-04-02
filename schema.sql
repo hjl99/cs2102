@@ -3,8 +3,7 @@ Course_packages, Credit_cards, Courses, Offerings,
 Sessions, Employees, Part_time_emp,
 Full_time_emp, Instructors, Part_time_instructors, 
 Full_time_instructors, Administrators, Managers, Pay_slips,
-Cancels, Buys, Registers, Specializes, Redeems, Conducts
-CASCADE;
+Cancels, Buys, Registers, Specializes, Redeems, Conducts CASCADE;
 
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
@@ -83,8 +82,6 @@ CREATE TABLE Course_packages (
     price FLOAT
 );
 
-
-
 CREATE TABLE Course_areas (
     name TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
@@ -94,7 +91,7 @@ CREATE TABLE Courses (
     course_id SERIAL PRIMARY KEY,
     duration FLOAT,
     description TEXT,
-    title TEXT unique,
+    title TEXT UNIQUE,
     name TEXT NOT NULL REFERENCES Course_areas
 );
 
@@ -119,7 +116,7 @@ CREATE TABLE Sessions (
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid SERIAL NOT NULL REFERENCES Rooms ON DELETE CASCADE,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (course_id, launch_date, sid) 
@@ -144,14 +141,14 @@ CREATE TABLE Credit_cards (
     CVV INTEGER,
     expiry_date DATE,
     cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
-    from_date DATE DEFAULT CURRENT_DATE
+    from_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 /* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
     package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
     number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
-    b_date DATE,
+    b_date DATE DEFAULT CURRENT_DATE,
     num_remaining_redemptions INTEGER,
     PRIMARY KEY (package_id, number, b_date)
 );
@@ -194,4 +191,4 @@ CREATE TABLE Conducts (
     sid INTEGER,
     FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
     PRIMARY KEY (rid, eid, course_id, launch_date, sid)
-)
+);
