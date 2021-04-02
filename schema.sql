@@ -31,10 +31,13 @@ CREATE TABLE Course_packages (
     price FLOAT
 );
 
+/* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
     CVV INTEGER,
-    expiry_date DATE
+    expiry_date DATE,
+    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
+    from_date DATE
 )
 
 CREATE TABLE Courses (
@@ -68,7 +71,7 @@ CREATE TABLE Sessions (
     end_time TIME,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
-    PRIMARY KEY (course_id, launch_date, sid) --this is annoying
+    PRIMARY KEY (course_id, launch_date, sid) 
 );
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
@@ -139,6 +142,18 @@ CREATE TABLE Cancels (
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
+CREATE TABLE Buys (
+    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, /* Package might not be offered but customer should be able to finish their remaining redemptions*/
+    number INTEGER REFERENCES Credit_card ON DELETE CASCADE,
+    date DATE,
+    num_remaining_redemptions INTEGER,
+    PRIMARY KEY (package_id, number, date)
+);
+
+CREATE TABLE Registers (
+    number INTEGER REFERENCES Credit_cards,
+    date DATE,
+);
 
 CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
