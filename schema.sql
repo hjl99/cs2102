@@ -35,7 +35,7 @@ CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
     CVV INTEGER,
     expiry_date DATE,
-    cust_id INTEGER NOT NULL FOREIGN KEY REFERENCES Customers, /* will require triggers to enforce total participation on customers*/
+    cust_id INTEGER NOT NULL REFERENCES Customers, /* will require triggers to enforce total participation on customers*/
     from_date DATE
 )
 
@@ -138,6 +138,13 @@ CREATE TABLE Cancels (
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
+CREATE TABLE Buys (
+    package_id INTEGER REFERENCES Course_packages,
+    number INTEGER REFERENCES Credit_card,
+    date DATE,
+    num_remaining_redemptions INTEGER,
+    PRIMARY KEY (package_id, number, date)
+);
 
 CREATE TABLE  Specializes (
 
