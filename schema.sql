@@ -139,25 +139,27 @@ CREATE TABLE Cancels (
     launch_date DATE,
     sid INTEGER,
     rid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid, rid) references Sessions,
+    FOREIGN KEY (course_id, launch_date, sid, rid) REFERENCES Sessions,
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
+/* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
-    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, /* Package might not be offered but customer should be able to finish their remaining redemptions*/
+    package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
     number INTEGER REFERENCES Credit_card ON DELETE CASCADE,
-    date DATE,
+    b_date DATE,
     num_remaining_redemptions INTEGER,
     PRIMARY KEY (package_id, number, date)
 );
 
+/* Requires triggers to enforce that each customer can register for at most one sesion of a course */
 CREATE TABLE Registers (
-    number INTEGER REFERENCES Credit_cards,
+    number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
     date DATE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, /* will cust be refunded if session deleted? */ 
     PRIMARY KEY (course_id, launch_date, sid, number, date)
 );
 
@@ -165,6 +167,19 @@ CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
     name CHAR(256) REFERENCES Course_areas,
     PRIMARY KEY (eid, name)
+);
+
+CREATE TABLE Redeems (
+    package_id INTEGER, 
+    number INTEGER,
+    b_date DATE,
+    r_date DATE,
+    course_id INTEGER,
+    launch_date DATE,
+    sid INTEGER,
+    FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, /* refund if cancelled? */
+    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date)
 );
 
 CREATE TABLE Conducts (
