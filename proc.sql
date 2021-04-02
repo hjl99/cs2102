@@ -1,8 +1,3 @@
-CREATE OR REPLACE ROUTINE add_course()
-
-
-
-
 /* 3 */
 CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
@@ -24,5 +19,12 @@ AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cid, cexpiry_date, ccvv, cid);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+	RETURNS VOID 
+AS $$
+BEGIN
 END;
 $$ LANGUAGE plpgsql;
