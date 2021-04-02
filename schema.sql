@@ -1,12 +1,13 @@
 /* Missing roles, most relationships */
 
 -- <---------------------- Customer side ---------------------->
+
 CREATE TABLE Customers (
     cust_id INTEGER PRIMARY KEY,
     name TEXT,
     phone INTEGER,
     email TEXT,
-    address TEXT,
+    address TEXT
 );
 
 CREATE TABLE Rooms (
@@ -37,8 +38,8 @@ CREATE TABLE Credit_cards (
     CVV INTEGER,
     expiry_date DATE,
     cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
-    from_date DATE
-)
+    from_date DATE DEFAULT CURRENT_DATE
+);
 
 CREATE TABLE Courses (
     course_id INTEGER PRIMARY KEY,
