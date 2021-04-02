@@ -96,8 +96,7 @@ CREATE TABLE Full_time_emp (
 )
 
 CREATE TABLE Instructors (
-    eid INTEGER PRIMARY KEY REFERENCES Employees
-        
+    eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE
 )
 
 CREATE TABLE Part_time_instructors (
@@ -134,12 +133,11 @@ CREATE TABLE Cancels (
     date DATE PRIMARY KEY,
     refund_amt INTEGER,
     package_credit INTEGER,
-    cust_id INTEGER REFERENCES Customers,
+    cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    rid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid, rid) REFERENCES Sessions,
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (cust_id, course_id, launch_date, sid, rid)
 );
 
@@ -159,7 +157,7 @@ CREATE TABLE Registers (
     launch_date DATE,
     sid INTEGER,
     date DATE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, /* will cust be refunded if session deleted? */ 
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, 
     PRIMARY KEY (course_id, launch_date, sid, number, date)
 );
 
@@ -178,7 +176,7 @@ CREATE TABLE Redeems (
     launch_date DATE,
     sid INTEGER,
     FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, /* refund if cancelled? */
+    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION,
     PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date)
 );
 
