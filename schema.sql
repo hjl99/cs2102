@@ -29,12 +29,14 @@ CREATE TABLE Course_packages (
     name VARCHAR(256),
     price FLOAT
 );
+
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
     CVV INTEGER,
     expiry_date DATE,
-    cust_id INTEGER NOT NULL FOREIGN KEY REFERENCES Customers /* will require triggers to enforce total participation on customers*/
+    cust_id INTEGER NOT NULL FOREIGN KEY REFERENCES Customers, /* will require triggers to enforce total participation on customers*/
+    from_date DATE
 )
 
 CREATE TABLE Courses (
