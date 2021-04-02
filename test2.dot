@@ -1,10 +1,14 @@
 digraph project {
     newrank=true;
 	overlap=false;
-	splines=false;
+    //splines=false;
+    ordering=out;
     rankdir=TB;
 
-    subgraph course {
+    {
+        rank=min;
+        ordering=out;
+        style="invis";
         // Courses
         node [shape=box]; Courses;
         // node [shape=ellipse]; courseId;
@@ -18,9 +22,62 @@ digraph project {
         // Courses -> courseArea [dir=none];
         // Courses -> duration [dir=none];
 
+        // Salary Payments
+        node [shape=box]; SP [label="Salary\nPayments"];
+        // node [shape=ellipse]; spdate [label="date"];
+        // node [shape=ellipse]; noWorkDays;
+        // SP -> spdate [dir=none];
+        // SP -> noWorkDays [dir=none];
+
+        node [shape=box]; Employees;
+        // node [shape=ellipse]; employeeId;
+        // node [shape=ellipse]; ename [label="name"];
+        // node [shape=ellipse]; employeeAddress [label="address"];
+        // node [shape=ellipse]; employeeContactNumber [label="contactNumber"];
+        // node [shape=ellipse]; dateJoined;
+        // node [shape=ellipse]; dateDeparted;
+        // Employees -> employeeId [dir=none];
+        // Employees -> ename [dir=none];
+        // Employees -> employeeAddress [dir=none];
+        // Employees -> employeeContactNumber [dir=none];
+        // Employees -> dateJoined [dir=none];
+        // Employees -> dateDeparted [dir=none];
+    }
+
+    {
+        rank=same;
+        ordering=out;
+        style="invis";
+
         // Offers
         node [shape=diamond]; Offers [peripheries=2];
 
+        node [style="",shape=triangle]; isa_SP_1 [label="ISA"];
+        
+        node [shape=diamond]; Accepts;
+    }
+
+    {
+        rank=same;
+        ordering=out;
+        style="invis";
+        // Full Time Payments
+        node [shape=box]; FTP [label="Full Time\nPayments"];
+        // node [shape=ellipse]; salary;
+        // FTP -> salary [dir=none];
+
+        // Part Time Salary Payments
+        node [shape=box]; PTP [label="Part Time\nPayments"];
+        // node [shape=ellipse]; amount;
+        // PTP -> amount [dir=none];
+
+        node [style="",shape=triangle]; isa_Employee_1 [label="ISA"];
+    }
+
+    {
+        rank=same;
+        ordering=out;
+        style="invis";
         // Course Offerings
         node [shape=box]; CO [label="Course\nOfferings"] [peripheries=2];
         // node [shape=ellipse]; fees;
@@ -32,9 +89,43 @@ digraph project {
         // CO -> launchDate [dir=none];
         // CO -> deadline [dir=none];
 
+        // Area
+        node [shape=diamond]; Area;
+
+        // Course Area
+        node [shape=box]; CA [label="Course Area"];
+
+        node [shape=diamond]; Receives;
+    }
+
+    {
+        rank=5;
+        ordering=out;
+        style="invis";
+
         // Consists
         node [shape=diamond]; Consists [peripheries=2];
-        
+        node [style="",shape=triangle]; isa_FTE_1 [label="ISA"];
+        node [style="",shape=triangle]; isa_PTE_1 [label="ISA"];
+
+        // Handles
+        node [shape=diamond]; Handles;
+
+        node [shape=box]; FTE [label="Full Time\nEmployees"];
+        // node [shape=ellipse]; monthlySalary;
+        // FTE -> monthlySalary [dir=none];
+
+        // Part Time Employees
+        node [shape=box]; PTE [label="Part Time\nEmployees"];
+        // node [shape=ellipse]; hourlyRate;
+        // PTE -> hourlyRate [dir=none];
+    }
+
+    {
+        rank=6;
+        ordering=out;
+        style="invis";
+
         // Sessions
         node [shape=box]; Sessions [peripheries=2];
         // node [shape=ellipse]; sessionNumber;
@@ -44,35 +135,40 @@ digraph project {
         // Sessions -> day [dir=none];
         // Sessions -> time [dir=none];
 
+        // Manages
+        node [shape=diamond]; Manages;
+
+
+        // Instructors
+        node [shape=box]; Instructors;
+        // node [shape=ellipse]; iCourseArea [label="courseArea"];
+        // Instructors -> iCourseArea [dir=none];
+
+        // Managers
+        node [shape=box]; Managers;
+
+        // Administrators
+        node [shape=box]; Administrators;
+    }
+
+    {
+        rank=same;
+        ordering=out;
+        style="invis";
         // Conducts
         node [shape=diamond]; Conducts;
 
-        // Area
-        node [shape=diamond]; Area;
-
-        // Course Area
-        node [shape=box]; CA [label="Course Area"];
-
-        // Handles
-        node [shape=diamond]; Handles;
+        // Specializes
+        node [shape=diamond]; Specializes;
     }
 
-    subgraph customer {
-        rank=min;
+    {
+        rank=same;
+        ordering=out;
+        style="invis";
         // In
         node [shape=diamond]; In;
 
-        // Lecture Rooms
-        node [shape=box]; LR [label="Lecture\nRooms"];
-        // node [shape=ellipse]; roomId;
-        // node [shape=ellipse]; floor;
-        // node [shape=ellipse]; roomNumber;
-        // node [shape=ellipse]; maxCapacity;
-        // LR -> roomId [dir=none];
-        // LR -> floor [dir=none];
-        // LR -> roomNumber [dir=none];
-        // LR -> maxCapacity [dir=none];
-        
         // Registers
         node [shape=diamond]; Registers;
 
@@ -106,19 +202,29 @@ digraph project {
         // CP -> startDate [dir=none];
         // CP -> endDate [dir=none];
         // CP -> price [dir=none];
+    }
+
+    {
+        rank=max;
+        ordering=out;
+        style="invis";
+
+        // Lecture Rooms
+        node [shape=box]; LR [label="Lecture\nRooms"];
+        // node [shape=ellipse]; roomId;
+        // node [shape=ellipse]; floor;
+        // node [shape=ellipse]; roomNumber;
+        // node [shape=ellipse]; maxCapacity;
+        // LR -> roomId [dir=none];
+        // LR -> floor [dir=none];
+        // LR -> roomNumber [dir=none];
+        // LR -> maxCapacity [dir=none];
 
         // Redeems
         node [shape=diamond]; Redeems;
+    }
 
-        // Specializes
-        node [shape=diamond]; Specializes;
-
-        // Manages
-        node [shape=diamond]; Manages;
-    };
-
-
-    Courses -> Offers [dir=none];
+       Courses -> Offers [dir=none];
 
     CO -> Offers [color="black:white:black"];
 
@@ -138,53 +244,7 @@ digraph project {
     CP -> Purchases [dir=none];
     CP -> Redeems [dir=none];
     Redeems -> Registers [arrowhead=box];
-
-    // Employees
-    subgraph employee {
-        rank=max;
-        node [shape=box]; Employees;
-        // node [shape=ellipse]; employeeId;
-        // node [shape=ellipse]; ename [label="name"];
-        // node [shape=ellipse]; employeeAddress [label="address"];
-        // node [shape=ellipse]; employeeContactNumber [label="contactNumber"];
-        // node [shape=ellipse]; dateJoined;
-        // node [shape=ellipse]; dateDeparted;
-        // Employees -> employeeId [dir=none];
-        // Employees -> ename [dir=none];
-        // Employees -> employeeAddress [dir=none];
-        // Employees -> employeeContactNumber [dir=none];
-        // Employees -> dateJoined [dir=none];
-        // Employees -> dateDeparted [dir=none];
-
-        node [style="",shape=triangle]; isa_Employee_1 [label="ISA"];    // Full Time Employees
-
-        node [shape=box]; FTE [label="Full Time\nEmployees"];
-        // node [shape=ellipse]; monthlySalary;
-        // FTE -> monthlySalary [dir=none];
-
-        // Part Time Employees
-        node [shape=box]; PTE [label="Part Time\nEmployees"];
-        // node [shape=ellipse]; hourlyRate;
-        // PTE -> hourlyRate [dir=none];
-        
-        node [style="",shape=triangle]; isa_FTE_1 [label="ISA"];
-        node [style="",shape=triangle]; isa_PTE_1 [label="ISA"];
-        // Administrators
-        node [shape=box]; Administrators;
-
-        // Instructors
-        node [shape=box]; Instructors;
-        // node [shape=ellipse]; iCourseArea [label="courseArea"];
-        // Instructors -> iCourseArea [dir=none];
-
-        // Managers
-        node [shape=box]; Managers;
-    };
-
-
-    //
-
-    Employees -> isa_Employee_1 [color="black:white:black"];
+        Employees -> isa_Employee_1 [color="black:white:black"];
     isa_Employee_1 -> FTE [dir=none];
     isa_Employee_1 -> PTE [dir=none];
     FTE -> isa_FTE_1 [color="black:white:black"];
@@ -195,33 +255,7 @@ digraph project {
     Managers -> isa_FTE_1 [dir=none];
 
     Sessions -> Conducts [color="black:white:black"];
-
-    subgraph salary {
-        // Salary Payments
-        node [shape=box]; SP [label="Salary\nPayments"];
-        // node [shape=ellipse]; spdate [label="date"];
-        // node [shape=ellipse]; noWorkDays;
-        // SP -> spdate [dir=none];
-        // SP -> noWorkDays [dir=none];
-
-        
-        node [style="",shape=triangle]; isa_SP_1 [label="ISA"];
-    
-        // Full Time Payments
-        node [shape=box]; FTP [label="Full Time\nPayments"];
-        // node [shape=ellipse]; salary;
-        // FTP -> salary [dir=none];
-
-        // Part Time Salary Payments
-        node [shape=box]; PTP [label="Part Time\nPayments"];
-        // node [shape=ellipse]; amount;
-        // PTP -> amount [dir=none];
-
-        node [shape=diamond]; Receives;
-        node [shape=diamond]; Accepts;
-    }
-
-    SP -> isa_SP_1 [color="black:white:black"];
+        SP -> isa_SP_1 [color="black:white:black"];
 
     FTP -> isa_SP_1 [dir=none];
 
@@ -248,8 +282,4 @@ digraph project {
 
     CA -> Manages [color="black:white:black"];
     Manages -> Managers [dir=none];
-    // end    
-
-    // Courses -> Employees [ltail=employee,lhead=course];
-    // Employees -> Customers [ltail=customer,lhead=employee]
 }
