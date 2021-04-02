@@ -1,4 +1,8 @@
-/* Missing roles, most relationships */
+DROP TABLE Customers, Rooms, Course_areas, Course_packages, Credit_cards,
+Courses, Offerings, Sessions, Employees, Part_time_emp,
+Full_time_emp, Instructors, Part_time_instructors,
+Full_time_instructors, Administrators, Managers, Pay_slips, 
+Cancels, Buys, Registers, Specializes, Redeems, Conducts IF EXISTS CASCADE;
 
 -- <---------------------- Customer side ---------------------->
 

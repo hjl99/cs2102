@@ -26,3 +26,10 @@ BEGIN
 	VALUES (cid, cexpiry_date, ccvv, cid);
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+	RETURNS VOID 
+AS $$
+BEGIN
+END;
+$$ LANGUAGE plpgsql;
