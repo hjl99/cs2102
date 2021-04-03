@@ -216,7 +216,7 @@ BEGIN
 	FROM (
 		SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date,
 		(
-			SELECT array_to_json(array_agg(row_to_json(d)))
+			SELECT json_agg(d)
 			FROM (
 				SELECT title, session_date, start_time
 				FROM tmp2
