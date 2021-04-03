@@ -121,6 +121,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* 5 */
 CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, duration INTEGER) AS $$
 DECLARE
@@ -134,6 +135,36 @@ BEGIN
     END IF;
     INSERT INTO  Courses (title, description, duration, name)
     VALUES (title, description, duration, area);
+END;
+$$ LANGUAGE plpgsql;
+
+/* 6 */
+CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, sess_start_hour TIME)
+RETURNS TABLE(eid INTEGER, name TEXT) AS $$
+	SELECT I.eid, I.name
+	FROM Instructors I
+	WHERE NOT EXISTS (SELECT 1
+					 FROM Sessions S
+					 WHERE I.eid = S.eid
+					 and sess_date = S.date
+					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
+$$ LANGUAGE plpgsql;
+
+/* 8 */
+CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
+RETURNS TABLE(rid INTEGER) AS $$
+DECLARE
+	sess_end_hour TIME;
+BEGIN
+	sess_end_hour := sess_start_hour + sess_duration * INTERVAL '1 hour';
+	SELECT R.rid
+	FROM Rooms R
+	WHERE NOT EXISTS (SELECT 1 
+					 FROM Sessions S
+					 WHERE R.rid = S.rid 
+					  and S.date = sess_date 
+					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
+						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
 END;
 $$ LANGUAGE plpgsql;
 
@@ -168,12 +199,12 @@ DECLARE
     c_and_co RECORD;
 BEGIN
     SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
-    IF sess_day < c_and_co.registration_deadline THEN
-        RAISE EXCEPTION 'The registration should close before commencing';
-    END IF;
-    IF NOW() > c_and_co.registration_deadline THEN
-        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    END IF;
+    -- IF sess_day < c_and_co.registration_deadline THEN
+    --     RAISE EXCEPTION 'The registration should close before commencing';
+    -- END IF;
+    -- IF NOW() > c_and_co.registration_deadline THEN
+    --     RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    -- END IF;
     INSERT INTO Sessions VALUES 
     (sess_id, sess_day, sess_start, sess_start + interval '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
