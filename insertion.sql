@@ -174,6 +174,7 @@ INSERT INTO Administrators (eid) VALUES (30);
 
 -- Negative insertions for Administrators
 
+
 -------- Insert Managers
 
 -- Positve insertions for Managers
@@ -187,6 +188,7 @@ INSERT INTO Managers (eid) VALUES (37);
 INSERT INTO Managers (eid) VALUES (38);
 INSERT INTO Managers (eid) VALUES (39);
 INSERT INTO Managers (eid) VALUES (40);
+
 -- Negative insertions for Managers
 
 
@@ -213,6 +215,7 @@ INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days)
 
 
  --<----------------------- company side ----------------------->
+
 -------- Insert Customers
 
 -- Positve insertions for Customers hierarchy
@@ -258,71 +261,68 @@ INSERT INTO Rooms (location,seating_capacity) VALUES ('P.O. Box 718, 3543 Ligula
 -------- Insert Course_packages
 
 -- Positve insertions for Course_packages
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-15', 0, '2020-03-06', 'Computer Science Package 1', 402.47);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-19', 1, '2021-03-18', 'Computer Science Package 2', 198.44);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-03-23', 4, '2021-03-22', 'Computer Science Package 3', 262.46);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-04-08', 15, '2021-05-03', 'Sociology Package 1', 485.51);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-06-03', 16, '2021-03-31', 'Sociology Package 2', 391.21);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2021-01-30', 7, '2021-12-15', 'Philosophy Package 1', 190.33);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-26', 13, '2021-01-20', 'Philosophy Package 2', 444.77);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-03', 11, '2021-05-20', 'Philosophy Package 3', 296.48);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-06-02', 3, '2021-05-08', 'Food Science Package 1', 401.46);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-15', 0, '2020-03-06', 'package 1', 402.47);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-19', 1, '2021-03-18', 'package 2', 198.44);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-03-23', 4, '2021-03-22', 'package 3', 262.46);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-04-08', 15, '2021-05-03', 'package 4' 485.51);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-06-03', 16, '2021-03-31', 'package 5' 391.21);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-06', 13, '2020-12-13', 'package 6' 249.76);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2021-01-30', 7, '2021-12-15', 'package 7' 190.33);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-26', 13, '2021-01-20', 'package 8', 444.77);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-03', 11, '2021-05-20', 'package 9', 296.48);
+INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-06-02', 3, '2021-05-08', 'package 10', 401.46);
 
 -- Negative insertions for Course_packages
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2021-01-30', 7, '2021-12-15', 'Philosophy Package 1', 190.33);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-26', 13, '2021-01-20', 'Philosophy Package 2', 444.77);
 INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-01-03', -1, '2021-05-20', 'Philosophy Package 3', -296.48);
-INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-06-00', 3, '2021-05-765', 'Food Science Package 1', 123.32);
 
 
 -------- Insert Course_areas
 
 -- Positve insertions for Course_areas
-INSERT INTO Course_areas (name, eid) VALUES ('Computer Science', 31);
-INSERT INTO Course_areas (name, eid) VALUES ('Product Management', 32);
-INSERT INTO Course_areas (name, eid) VALUES ('Sales', 33);
-INSERT INTO Course_areas (name, eid) VALUES ('Medicine', 34);
-INSERT INTO Course_areas (name, eid) VALUES ('Food Science', 35);
-INSERT INTO Course_areas (name, eid) VALUES ('Chemical Engineering', 36);
-INSERT INTO Course_areas (name, eid) VALUES ('Music Production', 37);
-INSERT INTO Course_areas (name, eid) VALUES ('Finance', 38);
-INSERT INTO Course_areas (name, eid) VALUES ('Law', 31);
-INSERT INTO Course_areas (name, eid) VALUES ('Philosophy', 35);
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Networking', 31);
+INSERT INTO Course_areas (name, eid) VALUES ('Algorithms', 32);
+INSERT INTO Course_areas (name, eid) VALUES ('Artificial Intelligence', 33);
+INSERT INTO Course_areas (name, eid) VALUES ('Natural Language Processing', 34);
+INSERT INTO Course_areas (name, eid) VALUES ('Database Systems', 35);
+INSERT INTO Course_areas (name, eid) VALUES ('Software Engineering', 36);
+INSERT INTO Course_areas (name, eid) VALUES ('Parallel Computing', 37);
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Vision', 38);
+INSERT INTO Course_areas (name, eid) VALUES ('Machine Learning', 31);
+INSERT INTO Course_areas (name, eid) VALUES ('Programming Languages', 35);
 
 -- Negative insertions for Course_areas
-INSERT INTO Course_areas (name, eid) VALUES (NULL, 978192384);
-INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 320212438);
-INSERT INTO Course_areas (name, eid) VALUES ('Mechanical Engineering', 785784942);
-INSERT INTO Course_areas (name, eid) VALUES ('Sociology', NULL);
+INSERT INTO Course_areas (name, eid) VALUES (NULL, 36);
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Graphics', 37);
+INSERT INTO Course_areas (name, eid) VALUES ('Computer Graphics', 39);
+INSERT INTO Course_areas (name, eid) VALUES ('Robotics', NULL);
+INSERT INTO Course_areas (name, eid) VALUES ('Concurrency and Distributed Computing', 50);
 
 
 -------- Insert Courses
 
 -- Positve insertions for Courses
-INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Morbi quis tortor id nulla ultrices aliquet. Maecenas leo odio, condimentum id, luctus nec, molestie sed, justo. Pellentesque viverra pede ac diam. Cras pellentesque volutpat dui. Maecenas tristique, est et tempus semper, est quam pharetra magna, ac consequat metus sapien ut nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti.', 'vestibulum eget vulputate ut ultrices vel augue vestibulum ante', 'Computer Science');
-INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti. Nullam porttitor lacus at turpis. Donec posuere metus vitae ipsum. Aliquam non mauris. Morbi non lectus. Aliquam sit amet diam in magna bibendum imperdiet. Nullam orci pede, venenatis non, sodales sed, tincidunt eu, felis. Fusce posuere felis sed lacus.', 'luctus et ultrices', 'Product Management');
-INSERT INTO Courses (duration, description, title, name) VALUES (80, 'In eleifend quam a odio. In hac habitasse platea dictumst. Maecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem.', 'donec vitae nisi nam ultrices', 'Sales');
-INSERT INTO Courses (duration, description, title, name) VALUES (75, 'Nulla justo. Aliquam quis turpis eget elit sodales scelerisque. Mauris sit amet eros. Suspendisse accumsan tortor quis turpis. Sed ante. Vivamus tortor.', 'tortor quis turpis sed ante vivamus', 'Medicine');
-INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Donec odio justo, sollicitudin ut, suscipit a, feugiat et, eros.', 'nulla nisl nunc nisl duis', 'Food Science';
-INSERT INTO Courses (duration, description, title, name) VALUES (70, 'Praesent lectus. Vestibulum quam sapien, varius ut, blandit non, interdum in, ante. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Duis faucibus accumsan odio. Curabitur convallis. Duis consequat dui nec nisi volutpat eleifend.', 'id mauris vulputate', 'Chemical Engineering');
-INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Maecenas leo odio, condimentum id, luctus nec, molestie sed, justo. Pellentesque viverra pede ac diam. Cras pellentesque volutpat dui. Maecenas tristique, est et tempus semper, est quam pharetra magna, ac consequat metus sapien ut nunc. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris viverra diam vitae quam. Suspendisse potenti. Nullam porttitor lacus at turpis. Donec posuere metus vitae ipsum. Aliquam non mauris. Morbi non lectus.', 'in quam fringilla rhoncus mauris enim', 'Music Production');
-INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Proin eu mi. Nulla ac enim.', 'ipsum primis in faucibus orci luctus', 'Finance');
-INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Integer pede justo, lacinia eget, tincidunt eget, tempus vel, pede. Morbi porttitor lorem id ligula. Suspendisse ornare consequat lectus.', 'dignissim vestibulum vestibulum ante ipsum primis in faucibus', 'Law');
-INSERT INTO Courses (duration, description, title, name) VALUES (70, 'Quisque erat eros, viverra eget, congue eget, semper rutrum, nulla. Nunc purus. Phasellus in felis. Donec semper sapien a libero. Nam dui. Proin leo odio, porttitor id, consequat in, consequat ut, nulla. Sed accumsan felis.', 'etiam faucibus cursus urna ut', 'Philosophy');
+INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Course named Algorithms 01', 'Algorithms 01', 'Algorithms');
+INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course named Algorithms 02', 'Algorithms 02', 'Algorithms');
+INSERT INTO Courses (duration, description, title, name) VALUES (80, 'Course named Artificial Intelligence 01', 'Artificial Intelligence 01', 'Artificial Intelligence');
+INSERT INTO Courses (duration, description, title, name) VALUES (75, 'Course named Artificial Intelligence 02', 'Artificial Intelligence 02', 'Artificial Intelligence');
+INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course named Artificial Intelligence 03', 'Artificial Intelligence 03', 'Artificial Intelligence');
+INSERT INTO Courses (duration, description, title, name) VALUES (70, 'Course named Software Engineering 01', 'Software Engineering 01', 'Software Engineering');
+INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Course named Software Engineering 02', 'Software Engineering 02', 'Software Engineering');
+INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course named Software Engineering 03', 'Software Engineering 03', 'Software Engineering');
+INSERT INTO Courses (duration, description, title, name) VALUES (65, 'Course named Machine Learning 01', 'Machine Learning 01', 'Machine Learning');
+INSERT INTO Courses (duration, description, title, name) VALUES (70, 'Course named Machine Learning 02', 'Machine Learning 02', 'Machine Learning');
 
 -- Negative insertions for Courses
-INSERT INTO Courses (duration, description, title, name) VALUES (70.1, 'Nam nulla. Integer pede justo, lacinia eget, tincidunt eget, tempus vel, pede. Morbi porttitor lorem id ligula. Suspendisse ornare consequat lectus. In est risus, auctor sed, tristique in, tempus sit amet, sem.', 'at turpis donec posuere metus vitae ipsum aliquam non mauris', 'Music Production');
-INSERT INTO Courses (duration, description, title, name) VALUES (90, 'Duis consequat dui nec nisi volutpat eleifend. Donec ut dolor. Morbi vel lectus in quam fringilla rhoncus. Mauris enim leo, rhoncus sed, vestibulum sit amet, cursus id, turpis. Integer aliquet, massa id lobortis convallis, tortor risus dapibus augue, vel accumsan tellus nisi eu orci. Mauris lacinia sapien quis libero. Nullam sit amet turpis elementum ligula vehicula consequat.', 'aliquam non mauris morbi non lectus aliquam sit amet diam', 'Philosophy');
-INSERT INTO Courses (duration, description, title, name) VALUES (90, 'Duis consequat dui nec nisi volutpat eleifend. Donec ut dolor. Morbi vel lectus in quam fringilla rhoncus. Mauris enim leo, rhoncus sed, vestibulum sit amet, cursus id, turpis. Integer aliquet, massa id lobortis convallis, tortor risus dapibus augue, vel accumsan tellus nisi eu orci. Mauris lacinia sapien quis libero. Nullam sit amet turpis elementum ligula vehicula consequat.', 'aliquam non mauris morbi non lectus aliquam sit amet diam', 'Philosophy');
-INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Nam dui.', 'iaculis congue vivamus', NULL);
-INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Nam dui.', 'iaculis congue vivamus', 'Non-Existing Course Area');
+INSERT INTO Courses (duration, description, title, name) VALUES (70.1, 'Course named Software Engineering 01', 'Software Engineering 01', 'Software Engineering');
+INSERT INTO Courses (duration, description, title, name) VALUES (90, 'Course named Software Engineering 03', 'Software Engineering 03', 'Non-Existing Course Area');
+INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course named Machine Learning 01', 'Machine Learning 01', 'Machine Learning');
+INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course named Machine Learning 01', 'Machine Learning 01', 'Machine Learning');
 
 
 -------- Insert Offerings
 
 -- Positve insertions for Offerings
+
 
 -- Negative insertions for Offerings
 
