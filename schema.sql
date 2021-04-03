@@ -126,7 +126,7 @@ CREATE TABLE Sessions (
 
 -- <----------------------associations----------------------->
 CREATE TABLE Cancels (
-    date DATE ,
+    date DATE,
     refund_amt INTEGER,
     package_credit INTEGER,
     cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,

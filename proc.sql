@@ -192,6 +192,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* 14 */
 CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
 RETURNS json AS $$
@@ -245,5 +246,31 @@ BEGIN
     INSERT INTO Sessions VALUES 
     (sess_id, sess_day, sess_start, sess_start + interval '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
+END;
+$$ LANGUAGE plpgsql;
+
+
+/* 25 */
+CREATE OR REPLACE FUNCTION pay_salary()
+RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
+	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
+AS 
+BEGIN
+	DECLARE @partTime BOOLEAN;
+	SET @partTime = EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE P.eid=PTE.eid);
+	INSERT INTO @salTable 
+	SELECT eid, 
+		(SELECT name FROM Employees E WHERE E.eid=P.eid) ename,
+		(CASE WHEN @partTime THEN 'part-time' ELSE 'full-time') estatus,
+		CASE WHEN @partTime THEN NULL ELSE num_work_days,
+		CASE WHEN @partTime THEN num_work_hours ELSE NULL,
+		CASE WHEN @partTime THEN (
+			SELECT hourly_rate FROM Part_time_emp PTE WHERE PTE.eid=P.eid) 
+			ELSE NULL,
+		CASE WHEN @partTime THEN NULL 
+			ELSE (SELECT monthly_salary FROM Full_time_emp FTE WHERE FTE.eid=P.eid),
+		amount
+	FROM Pay_slips P
+	ORDER BY eid ASC;
 END;
 $$ LANGUAGE plpgsql;
