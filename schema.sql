@@ -97,10 +97,11 @@ CREATE TABLE Courses (
 
 /* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
+    coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
     launch_date DATE,
-    end_date DATE,
     start_date DATE,
+    end_date DATE,
     registration_deadline DATE,
     target_number_registrations INTEGER,
     seating_capacity INTEGER,
@@ -110,16 +111,17 @@ CREATE TABLE Offerings (
 );
 
 CREATE TABLE Sessions (
-    course_id INTEGER,
-    launch_date DATE,
     sid INTEGER,
     date DATE,
     start_time TIME,
     end_time TIME,
-    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE,
+    course_id INTEGER,
+    launch_date DATE,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE, --if theres no room theres no session too imo
+    eid INTEGER NOT NULL REFERENCES Instructors,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
-    PRIMARY KEY (course_id, launch_date, sid) 
+    PRIMARY KEY (sid, course_id, launch_date, rid, eid) 
 );
 
 -- <----------------------associations----------------------->
@@ -131,8 +133,10 @@ CREATE TABLE Cancels (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
-    PRIMARY KEY (date, cust_id, course_id, launch_date, sid)
+    rid INTEGER,
+    eid INTEGER,
+    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
+    PRIMARY KEY (date, cust_id, course_id, launch_date, sid, rid, eid)
 );
 
 /* Contains the owns relationship to enforce key and total participation on credit cards */
@@ -160,8 +164,10 @@ CREATE TABLE Registers (
     launch_date DATE,
     sid INTEGER,
     date DATE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION, 
-    PRIMARY KEY (course_id, launch_date, sid, number, date)
+    rid INTEGER,
+    eid INTEGER,
+    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION, 
+    PRIMARY KEY (course_id, launch_date, sid, number, date, rid, eid)
 );
 
 CREATE TABLE  Specializes (
@@ -178,17 +184,11 @@ CREATE TABLE Redeems (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
+    rid INTEGER,
+    eid INTEGER,
     FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions ON DELETE NO ACTION,
-    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date)
+    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION,
+    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date, rid, eid)
 );
 
-CREATE TABLE Conducts (
-    rid INTEGER REFERENCES Rooms,
-    eid INTEGER REFERENCES Instructors,
-    course_id INTEGER,
-    launch_date DATE,
-    sid INTEGER,
-    FOREIGN KEY (course_id, launch_date, sid) REFERENCES Sessions,
-    PRIMARY KEY (rid, eid, course_id, launch_date, sid)
-);
+

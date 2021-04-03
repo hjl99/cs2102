@@ -121,6 +121,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 6 */
+CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, sess_start_hour TIME)
+RETURNS TABLE(eid INTEGER, name TEXT) AS $$
+	SELECT I.eid, I.name
+	FROM Instructors I
+	WHERE NOT EXISTS (SELECT 1
+					 FROM Sessions S
+					 WHERE I.eid = S.eid
+					 and sess_date = S.date
+					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
+$$ LANGUAGE plpgsql;
+
+/* 8 */
+CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
+RETURNS TABLE(rid INTEGER) AS $$
+DECLARE
+	sess_end_hour TIME;
+BEGIN
+	sess_end_hour := sess_start_hour + sess_duration * INTERVAL '1 hour';
+	SELECT R.rid
+	FROM Rooms R
+	WHERE NOT EXISTS (SELECT 1 
+					 FROM Sessions S
+					 WHERE R.rid = S.rid 
+					  and S.date = sess_date 
+					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
+						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
+END;
+$$ LANGUAGE plpgsql;
+
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
 RETURNS TABLE (LIKE Course_packages) AS $$
@@ -144,6 +174,26 @@ BEGIN
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+/* 24 */
+CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
+                                sess_start TIME, eid INTEGER, rid INTEGER) AS $$
+DECLARE 
+    co RECORD;
+BEGIN
+    SELECT * into co FROM Offerings WHERE course_id = in_coid;
+    IF sess_day < co.registration_deadline THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    END IF;
+    IF NOW() > co.registration_deadline THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
+    INSERT INTO Sessions VALUES 
+    (sess_id, sess_day, sess_start, NULL, co.course_id, co.launch_date, rid, eid);
+END;
+$$ LANGUAGE plpgsql;
+
 
 /* 25 */
 CREATE OR REPLACE FUNCTION pay_salary()
@@ -169,6 +219,3 @@ BEGIN
 	ORDER BY eid ASC;
 END;
 $$ LANGUAGE plpgsql;
-
-
-
