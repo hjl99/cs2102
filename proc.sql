@@ -114,7 +114,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 6 */
 CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
@@ -123,20 +122,20 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 8 */
-CREATE OR REPLACE FUNCTION find_rooms(session_date DATE, start_hour TIME, duration INTEGER) 
+CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
 RETURNS TABLE(rid INTEGER) AS $$
 DECLARE
-	end_hour TIME;
+	sess_end_hour TIME;
 BEGIN
-	end_hour := start_hour + duration * INTERVAL '1 hour';
-	SELECT rid 
+	sess_end_hour := sess_start_hour + sess_duration * INTERVAL '1 hour';
+	SELECT R.rid
 	FROM Rooms R
 	WHERE NOT EXISTS (SELECT 1 
-					  FROM Sessions S 
-					  WHERE R.rid = S.rid 
-					  and ((end_hour > S.start_time and end_hour <= S.end_time)
-						   or (start_hour >= S.start_time and start_hour < S.end_time))
-					 );
+					 FROM Sessions S
+					 WHERE R.rid = S.rid 
+					  and S.date = sess_date 
+					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
+						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
 END;
 $$ LANGUAGE plpgsql;
 
@@ -161,5 +160,23 @@ BEGIN
 		rnum := (SELECT num_free_registrations FROM get_available_course_packages() WHERE package_id=pid);
 		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
 	END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+/* 24 */
+CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
+                                sess_start TIME, eid INTEGER, rid INTEGER) AS $$
+DECLARE 
+    co RECORD;
+BEGIN
+    SELECT * into co FROM Offerings WHERE course_id = in_coid;
+    IF sess_day < co.registration_deadline THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    END IF;
+    IF NOW() > co.registration_deadline THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
+    INSERT INTO Sessions VALUES 
+    (sess_id, sess_day, sess_start, NULL, co.course_id, co.launch_date, rid, eid);
 END;
 $$ LANGUAGE plpgsql;
