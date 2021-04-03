@@ -150,6 +150,74 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
 					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
 $$ LANGUAGE plpgsql;
 
+/* 7 */
+DROP FUNCTION IF EXISTS get_available_instructors;
+CREATE OR REPLACE FUNCTION get_available_instructors(cid INTEGER, start_date DATE, end_date DATE)
+RETURNS TABLE(e_id INTEGER, i_name TEXT, total_hrs_for_month INTEGER, day INTEGER, hours TIME[]) AS $$
+DECLARE
+    curr record;
+    timings TIME[] := ARRAY['09:00','10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+    curs CURSOR FOR (
+        SELECT DISTINCT eid FROM Specializes NATURAL JOIN Courses
+        WHERE course_id = cid
+    );
+    i integer := date_part('day', start_date);
+    j integer := 1;
+    k integer := 0;
+    timing TIME;
+BEGIN
+    CREATE TEMP TABLE IF NOT EXISTS temp_table AS
+        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', S.date) as day, 
+        start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
+        FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
+        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S JOIN Employees E on E.eid = Instructors.eid
+        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
+        ORDER BY Instructors.eid, day;
+    FOR record IN curs LOOP
+        raise notice 'it is %', record.eid;
+        i := date_part('day', start_date);
+        WHILE i <= date_part('day', end_date) LOOP
+            If exists (SELECT * FROM temp_table WHERE temp_table.day = i) THEN
+                SELECT * INTO curr FROM temp_table 
+                where temp_table.e1 = record.eid and temp_table.day = i;
+                e_id := curr.e1;
+                i_name := curr.n1;
+                total_hrs_for_month := curr.w1;
+                day := i;
+                hours := timings;
+                WHILE k < (SELECT count(*) FROM temp_table 
+                WHERE temp_table.e1 = record.eid and temp_table.day = i) LOOP
+                    raise notice 'k is %', k;
+                    SELECT * INTO curr FROM temp_table 
+                    where temp_table.e1 = record.eid and temp_table.day = i OFFSET k;
+                    FOREACH timing IN ARRAY hours LOOP
+                        IF timing = curr.t1 THEN
+                            hours :=  hours[1: j-1]||hours[j + curr.duration:];
+                            EXIT;
+                        END IF;
+                        j:=j+1;
+                    END LOOP;
+                    k:=k+1;
+                END LOOP;
+                k:=0;
+                j:=1;
+                RETURN NEXT;
+            ELSE
+                SELECT * INTO curr FROM temp_table where temp_table.e1 = record.eid LIMIT 1;
+                e_id := curr.e1;
+                i_name := curr.n1;
+                total_hrs_for_month := curr.w1;
+                day := i;
+                hours := timings;
+                RETURN next;
+            END IF; 
+            i := i + 1;
+        END LOOP;
+    END LOOP;
+    DROP TABLE temp_table;
+END;
+$$ LANGUAGE plpgsql;
+
 /* 8 */
 CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
 RETURNS TABLE(rid INTEGER) AS $$
@@ -199,14 +267,14 @@ DECLARE
     c_and_co RECORD;
 BEGIN
     SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
-    -- IF sess_day < c_and_co.registration_deadline THEN
-    --     RAISE EXCEPTION 'The registration should close before commencing';
-    -- END IF;
-    -- IF NOW() > c_and_co.registration_deadline THEN
-    --     RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    -- END IF;
+    IF sess_day < c_and_co.registration_deadline THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    END IF;
+    IF NOW() > c_and_co.registration_deadline THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
     INSERT INTO Sessions VALUES 
-    (sess_id, sess_day, sess_start, sess_start + interval '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
+    (sess_id, sess_day, sess_start, sess_start + INTERVAL '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
 END;
 $$ LANGUAGE plpgsql;
