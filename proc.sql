@@ -200,6 +200,7 @@ DECLARE
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN
+	DROP TABLE IF EXISTS tmp, tmp2;
 	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
 	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
 	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date
@@ -224,7 +225,6 @@ BEGIN
 		) as redeemed_session_information
 		FROM tmp
 	) t);
-	DROP TABLE tmp, tmp2;
 END;
 $$ LANGUAGE plpgsql;
 
