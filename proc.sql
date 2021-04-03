@@ -121,6 +121,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 5 */
+CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, duration INTEGER) AS $$
+DECLARE
+    mid INTEGER;
+BEGIN
+
+    SELECT eid INTO mid FROM Course_areas WHERE name = area;
+    IF mid IS NULL THEN 
+        RAISE EXCEPTION 'No manager to the area %', area;
+        return;
+    END IF;
+    INSERT INTO  Courses (title, description, duration, name)
+    VALUES (title, description, duration, area);
+END;
+$$ LANGUAGE plpgsql;
+
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
 RETURNS TABLE (LIKE Course_packages) AS $$
@@ -149,16 +165,17 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
 DECLARE 
-    co RECORD;
+    c_and_co RECORD;
 BEGIN
-    SELECT * into co FROM Offerings WHERE course_id = in_coid;
-    IF sess_day < co.registration_deadline THEN
+    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
+    IF sess_day < c_and_co.registration_deadline THEN
         RAISE EXCEPTION 'The registration should close before commencing';
     END IF;
-    IF NOW() > co.registration_deadline THEN
+    IF NOW() > c_and_co.registration_deadline THEN
         RAISE EXCEPTION 'Course offering’s registration deadline has passed';
     END IF;
     INSERT INTO Sessions VALUES 
-    (sess_id, sess_day, sess_start, NULL, co.course_id, co.launch_date, rid, eid);
+    (sess_id, sess_day, sess_start, sess_start + interval '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
+    rid, eid);
 END;
 $$ LANGUAGE plpgsql;
