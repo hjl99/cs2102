@@ -144,3 +144,21 @@ BEGIN
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+/* 24 */
+CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
+                                sess_start TIME, eid INTEGER, rid INTEGER) AS $$
+DECLARE 
+    co RECORD;
+BEGIN
+    SELECT * into co FROM Offerings WHERE course_id = in_coid;
+    IF sess_day < co.registration_deadline THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    END IF;
+    IF NOW() > co.registration_deadline THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
+    INSERT INTO Sessions VALUES 
+    (sess_id, sess_day, sess_start, NULL, co.course_id, co.launch_date, rid, eid);
+END;
+$$ LANGUAGE plpgsql;

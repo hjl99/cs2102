@@ -97,7 +97,7 @@ CREATE TABLE Courses (
 
 /* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
-    coid INTEGER, -- cuz routine 10 gives coid?!
+    coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
     launch_date DATE,
     start_date DATE,
