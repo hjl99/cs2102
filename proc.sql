@@ -192,6 +192,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 14 */
+CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
+RETURNS json AS $$
+DECLARE
+	cust_num INTEGER;
+	package_info RECORD;
+	buy_info RECORD;
+BEGIN
+	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
+	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date
+					 FROM Course_packages NATURAL JOIN Buys WHERE Buys.number=cust_num ORDER BY b_date DESC LIMIT 1;
+	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
+	(SELECT date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+	and C.rid=R.rid and C.eid=R.eid) AS session_date,
+	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+	and C.rid=R.rid and C.eid=R.eid) AS start_time
+	FROM Redeems R
+	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
+	ORDER BY session_date ASC, start_time ASC;
+	RETURN (SELECT row_to_json(t)
+	FROM (
+		SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date,
+		(
+			SELECT array_to_json(array_agg(row_to_json(d)))
+			FROM (
+				SELECT title, session_date, start_time
+				FROM tmp2
+			) d
+		) as redeemed_session_information
+		FROM tmp
+	) t);
+	DROP TABLE tmp, tmp2;
+END;
+$$ LANGUAGE plpgsql;
+
+
 /* 24 */
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
