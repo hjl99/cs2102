@@ -121,6 +121,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 6 */
+CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, sess_start_hour TIME)
+RETURNS TABLE(eid INTEGER, name TEXT) AS $$
+	SELECT I.eid, I.name
+	FROM Instructors I
+	WHERE NOT EXISTS (SELECT 1
+					 FROM Sessions S
+					 WHERE I.eid = S.eid
+					 and sess_date = S.date
+					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
+$$ LANGUAGE plpgsql;
+
 /* 8 */
 CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
 RETURNS TABLE(rid INTEGER) AS $$
