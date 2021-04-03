@@ -89,7 +89,7 @@ CREATE TABLE Course_areas (
 
 CREATE TABLE Courses (
     course_id SERIAL PRIMARY KEY,
-    duration FLOAT,
+    duration INTEGER,
     description TEXT,
     title TEXT UNIQUE,
     name TEXT NOT NULL REFERENCES Course_areas
