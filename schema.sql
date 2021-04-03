@@ -11,7 +11,7 @@ CREATE TABLE Employees (
     name TEXT,
     phone INTEGER,
     email TEXT,
-    join_date DATE,
+    join_date DATE ,
     address TEXT,
     depart_date DATE
 );
@@ -126,7 +126,7 @@ CREATE TABLE Sessions (
 
 -- <----------------------associations----------------------->
 CREATE TABLE Cancels (
-    date DATE ,
+    date DATE,
     refund_amt INTEGER,
     package_credit INTEGER,
     cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
@@ -176,7 +176,7 @@ CREATE TABLE  Specializes (
     PRIMARY KEY (eid, name)
 );
 
-CREATE TABLE Redeems (
+CREATE TABLE Redeems ( 
     package_id INTEGER, 
     number INTEGER,
     b_date DATE,

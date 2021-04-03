@@ -260,6 +260,44 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+/* 14 */
+CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
+RETURNS json AS $$
+DECLARE
+	cust_num INTEGER;
+	package_info RECORD;
+	buy_info RECORD;
+BEGIN
+	DROP TABLE IF EXISTS tmp, tmp2;
+	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
+	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date
+					 FROM Course_packages NATURAL JOIN Buys WHERE Buys.number=cust_num ORDER BY b_date DESC LIMIT 1;
+	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
+	(SELECT date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+	and C.rid=R.rid and C.eid=R.eid) AS session_date,
+	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+	and C.rid=R.rid and C.eid=R.eid) AS start_time
+	FROM Redeems R
+	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
+	ORDER BY session_date ASC, start_time ASC;
+	RETURN (SELECT row_to_json(t)
+	FROM (
+		SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date,
+		(
+			SELECT json_agg(d)
+			FROM (
+				SELECT title, session_date, start_time
+				FROM tmp2
+			) d
+		) as redeemed_session_information
+		FROM tmp
+	) t);
+END;
+$$ LANGUAGE plpgsql;
+
+
 /* 24 */
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
@@ -276,5 +314,31 @@ BEGIN
     INSERT INTO Sessions VALUES 
     (sess_id, sess_day, sess_start, sess_start + INTERVAL '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
+END;
+$$ LANGUAGE plpgsql;
+
+
+/* 25 */
+CREATE OR REPLACE FUNCTION pay_salary()
+RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
+	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
+AS 
+BEGIN
+	DECLARE @partTime BOOLEAN;
+	SET @partTime = EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE P.eid=PTE.eid);
+	INSERT INTO @salTable 
+	SELECT eid, 
+		(SELECT name FROM Employees E WHERE E.eid=P.eid) ename,
+		(CASE WHEN @partTime THEN 'part-time' ELSE 'full-time') estatus,
+		CASE WHEN @partTime THEN NULL ELSE num_work_days,
+		CASE WHEN @partTime THEN num_work_hours ELSE NULL,
+		CASE WHEN @partTime THEN (
+			SELECT hourly_rate FROM Part_time_emp PTE WHERE PTE.eid=P.eid) 
+			ELSE NULL,
+		CASE WHEN @partTime THEN NULL 
+			ELSE (SELECT monthly_salary FROM Full_time_emp FTE WHERE FTE.eid=P.eid),
+		amount
+	FROM Pay_slips P
+	ORDER BY eid ASC;
 END;
 $$ LANGUAGE plpgsql;
