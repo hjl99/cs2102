@@ -11,7 +11,7 @@ CREATE TABLE Employees (
     name TEXT,
     phone INTEGER,
     email TEXT,
-    join_date DATE,
+    join_date DATE ,
     address TEXT,
     depart_date DATE
 );
@@ -176,7 +176,7 @@ CREATE TABLE  Specializes (
     PRIMARY KEY (eid, name)
 );
 
-CREATE TABLE Redeems (
+CREATE TABLE Redeems ( 
     package_id INTEGER, 
     number INTEGER,
     b_date DATE,
