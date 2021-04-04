@@ -135,7 +135,8 @@ CREATE TABLE Sessions (
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (sid, course_id, launch_date, rid, eid),
-    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time)  
+    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
+    CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
 );
 
 -- <----------------------associations----------------------->
