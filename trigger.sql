@@ -47,7 +47,22 @@ AFTER INSERT ON Offerings
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION session_non_zero_func1();
-EXECUTE FUNCTION customer_total_participation_func();
+
+CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date)=0) THEN
+		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER session_non_zero_trigger
+AFTER DELETE ON Sessions
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION session_non_zero_func2();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
