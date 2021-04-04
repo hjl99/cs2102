@@ -1,47 +1,17 @@
-DROP TYPE IF EXISTS Session CASCADE;
--- (session date, session start hour, and room identifier)
-CREATE TYPE Session AS (
-    start_date DATE,
-    start_hr TIME,
-    rid INTEGER
-);
-
-CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
-launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
-DECLARE
-    course_and_area RECORD;
-    temp_id INTEGER;
-    min_seating_cap INTEGER;
-    instructor_id INTEGER;
-    i INTEGER := 0;
-    sess_table RECORD;
-    valid BOOLEAN := 1;
+CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
+cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+	RETURNS VOID 
+AS $$
+DECLARE 
+	cid INTEGER;
 BEGIN
-    course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
-    WHERE course_id = cid);
-    -- insert sessions
-    WHILE i < coalesce(array_length(sess, 1), 0) LOOP
-        -- add_session(coid, i+1, start)
-        i := i + 1;
-    END LOOP;
-        -- WITH avail_instructors AS (
-        --     SELECT eid
-        --     FROM Instructors NATURAL JOIN Pay_slips
-        --     WHERE coalesce(num_work_hours, 0) <= 30 
-        -- )
-        -- SELECT eid into temp_id 
-        -- FROM avail_instructors NATURAL JOIN Specializes 
-        -- WHERE Course_areas = course_area;
-    -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
-    --  reg_deadline, target_no, 0, fees, aid);
-    --check if exists valid instructor
-    --check if target_no <= seating_cap
-    -- min_seating_cap := (SELECT min(seating_capacity) FROM )
-    RAISE EXCEPTION 'Invalid course offering information input';
+    INSERT INTO Customers (c_name, address, phone, email)
+    VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
+
+	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
+	VALUES (cnumber, cexpiry_date, ccvv, cid);
 END;
 $$ LANGUAGE plpgsql;
-
-
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
 DECLARE 
@@ -60,18 +30,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
-cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
-AS $$
-DECLARE 
-	cid INTEGER;
+DROP TYPE IF EXISTS Session CASCADE;
+-- (session date, session start hour, and room identifier)
+CREATE TYPE Session AS (
+    start_date DATE,
+    start_hr TIME,
+    rid INTEGER
+);
+CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
+launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+DECLARE
+    course_and_area RECORD;
+    temp_id INTEGER;
+    min_seating_cap INTEGER;
+    instructor_id INTEGER;
+    i INTEGER := 0;
+    sess_table RECORD;
+    valid BOOLEAN := 1;
 BEGIN
-    INSERT INTO Customers (c_name, address, phone, email)
-    VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
-
-	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
-	VALUES (cnumber, cexpiry_date, ccvv, cid);
+    course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
+    WHERE course_id = cid);
+    -- insert sessions
+    WHILE i < coalesce(array_length(sess, 1), 0) LOOP
+        add_session(coid, i+1, start)
+        i := i + 1;
+    END LOOP;
+        -- WITH avail_instructors AS (
+        --     SELECT eid
+        --     FROM Instructors NATURAL JOIN Pay_slips
+        --     WHERE coalesce(num_work_hours, 0) <= 30 
+        -- )
+        -- SELECT eid into temp_id 
+        -- FROM avail_instructors NATURAL JOIN Specializes 
+        -- WHERE Course_areas = course_area;
+    -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
+    --  reg_deadline, target_no, 0, fees, aid);
+    --check if target_no <= seating_cap
+    RAISE EXCEPTION 'Invalid course offering information input';
 END;
 $$ LANGUAGE plpgsql;
 
@@ -109,17 +104,9 @@ $$ LANGUAGE plpgsql;
 -- insert into Registers VALUES (123345, 10, '2021-02-01', 1, '2021-03-01', 1, 20);
 
 
-SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', s_date) as day, 
-start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
-FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
-NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
-WHERE course_id = '10'
-ORDER BY Instructors.eid, day;
 
-SELECT * FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
-NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S;
 
-DROP FUNCTION IF EXISTS get_available_instructors;
+
 CREATE OR REPLACE FUNCTION get_available_instructors(cid INTEGER, start_date DATE, end_date DATE)
 RETURNS TABLE(e_id INTEGER, i_name TEXT, total_hrs_for_month INTEGER, day INTEGER, hours TIME[]) AS $$
 DECLARE
@@ -185,8 +172,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-SELECT * from get_available_instructors(10, '2021-04-01', '2021-04-04');
-
 CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
 RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
     SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
@@ -216,5 +201,3 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-SELECT * FROM Courses NATURAL JOIN Offerings JOIN Sessions 
-on Sessions.course_id =Courses.course_id and Sessions.launch_date =Offerings.launch_date;
