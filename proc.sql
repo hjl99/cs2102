@@ -91,13 +91,14 @@ AS $$
 $$ LANGUAGE plpgsql;
 
 /* 3 */
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
+cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
 DECLARE 
 	cid INTEGER;
 BEGIN
-    INSERT INTO Customers (name, address, phone, email)
+    INSERT INTO Customers (c_name, address, phone, email)
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);
@@ -167,10 +168,10 @@ DECLARE
     timing TIME;
 BEGIN
     CREATE TEMP TABLE IF NOT EXISTS temp_table AS
-        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', S.date) as day, 
+        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', s_date) as day, 
         start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
         FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
-        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S JOIN Employees E on E.eid = Instructors.eid
+        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
         WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
@@ -296,6 +297,16 @@ BEGIN
 	) t);
 END;
 $$ LANGUAGE plpgsql;
+
+
+/* 16 */
+CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
+RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+    SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
+    FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
+    NATURAL JOIN Rooms
+    GROUP BY s_date, start_time, name, seating_capacity;
+$$ LANGUAGE sql;
 
 
 /* 24 */
