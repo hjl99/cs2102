@@ -115,7 +115,7 @@ CREATE TABLE Offerings (
     num_target_reg INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
-    aid INTEGER NOT NULL REFERENCES Administrators,
+    eid INTEGER NOT NULL REFERENCES Administrators,
     PRIMARY KEY (course_id, launch_date),   
     CONSTRAINT start_end_date_validity CHECK (start_date <= end_date),
     CONSTRAINT registration_deadline_validity CHECK (reg_deadline + INTERVAL '10 DAY' <= start_date),

@@ -120,11 +120,14 @@ CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, s
 RETURNS TABLE(eid INTEGER, name TEXT) AS $$
 	SELECT I.eid, E.name
 	FROM Instructors I NATURAL JOIN Employees E
-	WHERE NOT EXISTS (SELECT 1
-					 FROM Sessions S
-					 WHERE I.eid = S.eid
-					 and sess_date = S.s_date
-					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
+	WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM Sessions S
+                    WHERE I.eid = S.eid
+                    and sess_date = S.s_date
+                    and (sess_start_hour >= S.start_time and 
+                    sess_start_hour < S.end_time + INTERVAL '1 hour')
+                    );
 $$ LANGUAGE sql;
 
 /* 7 */
