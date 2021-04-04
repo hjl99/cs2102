@@ -12,7 +12,7 @@ CREATE TABLE Employees (
     phone INTEGER,
     email TEXT,
     join_date DATE,
-    addr TEXT,
+    address TEXT,
     depart_date DATE
 );
 
@@ -105,7 +105,6 @@ CREATE TABLE Courses (
     CONSTRAINT duration_validity CHECK (duration > 0 and duration <= 4)
 );
 
-/* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
     coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
@@ -154,8 +153,7 @@ CREATE TABLE Cancels (
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = null) or (package_credit = 1 and refund_amt = null))
 );
-
-/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
+/* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
