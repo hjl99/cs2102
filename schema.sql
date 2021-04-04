@@ -102,7 +102,7 @@ CREATE TABLE Courses (
     description TEXT,
     title TEXT UNIQUE,
     course_area_name TEXT NOT NULL REFERENCES Course_areas,
-    CONSTRAINT duration_pos CHECK (duration > 0)
+    CONSTRAINT duration_validity CHECK (duration > 0 and duration <= 4)
 );
 
 /* dk why is seating_capacity here tbh */
