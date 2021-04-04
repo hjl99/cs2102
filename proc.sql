@@ -91,13 +91,14 @@ AS $$
 $$ LANGUAGE plpgsql;
 
 /* 3 */
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
+cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
 DECLARE 
 	cid INTEGER;
 BEGIN
-    INSERT INTO Customers (name, address, phone, email)
+    INSERT INTO Customers (c_name, address, phone, email)
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);
@@ -148,6 +149,74 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
 					 WHERE I.eid = S.eid
 					 and sess_date = S.date
 					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
+$$ LANGUAGE plpgsql;
+
+/* 7 */
+DROP FUNCTION IF EXISTS get_available_instructors;
+CREATE OR REPLACE FUNCTION get_available_instructors(cid INTEGER, start_date DATE, end_date DATE)
+RETURNS TABLE(e_id INTEGER, i_name TEXT, total_hrs_for_month INTEGER, day INTEGER, hours TIME[]) AS $$
+DECLARE
+    curr record;
+    timings TIME[] := ARRAY['09:00','10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+    curs CURSOR FOR (
+        SELECT DISTINCT eid FROM Specializes NATURAL JOIN Courses
+        WHERE course_id = cid
+    );
+    i integer := date_part('day', start_date);
+    j integer := 1;
+    k integer := 0;
+    timing TIME;
+BEGIN
+    CREATE TEMP TABLE IF NOT EXISTS temp_table AS
+        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', s_date) as day, 
+        start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
+        FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
+        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
+        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
+        ORDER BY Instructors.eid, day;
+    FOR record IN curs LOOP
+        raise notice 'it is %', record.eid;
+        i := date_part('day', start_date);
+        WHILE i <= date_part('day', end_date) LOOP
+            If exists (SELECT * FROM temp_table WHERE temp_table.day = i) THEN
+                SELECT * INTO curr FROM temp_table 
+                where temp_table.e1 = record.eid and temp_table.day = i;
+                e_id := curr.e1;
+                i_name := curr.n1;
+                total_hrs_for_month := curr.w1;
+                day := i;
+                hours := timings;
+                WHILE k < (SELECT count(*) FROM temp_table 
+                WHERE temp_table.e1 = record.eid and temp_table.day = i) LOOP
+                    raise notice 'k is %', k;
+                    SELECT * INTO curr FROM temp_table 
+                    where temp_table.e1 = record.eid and temp_table.day = i OFFSET k;
+                    FOREACH timing IN ARRAY hours LOOP
+                        IF timing = curr.t1 THEN
+                            hours :=  hours[1: j-1]||hours[j + curr.duration:];
+                            EXIT;
+                        END IF;
+                        j:=j+1;
+                    END LOOP;
+                    k:=k+1;
+                END LOOP;
+                k:=0;
+                j:=1;
+                RETURN NEXT;
+            ELSE
+                SELECT * INTO curr FROM temp_table where temp_table.e1 = record.eid LIMIT 1;
+                e_id := curr.e1;
+                i_name := curr.n1;
+                total_hrs_for_month := curr.w1;
+                day := i;
+                hours := timings;
+                RETURN next;
+            END IF; 
+            i := i + 1;
+        END LOOP;
+    END LOOP;
+    DROP TABLE temp_table;
+END;
 $$ LANGUAGE plpgsql;
 
 /* 8 */
@@ -278,6 +347,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+/* 16 */
+CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
+RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+    SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
+    FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
+    NATURAL JOIN Rooms
+    WHERE course_id = coid
+    GROUP BY s_date, start_time, name, seating_capacity;
+$$ LANGUAGE sql;
+
+
 /* 24 */
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
@@ -285,14 +365,14 @@ DECLARE
     c_and_co RECORD;
 BEGIN
     SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
-    -- IF sess_day < c_and_co.registration_deadline THEN
-    --     RAISE EXCEPTION 'The registration should close before commencing';
-    -- END IF;
-    -- IF NOW() > c_and_co.registration_deadline THEN
-    --     RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    -- END IF;
+    IF sess_day < c_and_co.registration_deadline THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    END IF;
+    IF NOW() > c_and_co.registration_deadline THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
     INSERT INTO Sessions VALUES 
-    (sess_id, sess_day, sess_start, sess_start + interval '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
+    (sess_id, sess_day, sess_start, sess_start + INTERVAL '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
 END;
 $$ LANGUAGE plpgsql;
@@ -302,23 +382,52 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION pay_salary()
 RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
 	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
-AS 
+AS $$
+DECLARE
+	curs CURSOR FOR (SELECT * FROM Employees WHERE depart_date IS NULL ORDER BY eid ASC)
+	r RECORD;
+	partTime BOOLEAN;
+	estatus TEXT;
+	num_work_days INTEGER;
+	num_work_hours INTEGER;
+	hourly_rate FLOAT;
+	monthly_salary FLOAT;
+	amount FLOAT;
 BEGIN
-	DECLARE @partTime BOOLEAN;
-	SET @partTime = EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE P.eid=PTE.eid);
-	INSERT INTO @salTable 
-	SELECT eid, 
-		(SELECT name FROM Employees E WHERE E.eid=P.eid) ename,
-		(CASE WHEN @partTime THEN 'part-time' ELSE 'full-time') estatus,
-		CASE WHEN @partTime THEN NULL ELSE num_work_days,
-		CASE WHEN @partTime THEN num_work_hours ELSE NULL,
-		CASE WHEN @partTime THEN (
-			SELECT hourly_rate FROM Part_time_emp PTE WHERE PTE.eid=P.eid) 
-			ELSE NULL,
-		CASE WHEN @partTime THEN NULL 
-			ELSE (SELECT monthly_salary FROM Full_time_emp FTE WHERE FTE.eid=P.eid),
-		amount
-	FROM Pay_slips P
-	ORDER BY eid ASC;
+	OPEN curs;
+	LOOP
+		FETCH curs INTO r;
+		EXIT WHEN NOT FOUND;
+		eid := r.eid;
+		ename := r.name;
+		partTime := EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
+		IF partTime THEN 
+			estatus := 'part-time';
+			num_work_hours := SUM(
+				SELECT (EXTRACT(EPOCH FROM end_time)::INTEGER - EXTRACT(EPOCH FROM start_time)::INTEGER) / 3600;
+				FROM Sessions WHERE eid = r.eid);
+			IF num_work_hours = 0 THEN CONTINUE;
+			num_work_days := NULL;
+			hourly_rate := SELECT hourly_rate FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
+			monthly_salary := NULL;
+			amount := num_work_hours * hourly_rate;
+		ELSE
+			estatus := 'full-time';
+			num_work_hours := NULL;
+			num_work_days := CASE
+				WHEN SELECT EXTRACT(YEAR FROM r.join_date)::INTEGER = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+						AND SELECT EXTRACT(MONTH FROM r.join_date)::INTEGER = EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER
+					THEN SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER - EXTRACT(DAY FROM r.join_date)::INTEGER + 1
+				ELSE SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER
+				END
+			IF num_work_days = 0 THEN CONTINUE;
+			hourly_rate := NULL;
+			monthly_salary := SELECT monthly_salary FROM Full_time_emp PTE WHERE r.eid=PTE.eid);
+			amount := monthly_salary * (num_work_days / SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER);
+		END IF;
+		INSERT INTO Pay_slips VALUES (eid, CURRENT_DATE, amount, num_work_hours, num_work_days);
+		RETURN NEXT;
+	END LOOP;
+	CLOSE curs;
 END;
 $$ LANGUAGE plpgsql;

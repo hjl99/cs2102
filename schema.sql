@@ -60,7 +60,7 @@ CREATE TABLE Pay_slips (
 
 CREATE TABLE Customers (
     cust_id SERIAL PRIMARY KEY,
-    name TEXT,
+    c_name TEXT,
     phone INTEGER,
     email TEXT,
     address TEXT
@@ -78,12 +78,12 @@ CREATE TABLE Course_packages (
     sale_start_date DATE,
     num_free_registrations INTEGER,
     sale_end_date DATE,
-    name TEXT,
+    package_name TEXT,
     price FLOAT
 );
 
 CREATE TABLE Course_areas (
-    name TEXT PRIMARY KEY,
+    course_aname TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
 );
 
@@ -92,7 +92,7 @@ CREATE TABLE Courses (
     duration INTEGER,
     description TEXT,
     title TEXT UNIQUE,
-    name TEXT NOT NULL REFERENCES Course_areas
+    course_aname TEXT NOT NULL REFERENCES Course_areas
 );
 
 /* dk why is seating_capacity here tbh */
@@ -112,7 +112,7 @@ CREATE TABLE Offerings (
 
 CREATE TABLE Sessions (
     sid INTEGER,
-    date DATE,
+    s_date DATE,
     start_time TIME,
     end_time TIME,
     course_id INTEGER,
@@ -126,7 +126,7 @@ CREATE TABLE Sessions (
 
 -- <----------------------associations----------------------->
 CREATE TABLE Cancels (
-    date DATE,
+    c_date DATE,
     refund_amt INTEGER,
     package_credit INTEGER,
     cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
@@ -136,9 +136,9 @@ CREATE TABLE Cancels (
     rid INTEGER,
     eid INTEGER,
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
-    PRIMARY KEY (date, cust_id, course_id, launch_date, sid, rid, eid)
+    PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid)
 );
-
+/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
@@ -163,17 +163,17 @@ CREATE TABLE Registers (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    date DATE,
+    r_date DATE,
     rid INTEGER,
     eid INTEGER,
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION, 
-    PRIMARY KEY (course_id, launch_date, sid, number, date, rid, eid)
+    PRIMARY KEY (course_id, launch_date, sid, number, r_date, rid, eid)
 );
 
 CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
-    name TEXT REFERENCES Course_areas,
-    PRIMARY KEY (eid, name)
+    course_aname TEXT REFERENCES Course_areas,
+    PRIMARY KEY (eid, course_aname)
 );
 
 CREATE TABLE Redeems ( 
