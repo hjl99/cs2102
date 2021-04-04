@@ -168,6 +168,54 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 9 */
+CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
+RETURNS TABLE(room_identifier INTEGER, room_capacity INTEGER, day DATE, array_of_hour TIME[]) AS $$
+DECLARE
+	curr_arr TIME[];
+	curr_date DATE;
+	curr_time TIME;
+	curs refcursor;
+	row_var RECORD;
+	prev_row RECORD;
+	curr_rid INTEGER;
+BEGIN
+	curr_date := start_date;
+	LOOP
+		IF (curr_date > end_date) THEN
+			EXIT;
+		END IF;
+		curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+		OPEN curs FOR SELECT * FROM Sessions WHERE date = curr_date ORDER BY rid ASC, start_time ASC; 
+		LOOP
+			prev_row := row_var;
+			FETCH curs INTO row_var;
+			EXIT WHEN NOT FOUND;
+			IF (prev_row.rid <> row_var.rid and prev_row <> null) THEN
+				room_identifier := prev_row.rid;
+				room_capacity := (SELECT seating_capacity FROM Rooms WHERE rid=room_identifier);
+				day := curr_date;
+				array_of_hour := curr_arr;
+				RETURN NEXT;
+				curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+			END IF;
+			curr_time := row_var.start_time;
+			LOOP
+				IF (curr_time = row_var.end_time) THEN
+					EXIT;
+				END IF;
+				curr_arr := array_remove(curr_arr, curr_time);
+				curr_time := curr_time + INTERVAL '1 HOUR';
+			END LOOP;
+		END LOOP;
+		curr_date := curr_date + INTERVAL '1 DAY';
+		CLOSE curs;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
 RETURNS TABLE (LIKE Course_packages) AS $$
