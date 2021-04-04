@@ -12,7 +12,7 @@ CREATE TABLE Employees (
     phone INTEGER,
     email TEXT,
     join_date DATE,
-    addr TEXT,
+    address TEXT,
     depart_date DATE
 );
 
@@ -95,7 +95,6 @@ CREATE TABLE Courses (
     course_area_name TEXT NOT NULL REFERENCES Course_areas
 );
 
-/* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
     coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
@@ -138,7 +137,7 @@ CREATE TABLE Cancels (
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid)
 );
-/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
+/* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
