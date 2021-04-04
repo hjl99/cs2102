@@ -197,21 +197,21 @@ INSERT INTO Managers (eid) VALUES (40);
 
 
 -- Positve insertions for Pay_slips
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (8, '2020-11-01', 1662.9, 10, NULL);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (9, '2021-02-01', 1585.2, 30, NULL);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (10, '2020-09-01', 12180, 100, NULL);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (19, '2021-04-01', 17949.38, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (20, '2021-02-01', 10143.3, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (21, '2020-11-08', 17869.1, NULL, 7);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (22, '2021-02-01', 15782.84, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-09-01', 5699.07, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (24, '2020-11-01', 10031.57, NULL, 30);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (25, '2021-03-01', 7027.88, NULL, 27);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (8, '2020-10-31', 1662.9, 10, NULL);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (9, '2021-01-31', 1585.2, 30, NULL);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (10, '2020-08-31', 12180, 100, NULL);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (19, '2021-03-31', 17949.38, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (20, '2021-01-31', 10143.3, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (21, '2020-10-31', 17869.1, NULL, 7);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (22, '2021-01-31', 15782.84, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-08-31', 5699.07, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (24, '2020-10-31', 10031.57, NULL, 30);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (25, '2021-02-28', 7027.88, NULL, 27);
 
 -- Negative insertions for Pay_slips
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (100, '2021-02-01', 15782.84, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-09-01', 5699.07, NULL, 31);
-INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-11-01', 10031.57, NULL, 30);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (100, '2021-01-31', 15782.84, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-08-31', 5699.07, NULL, 31);
+INSERT INTO Pay_slips (eid, payment_date, amount, num_work_hours, num_work_days) VALUES (23, '2020-10-31', 10031.57, NULL, 30);
 
 
  --<----------------------- company side ----------------------->
