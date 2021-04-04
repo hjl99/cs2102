@@ -119,7 +119,7 @@ BEGIN
         RAISE EXCEPTION 'No manager to the area %', area;
         return;
     END IF;
-    INSERT INTO  Courses (title, description, duration, name)
+    INSERT INTO  Courses (title, description, duration, course_area_name)
     VALUES (title, description, duration, area);
 END;
 $$ LANGUAGE plpgsql;
