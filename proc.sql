@@ -175,7 +175,6 @@ BEGIN
         WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
-        raise notice 'it is %', record.eid;
         i := date_part('day', start_date);
         WHILE i <= date_part('day', end_date) LOOP
             If exists (SELECT * FROM temp_table WHERE temp_table.day = i) THEN
@@ -188,7 +187,6 @@ BEGIN
                 hours := timings;
                 WHILE k < (SELECT count(*) FROM temp_table 
                 WHERE temp_table.e1 = record.eid and temp_table.day = i) LOOP
-                    raise notice 'k is %', k;
                     SELECT * INTO curr FROM temp_table 
                     where temp_table.e1 = record.eid and temp_table.day = i OFFSET k;
                     FOREACH timing IN ARRAY hours LOOP

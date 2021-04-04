@@ -11,8 +11,8 @@ CREATE TABLE Employees (
     name TEXT,
     phone INTEGER,
     email TEXT,
-    join_date DATE ,
-    address TEXT,
+    join_date DATE,
+    addr TEXT,
     depart_date DATE
 );
 
@@ -51,7 +51,7 @@ CREATE TABLE Managers (
 CREATE TABLE Pay_slips (
     eid INTEGER REFERENCES Employees ON DELETE CASCADE,
     payment_date DATE,
-    amount FLOAT,
+    amt FLOAT,
     num_work_hours INTEGER,
     num_work_days INTEGER,
     PRIMARY KEY (eid, payment_date)
@@ -60,7 +60,7 @@ CREATE TABLE Pay_slips (
 
 CREATE TABLE Customers (
     cust_id SERIAL PRIMARY KEY,
-    c_name TEXT,
+    cust_name TEXT,
     phone INTEGER,
     email TEXT,
     address TEXT
@@ -83,7 +83,7 @@ CREATE TABLE Course_packages (
 );
 
 CREATE TABLE Course_areas (
-    course_aname TEXT PRIMARY KEY,
+    course_area_name TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
 );
 
@@ -92,7 +92,7 @@ CREATE TABLE Courses (
     duration INTEGER,
     description TEXT,
     title TEXT UNIQUE,
-    course_aname TEXT NOT NULL REFERENCES Course_areas
+    course_area_name TEXT NOT NULL REFERENCES Course_areas
 );
 
 /* dk why is seating_capacity here tbh */
@@ -102,11 +102,11 @@ CREATE TABLE Offerings (
     launch_date DATE,
     start_date DATE,
     end_date DATE,
-    registration_deadline DATE,
-    target_number_registrations INTEGER,
+    reg_deadline DATE,
+    num_target_reg INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
-    eid INTEGER NOT NULL REFERENCES Administrators,
+    aid INTEGER NOT NULL REFERENCES Administrators,
     PRIMARY KEY (course_id, launch_date)
 );
 
@@ -172,8 +172,8 @@ CREATE TABLE Registers (
 
 CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
-    course_aname TEXT REFERENCES Course_areas,
-    PRIMARY KEY (eid, course_aname)
+    course_area_name TEXT REFERENCES Course_areas,
+    PRIMARY KEY (eid, course_area_name)
 );
 
 CREATE TABLE Redeems ( 
