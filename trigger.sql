@@ -68,10 +68,8 @@ EXECUTE FUNCTION session_non_zero_func2();
 /* 5 */
 CREATE OR REPLACE FUNCTION concurrent_session_func() RETURNS TRIGGER AS $$
 DECLARE
-	r RECORD;
 BEGIN
-	
-	IF EXISTS (SELECT * INTO r FROM Sessions S WHERE S.launch_date=NEW.launch_date and
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
 	END IF;
@@ -79,8 +77,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER concurrent_session_trigger
-AFTER INSERT ON Sessions
+CREATE TRIGGER concurrent_session_trigger
+BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION concurrent_session_func();
 
