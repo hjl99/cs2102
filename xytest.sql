@@ -6,7 +6,7 @@ INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_d
 INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, name, price) VALUES ('2020-05-06', 13, '2020-12-13', 'Sociology Package 3', 249.76);
 select buy_course_package(1,1);
 call add_employee('Nell T. Calderon','2447 Enim. Avenue', 76044067,'Nunc.lectus@orci.ca', 10000, '2021-4-4', 'manager', array['CS']);
-call add_course('cs1231', 'god stuf', 'CS', 2);
+call add_course('cs1231', 'god stuf', 'CS', 1);
 call add_employee('Banerjee','2341 bokers. Avenue', 98044067,'pops.lectus@orci.ca', 10000, '2021-4-4', 'administrator');
 INSERT INTO Offerings (course_id, launch_date, start_date, end_date, reg_deadline, num_target_reg,
 							 seating_capacity, fees, aid) VALUES (1, '2021-4-4', '2021-5-20', '2021-8-20','2021-5-4', 30, 30, 20, 2);

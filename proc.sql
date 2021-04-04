@@ -114,7 +114,7 @@ DECLARE
     mid INTEGER;
 BEGIN
 
-    SELECT eid INTO mid FROM Course_areas WHERE name = area;
+    SELECT eid INTO mid FROM Course_areas WHERE course_area_name = area;
     IF mid IS NULL THEN 
         RAISE EXCEPTION 'No manager to the area %', area;
         return;
