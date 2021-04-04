@@ -15,8 +15,10 @@ BEGIN
 	END IF;
 
     IF (num <> 1) THEN 
+        RAISE EXCEPTION 'Every employee must be either a part time or full time employee!';
         RETURN NULL;
     END IF;
+    RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -38,8 +40,10 @@ BEGIN
 	END IF;
 
     IF (num <> 1) THEN
+        RAISE EXCEPTION 'Every part time employee must be a part time instructor!';
         RETURN NULL;
     END IF;
+    RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -64,8 +68,10 @@ BEGIN
 	END IF;
 
     IF (num <> 1) THEN
+        RAISE EXCEPTION 'Every full time employee must be either a full time instructor, an administrator or a manager!';
         RETURN NULL;
     END IF;
+    RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -88,8 +94,10 @@ BEGIN
 	END IF;
 
     IF (num <> 1) THEN
+        RAISE EXCEPTION 'Every instructor must be either a part time or full time instructor!';
         RETURN NULL;
     END IF;
+    RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -97,3 +105,51 @@ CREATE TRIGGER instructor_trigger
 BEFORE INSERT OR UPDATE ON Instructors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_check();
+
+/* 17 */
+CREATE OR REPLACE FUNCTION part_time_instructor_teaching_hour_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	total_hour INTEGER;
+BEGIN
+	SELECT SUM(DATE_PART('hour', S.end_time - S.start_time)) INTO total_hour
+	FROM Sessions S NATURAL JOIN Part_time_instructors P
+	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date);
+	
+	IF (total_hour > 30) THEN
+		RAISE EXCEPTION 'The teaching hours of this part time instructor exceeds the limit for the month!';
+	END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER part_time_instructor_teaching_hour_trigger
+AFTER INSERT OR UPDATE ON Sessions
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION part_time_instructor_teaching_hour_check();
+
+/* 18 */
+CREATE OR REPLACE FUNCTION instructor_consecutive_sessions_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	num_of_consecutive_sessions INTEGER;
+BEGIN
+	SELECT COUNT(*)
+	INTO num_of_consecutive_sessions
+	FROM SESSIONS S
+	WHERE S.s_date = NEW.s_date and 
+		  ((NEW.start_time > S.end_time and DATE_PART('hour', NEW.start_time - S.end_time) < 1) or
+		  (S.start_time > NEW.end_time and DATE_PART('hour', S.start_time - NEW.end_time) < 1));
+	
+	IF (num_of_consecutive_sessions > 0) THEN
+		RAISE EXCEPTION 'Each instructor must not be assigned to teach two consecutive course sessions!';
+		RETURN NULL;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER instructor_consecutive_sessions_trigger
+BEFORE INSERT OR UPDATE ON Sessions
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
