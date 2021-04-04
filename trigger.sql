@@ -1,6 +1,6 @@
+/* Will consider combining the 2 functions for using TG_OP */
 /* 1 */
 CREATE OR REPLACE FUNCTION customer_total_participation_func1() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF (NEW.cust_id NOT IN (SELECT cust_id FROM Credit_cards)) THEN
 		RAISE EXCEPTION 'Each Customer must own 1 or more credit cards!';
@@ -16,7 +16,6 @@ FOR EACH ROW
 EXECUTE FUNCTION customer_total_participation_func1();
 
 CREATE OR REPLACE FUNCTION customer_total_participation_func2() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF (OLD.cust_id NOT IN (SELECT cust_id FROM Credit_cards)) THEN
 		RAISE EXCEPTION 'Each Customer must own 1 or more credit cards!';
@@ -31,9 +30,9 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION customer_total_participation_func2();
 
+/* Will consider combining the 2 functions for using TG_OP */
 /* 2 */
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date)=0) THEN
 		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
@@ -49,7 +48,6 @@ FOR EACH ROW
 EXECUTE FUNCTION session_non_zero_func1();
 
 CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date)=0) THEN
 		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
@@ -67,7 +65,6 @@ EXECUTE FUNCTION session_non_zero_func2();
 
 /* 5 */
 CREATE OR REPLACE FUNCTION concurrent_session_func() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time) THEN
@@ -105,6 +102,51 @@ AFTER INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION co_date_func();
 
+/* 8 */
+CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+	IF EXISTS (SELECT * FROM Register R WHERE R.launch_date=NEW.launch_date and
+		R.course_id=NEW.course_id) THEN
+		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
+	ELSIF (NEW.r_date=(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
+		O.course_id=NEW.course_id)) THEN
+		RAISE EXCEPTION 'You cannot register after the deadline!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER registration_trigger
+BEFORE INSERT ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION registration_func();
+
+/* 9 */
+CREATE OR REPLACE FUNCTION sum_capacity_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (TG_OP='INSERT') THEN
+		UPDATE Offerings o
+		SET seating_capacity=seating_capacity+(SELECT seating_capacity FROM Rooms R WHERE R.rid=NEW.rid)
+		WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	ELSIF (TG_OP='DELETE') THEN
+		UPDATE Offerings o
+		SET seating_capacity=seating_capacity-(SELECT seating_capacity FROM Rooms R WHERE R.rid=OLD.rid)
+		WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	ELSIF (TG_OP='UPDATE') THEN
+		UPDATE Offerings o
+		SET seating_capacity=seating_capacity+(SELECT seating_capacity FROM Rooms R WHERE R.rid=NEW.rid)-(SELECT seating_capacity FROM Rooms R WHERE R.rid=OLD.rid)
+		WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER sum_capacity_trigger
+AFTER INSERT OR DELETE OR UPDATE ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION sum_capacity_func();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
