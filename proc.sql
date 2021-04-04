@@ -125,7 +125,9 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
                     FROM Sessions S
                     WHERE I.eid = S.eid
                     and sess_date = S.s_date
-                    and (sess_start_hour >= S.start_time and 
+                    and (sess_start_hour + INTERVAL '1 hours' * 
+                    ((SELECT duration FROM Courses where Courses.course_id = course_id) + 1) > S.start_time 
+                    or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour')
                     );
 $$ LANGUAGE sql;
