@@ -37,71 +37,42 @@ CREATE TYPE Session AS (
     start_hr TIME,
     rid INTEGER
 );
-CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
-launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
-DECLARE
-    course_and_area RECORD;
-    temp_id INTEGER;
-    min_seating_cap INTEGER;
-    instructor_id INTEGER;
-    i INTEGER := 0;
-    sess_table RECORD;
-    valid BOOLEAN := 1;
-BEGIN
-    course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
-    WHERE course_id = cid);
-    -- insert sessions
-    WHILE i < coalesce(array_length(sess, 1), 0) LOOP
-        add_session(coid, i+1, start)
-        i := i + 1;
-    END LOOP;
-        -- WITH avail_instructors AS (
-        --     SELECT eid
-        --     FROM Instructors NATURAL JOIN Pay_slips
-        --     WHERE coalesce(num_work_hours, 0) <= 30 
-        -- )
-        -- SELECT eid into temp_id 
-        -- FROM avail_instructors NATURAL JOIN Specializes 
-        -- WHERE Course_areas = course_area;
-    -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
-    --  reg_deadline, target_no, 0, fees, aid);
-    --check if target_no <= seating_cap
-    RAISE EXCEPTION 'Invalid course offering information input';
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
+-- launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+-- DECLARE
+--     course_and_area RECORD;
+--     temp_id INTEGER;
+--     min_seating_cap INTEGER;
+--     instructor_id INTEGER;
+--     i INTEGER := 0;
+--     sess_table RECORD;
+--     valid BOOLEAN := 1;
+-- BEGIN
+--     course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
+--     WHERE course_id = cid);
+--     -- insert sessions
+--     WHILE i < coalesce(array_length(sess, 1), 0) LOOP
+--         add_session(coid, i+1, start)
+--         i := i + 1;
+--     END LOOP;
+--         -- WITH avail_instructors AS (
+--         --     SELECT eid
+--         --     FROM Instructors NATURAL JOIN Pay_slips
+--         --     WHERE coalesce(num_work_hours, 0) <= 30 
+--         -- )
+--         -- SELECT eid into temp_id 
+--         -- FROM avail_instructors NATURAL JOIN Specializes 
+--         -- WHERE Course_areas = course_area;
+--     -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
+--     --  reg_deadline, target_no, 0, fees, aid);
+--     --check if target_no <= seating_cap
+--     RAISE EXCEPTION 'Invalid course offering information input';
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 
 -- test cases
--- insert into Rooms values (1,'A', 100);
--- insert into Rooms values (2,'B', 200);
--- insert into Rooms values (3,'C', 300);
--- insert into Rooms values (4,'D', 400);
--- insert into Rooms values (5,'E', 500);
--- Delete from Employees CASCADE;
--- insert INTO Employees VALUES (9), (10), (11);
--- insert into Instructors VALUES (11);
--- insert into Full_time_emp VALUES (9), (10);
--- insert into Administrators VALUES (10);
--- insert into Managers VALUES (9);
--- insert into Course_areas VALUES ('area managed by 9', 9);
--- insert into Courses VALUES (10, 13, 'test', 'title 10', 'area managed by 9');
--- insert into Offerings VALUES (10, 10, '2021-02-01', '2021-02-15', NULL, '2021-02-15', 100,100, 100,10);
--- CALL add_session(10, 1, '2021-02-13', '20:00:00', 11, 1);
--- insert INTO Employees VALUES (20), (21), (22);
--- insert into Instructors VALUES (20), (21), (22);
--- CALL add_session(10, 1, '2021-04-01',
---                     '10:00', 20, 1);
--- CALL add_session(10, 1, '2021-04-01',
---                     '10:00', 21, 1);
--- CALL add_session(10, 2, '2021-04-01',
---                     '15:00', 20, 1);
--- insert into Pay_slips VALUES (10,'2021-04-30', 2000, 3, 0);
--- insert into Pay_slips VALUES (20,'2021-04-30', 2000, 3, 0);
--- insert into Pay_slips VALUES (21,'2021-04-30', 4000, 2, 0);
--- insert into Specializes VALUES (20, 'area managed by 9');
--- insert into Specializes VALUES (21, 'area managed by 9');
--- SELECT add_customer('a', 'addr',123,'email', 123345,'2022-04-01',123);
--- insert into Registers VALUES (123345, 10, '2021-02-01', 1, '2021-03-01', 1, 20);
+
 
 
 
@@ -201,3 +172,5 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+select * from Course_areas natural join Managers;

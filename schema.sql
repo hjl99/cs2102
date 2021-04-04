@@ -11,7 +11,7 @@ CREATE TABLE Employees (
     name TEXT,
     phone INTEGER,
     email TEXT,
-    join_date DATE ,
+    join_date DATE,
     address TEXT,
     depart_date DATE
 );
@@ -19,11 +19,13 @@ CREATE TABLE Employees (
 CREATE TABLE Part_time_emp (
     eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     hourly_rate FLOAT
+    CONSTRAINT hourly_rate_non_neg CHECK (hourly_rate >= 0.0)
 );
 
 CREATE TABLE Full_time_emp (
     eid INTEGER PRIMARY KEY REFERENCES Employees ON DELETE CASCADE,
     monthly_salary FLOAT
+    CONSTRAINT monthly_salary_non_neg CHECK (monthly_salary >= 0.0)
 );
 
 CREATE TABLE Instructors (
@@ -51,16 +53,19 @@ CREATE TABLE Managers (
 CREATE TABLE Pay_slips (
     eid INTEGER REFERENCES Employees ON DELETE CASCADE,
     payment_date DATE,
-    amount FLOAT,
+    amt FLOAT,
     num_work_hours INTEGER,
     num_work_days INTEGER,
-    PRIMARY KEY (eid, payment_date)
+    PRIMARY KEY (eid, payment_date),
+    CONSTRAINT num_work_hours_non_neg CHECK (num_work_hours >= 0),
+    CONSTRAINT num_work_days_non_neg CHECK (num_work_days >= 0),
+    CONSTRAINT amt_pos CHECK (amt > 0)
 );
 -- <---------------------- Customer side ---------------------->
 
 CREATE TABLE Customers (
     cust_id SERIAL PRIMARY KEY,
-    c_name TEXT,
+    cust_name TEXT,
     phone INTEGER,
     email TEXT,
     address TEXT
@@ -69,7 +74,8 @@ CREATE TABLE Customers (
 CREATE TABLE Rooms (
     rid SERIAL PRIMARY KEY,
     location TEXT,
-    seating_capacity INTEGER
+    seating_capacity INTEGER 
+    CONSTRAINT  seating_capacity_pos CHECK (seating_capacity > 0)
 );
 
 
@@ -79,11 +85,14 @@ CREATE TABLE Course_packages (
     num_free_registrations INTEGER,
     sale_end_date DATE,
     package_name TEXT,
-    price FLOAT
+    price FLOAT 
+    CONSTRAINT price_non_neg CHECK (price >= 0.0),
+    CONSTRAINT sale_date_validity CHECK (sale_start_date <= sale_end_date),
+    CONSTRAINT num_free_reg_pos CHECK (num_free_registrations > 0)
 );
 
 CREATE TABLE Course_areas (
-    course_aname TEXT PRIMARY KEY,
+    course_area_name TEXT PRIMARY KEY,
     eid INTEGER NOT NULL REFERENCES Managers
 );
 
@@ -92,22 +101,25 @@ CREATE TABLE Courses (
     duration INTEGER,
     description TEXT,
     title TEXT UNIQUE,
-    course_aname TEXT NOT NULL REFERENCES Course_areas
+    course_area_name TEXT NOT NULL REFERENCES Course_areas,
+    CONSTRAINT duration_validity CHECK (duration > 0 and duration <= 4)
 );
 
-/* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
     coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
     launch_date DATE,
     start_date DATE,
     end_date DATE,
-    registration_deadline DATE,
-    target_number_registrations INTEGER,
+    reg_deadline DATE,
+    num_target_reg INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
-    eid INTEGER NOT NULL REFERENCES Administrators,
-    PRIMARY KEY (course_id, launch_date)
+    aid INTEGER NOT NULL REFERENCES Administrators,
+    PRIMARY KEY (course_id, launch_date),   
+    CONSTRAINT start_end_date_validity CHECK (start_date <= end_date),
+    CONSTRAINT registration_deadline_validity CHECK (reg_deadline + INTERVAL '10 DAY' <= start_date),
+    CONSTRAINT target_reg_validity CHECK (num_target_reg <= seating_capacity)
 );
 
 CREATE TABLE Sessions (
@@ -121,7 +133,9 @@ CREATE TABLE Sessions (
     eid INTEGER NOT NULL REFERENCES Instructors,
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
-    PRIMARY KEY (sid, course_id, launch_date, rid, eid) 
+    PRIMARY KEY (sid, course_id, launch_date, rid, eid),
+    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
+    CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
 );
 
 -- <----------------------associations----------------------->
@@ -136,15 +150,16 @@ CREATE TABLE Cancels (
     rid INTEGER,
     eid INTEGER,
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
-    PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid)
+    PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid),
+    CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = null) or (package_credit = 1 and refund_amt = null))
 );
-/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
+/* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
     CVV INTEGER,
     expiry_date DATE,
-    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE, /* will require triggers to enforce total participation on customers*/
+    cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE,
     from_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -154,7 +169,8 @@ CREATE TABLE Buys (
     number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
     b_date DATE DEFAULT CURRENT_DATE,
     num_remaining_redemptions INTEGER,
-    PRIMARY KEY (package_id, number, b_date)
+    PRIMARY KEY (package_id, number, b_date),
+    CONSTRAINT num_remaining_redemptions_non_neg CHECK (num_remaining_redemptions >= 0)
 );
 
 /* Requires triggers to enforce that each customer can register for at most one sesion of a course */
@@ -172,8 +188,8 @@ CREATE TABLE Registers (
 
 CREATE TABLE  Specializes (
     eid INTEGER REFERENCES Instructors, /*total participation*/
-    course_aname TEXT REFERENCES Course_areas,
-    PRIMARY KEY (eid, course_aname)
+    course_area_name TEXT REFERENCES Course_areas,
+    PRIMARY KEY (eid, course_area_name)
 );
 
 CREATE TABLE Redeems ( 
@@ -188,7 +204,8 @@ CREATE TABLE Redeems (
     eid INTEGER,
     FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION,
-    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date, rid, eid)
+    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date, rid, eid),
+    CONSTRAINT date_validity CHECK (b_date <= r_date)
 );
 
 

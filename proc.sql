@@ -1,104 +1,89 @@
 /* 1 */
 CREATE OR REPLACE PROCEDURE
-add_employee(name TEXT, address TEXT, 
-             phone INTEGER, email TEXT, 
-             salary_or_hourly_rate FLOAT, join_date DATE, 
-             category TEXT, course_areas TEXT[] DEFAULT ARRAY[]::TEXT[])
+add_employee(name TEXT, address TEXT, phone INTEGER, email TEXT, 
+             salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
+             course_areas TEXT[] DEFAULT ARRAY[]::TEXT[])
 AS $$
-  DECLARE
-    curr_eid INTEGER;
-	carea TEXT;
-  BEGIN
+DECLARE
+curr_eid INTEGER;
+carea TEXT;
+BEGIN
   	IF (category != 'administrator' and category != 'manager'
         and category != 'part time instructor' and category != 'full time instructor')
     THEN
-      RAISE EXCEPTION 'Please insert the correct category!';
+      RAISE EXCEPTION 'Please insert the correct category! E.G. "administrator", 
+      "manager", "part time instructor" or "full time instructor"';
     END IF;
-	
+
     INSERT INTO Employees (name, phone, email, join_date, address)
     VALUES (name, phone, email, join_date, address) RETURNING eid INTO curr_eid;
-   
+
     IF (category = 'part time instructor') THEN
-	  IF (array_length(course_areas, 1) IS NULL) THEN
-	  	RAISE EXCEPTION 'An instructor must specialize in some course areas!';	
-	  END IF;
-	  
-      INSERT INTO Part_time_emp
-      VALUES (curr_eid, salary_or_hourly_rate);
-      INSERT INTO Instructors
-      VALUES (curr_eid);       
-      INSERT INTO Part_time_instructors 
-      VALUES (curr_eid);
-	  
-	  FOREACH carea IN ARRAY course_areas LOOP
-	  	INSERT INTO Specializes
-		VALUES (curr_eid, carea);
-	  END LOOP;
+        IF (array_length(course_areas, 1) IS NULL) THEN
+        RAISE EXCEPTION 'An instructor must specialize in some course areas!';	
+        END IF;
+        
+        INSERT INTO Part_time_emp VALUES (curr_eid, salary_or_hourly_rate);
+        INSERT INTO Instructors VALUES (curr_eid);       
+        INSERT INTO Part_time_instructors VALUES (curr_eid);
+        
+        FOREACH carea IN ARRAY course_areas LOOP
+            INSERT INTO Specializes VALUES (curr_eid, carea);
+        END LOOP;
     ELSE
-      INSERT INTO Full_time_emp
-      VALUES (curr_eid, salary_or_hourly_rate);
-      IF (category = 'administrator') THEN
-	  	IF (array_length(course_areas, 1) > 0) THEN
-			RAISE EXCEPTION 'An administrator must not specialize or manage any course areas!';
-		END IF;
-		
-        INSERT INTO Administrators 
-        VALUES (curr_eid);
-      
-	  ELSIF (category = 'manager') THEN
-	  	IF (array_length(course_areas, 1) IS NULL) THEN
-			RAISE EXCEPTION 'A manager must manages some course areas!';
-		END IF;
-		
-        INSERT INTO Managers       
-        VALUES (curr_eid);
-		
-		FOREACH carea IN ARRAY course_areas LOOP
-			INSERT INTO Course_areas VALUES (carea, curr_eid);
-		END LOOP;
-      
-	  ELSIF (category = 'full time instructor') THEN
-	  	IF (array_length(course_areas, 1) IS NULL) THEN
-			RAISE EXCEPTION 'An instructor must specializes in some course areas!';
-		END IF;
-	  
-        INSERT INTO Instructors
-        VALUES (curr_eid);
-        INSERT INTO Full_time_instructors
-        VALUES (curr_eid);
-		
-		FOREACH carea IN ARRAY course_areas LOOP
-	  		INSERT INTO Specializes
-			VALUES (curr_eid, carea);
-	  	END LOOP;
-      END IF;
+        INSERT INTO Full_time_emp VALUES (curr_eid, salary_or_hourly_rate);
+        IF (category = 'administrator') THEN
+            IF (array_length(course_areas, 1) > 0) THEN
+                RAISE EXCEPTION 'An administrator must not specialize or manage any course areas!';
+            END IF;
+            INSERT INTO Administrators VALUES (curr_eid);
+        ELSIF (category = 'manager') THEN
+            IF (array_length(course_areas, 1) IS NULL) THEN
+                RAISE EXCEPTION 'A manager must manage some course areas!';
+           END IF;
+            INSERT INTO Managers VALUES (curr_eid);
+            FOREACH carea IN ARRAY course_areas LOOP
+                INSERT INTO Course_areas VALUES (carea, curr_eid);
+            END LOOP;
+        ELSIF (category = 'full time instructor') THEN
+            IF (array_length(course_areas, 1) IS NULL) THEN
+                RAISE EXCEPTION 'An instructor must specialize in some course areas!';
+            END IF;
+            INSERT INTO Instructors VALUES (curr_eid);
+            INSERT INTO Full_time_instructors VALUES (curr_eid);
+            FOREACH carea IN ARRAY course_areas LOOP
+                INSERT INTO Specializes VALUES (curr_eid, carea);
+            END LOOP;
+        ELSE 
+            RAISE EXCEPTION 'Something wrong happened on our side';
+        END IF;
     END IF;
-  END;
+END;
 $$ LANGUAGE plpgsql;
 
 /* 2 */
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) 
 AS $$
-	BEGIN
-		IF ((SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
-		   or (SELECT COUNT(*) FROM Conducts C WHERE reid = C.eid and depart_date < C.launch_date) > 0
-		   or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0)
-		THEN RAISE EXCEPTION 'Employee cannot be removed!';
-		ELSE
-			UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
-		END IF;
-	END;
+BEGIN
+    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
+        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date) > 0
+        or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
+    THEN 
+        RAISE EXCEPTION 'Employee cannot be removed!';
+    ELSE
+        UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+    END IF;
+END;
 $$ LANGUAGE plpgsql;
 
 /* 3 */
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
-cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
+CREATE OR REPLACE PROCEDURE add_customer(cname TEXT, caddress TEXT, cphone INTEGER,
+                        cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 AS $$
 DECLARE 
 	cid INTEGER;
 BEGIN
-    INSERT INTO Customers (c_name, address, phone, email)
+    INSERT INTO Customers (cust_name, address, phone, email)
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);
@@ -106,8 +91,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 4 */
-CREATE OR REPLACE FUNCTION update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
+CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
+                                             ccvv INTEGER)
 AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
@@ -115,26 +100,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION find_instructors(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
-AS $$
-BEGIN
-END;
-$$ LANGUAGE plpgsql;
-
-
 /* 5 */
 CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, duration INTEGER) AS $$
 DECLARE
     mid INTEGER;
 BEGIN
-
-    SELECT eid INTO mid FROM Course_areas WHERE name = area;
+    SELECT eid INTO mid FROM Course_areas WHERE course_area_name = area;
     IF mid IS NULL THEN 
         RAISE EXCEPTION 'No manager to the area %', area;
         return;
     END IF;
-    INSERT INTO  Courses (title, description, duration, name)
+    INSERT INTO  Courses (title, description, duration, course_area_name)
     VALUES (title, description, duration, area);
 END;
 $$ LANGUAGE plpgsql;
@@ -142,14 +118,14 @@ $$ LANGUAGE plpgsql;
 /* 6 */
 CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, sess_start_hour TIME)
 RETURNS TABLE(eid INTEGER, name TEXT) AS $$
-	SELECT I.eid, I.name
-	FROM Instructors I
+	SELECT I.eid, E.name
+	FROM Instructors I NATURAL JOIN Employees E
 	WHERE NOT EXISTS (SELECT 1
 					 FROM Sessions S
 					 WHERE I.eid = S.eid
-					 and sess_date = S.date
+					 and sess_date = S.s_date
 					 and (sess_start_hour >= S.start_time and sess_start_hour < S.end_time));
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE sql;
 
 /* 7 */
 DROP FUNCTION IF EXISTS get_available_instructors;
@@ -175,7 +151,6 @@ BEGIN
         WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
-        raise notice 'it is %', record.eid;
         i := date_part('day', start_date);
         WHILE i <= date_part('day', end_date) LOOP
             If exists (SELECT * FROM temp_table WHERE temp_table.day = i) THEN
@@ -188,7 +163,6 @@ BEGIN
                 hours := timings;
                 WHILE k < (SELECT count(*) FROM temp_table 
                 WHERE temp_table.e1 = record.eid and temp_table.day = i) LOOP
-                    raise notice 'k is %', k;
                     SELECT * INTO curr FROM temp_table 
                     where temp_table.e1 = record.eid and temp_table.day = i OFFSET k;
                     FOREACH timing IN ARRAY hours LOOP
@@ -379,59 +353,55 @@ $$ LANGUAGE plpgsql;
 
 
 /* 25 */
-CREATE OR REPLACE FUNCTION pay_salary()
-RETURNS TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
-	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
-AS $$
-DECLARE
-	curs CURSOR FOR (SELECT * FROM Employees WHERE depart_date IS NULL ORDER BY eid ASC);
-	r RECORD;
-	eid INTEGER;
-	ename TEXT;
-	partTime BOOLEAN;
-	estatus TEXT;
-	num_work_days INTEGER;
-	num_work_hours INTEGER;
-	hourly_rate FLOAT;
-	monthly_salary FLOAT;
-	amount FLOAT;
-BEGIN
-	OPEN curs;
-	LOOP
-		FETCH curs INTO r;
-		EXIT WHEN NOT FOUND;
-		eid := r.eid;
-		ename := r.name;
-		partTime := EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
-		IF partTime THEN 
-			estatus := 'part-time';
-			num_work_hours := SUM(
-				SELECT (EXTRACT(EPOCH FROM end_time)::INTEGER - EXTRACT(EPOCH FROM start_time)::INTEGER) / 3600;
-				FROM Sessions WHERE eid = r.eid AND 
-					SELECT EXTRACT(YEAR FROM date)::INTEGER = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
-					AND SELECT EXTRACT(MONTH FROM date)::INTEGER = EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER);
-			IF num_work_hours = 0 THEN CONTINUE;
-			num_work_days := NULL;
-			hourly_rate := SELECT hourly_rate FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
-			monthly_salary := NULL;
-			amount := num_work_hours * hourly_rate;
-		ELSE
-			estatus := 'full-time';
-			num_work_hours := NULL;
-			num_work_days := CASE
-				WHEN SELECT EXTRACT(YEAR FROM r.join_date)::INTEGER = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
-						AND SELECT EXTRACT(MONTH FROM r.join_date)::INTEGER = EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER
-					THEN SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER - EXTRACT(DAY FROM r.join_date)::INTEGER + 1
-				ELSE SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER
-				END
-			IF num_work_days = 0 THEN CONTINUE;
-			hourly_rate := NULL;
-			monthly_salary := SELECT monthly_salary FROM Full_time_emp PTE WHERE r.eid=PTE.eid);
-			amount := monthly_salary * (num_work_days / SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER);
-		END IF;
-		INSERT INTO Pay_slips VALUES (eid, CURRENT_DATE, amount, num_work_hours, num_work_days);
-		RETURN NEXT;
-	END LOOP;
-	CLOSE curs;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION pay_salary()
+-- RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
+-- 	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT)
+-- AS $$
+-- DECLARE
+-- 	curs CURSOR FOR (SELECT * FROM Employees WHERE depart_date IS NULL ORDER BY eid ASC)
+-- 	r RECORD;
+-- 	partTime BOOLEAN;
+-- 	estatus TEXT;
+-- 	num_work_days INTEGER;
+-- 	num_work_hours INTEGER;
+-- 	hourly_rate FLOAT;
+-- 	monthly_salary FLOAT;
+-- 	amount FLOAT;
+-- BEGIN
+-- 	OPEN curs;
+-- 	LOOP
+-- 		FETCH curs INTO r;
+-- 		EXIT WHEN NOT FOUND;
+-- 		eid := r.eid;
+-- 		ename := r.name;
+-- 		partTime := EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
+-- 		IF partTime THEN 
+-- 			estatus := 'part-time';
+-- 			num_work_hours := SUM(
+-- 				SELECT (EXTRACT(EPOCH FROM end_time)::INTEGER - EXTRACT(EPOCH FROM start_time)::INTEGER) / 3600;
+-- 				FROM Sessions WHERE eid = r.eid);
+-- 			IF num_work_hours = 0 THEN CONTINUE;
+-- 			num_work_days := NULL;
+-- 			hourly_rate := SELECT hourly_rate FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
+-- 			monthly_salary := NULL;
+-- 			amount := num_work_hours * hourly_rate;
+-- 		ELSE
+-- 			estatus := 'full-time';
+-- 			num_work_hours := NULL;
+-- 			num_work_days := CASE
+-- 				WHEN SELECT EXTRACT(YEAR FROM r.join_date)::INTEGER = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+-- 						AND SELECT EXTRACT(MONTH FROM r.join_date)::INTEGER = EXTRACT(MONTH FROM CURRENT_DATE)::INTEGER
+-- 					THEN SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER - EXTRACT(DAY FROM r.join_date)::INTEGER + 1
+-- 				ELSE SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER
+-- 				END
+-- 			IF num_work_days = 0 THEN CONTINUE;
+-- 			hourly_rate := NULL;
+-- 			monthly_salary := SELECT monthly_salary FROM Full_time_emp PTE WHERE r.eid=PTE.eid);
+-- 			amount := monthly_salary * (num_work_days / SELECT EXTRACT(DAY FROM CURRENT_DATE)::INTEGER);
+-- 		END IF;
+-- 		INSERT INTO Pay_slips VALUES (eid, CURRENT_DATE, amount, num_work_hours, num_work_days);
+-- 		RETURN NEXT;
+-- 	END LOOP;
+-- 	CLOSE curs;
+-- END;
+-- $$ LANGUAGE plpgsql;
