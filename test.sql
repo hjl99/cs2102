@@ -5,6 +5,9 @@ it's march*/
 /* one-indexed. Rid increments by 1, Locations are a single capital letter increment by 1, 
 seating capacity == rid*/
 DELETE FROM Rooms;
+DELETE FROM Course_areas;
+DELETE FROM Managers;
+DELETE FROM Employees;
 insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
 insert into Rooms values (2,'room_B', 2);
 insert into Rooms values (3,'room_C', 3);
@@ -14,14 +17,15 @@ insert into Rooms values (6,'room_F', 6);
 insert into Rooms values (7,'room_G', 7);
 insert into Rooms values (8,'room_H', 8);
 /* add course areas and its employee. name prefixed with pti, fti, m or a.*/
-CALL add_employee('m_A', 'addr_A', 1, 'A@A.com', 1.0, '2021-04-01', 'manager', '{"course_area_A"}');
-CALL add_employee('m_B', 'addr_B', 1, 'B@B.com', 1.0, '2021-04-02', 'manager', '{"course_area_B"}');
-CALL add_employee('m_C', 'addr_C', 1, 'C@C.com', 1.0, '2021-04-03', 'manager', '{"course_area_C"}');
--- insert INTO Employees VALUES (9), (10), (11);
--- insert into Instructors VALUES (11);
--- insert into Full_time_emp VALUES (9), (10);
--- insert into Administrators VALUES (10);
--- insert into Managers VALUES (9);
+CALL add_employee('m_A', 'addr_A', 1, 'A@A.com', 100.0, '2021-04-01', 'manager', '{"course_area_A"}');
+CALL add_employee('m_B', 'addr_B', 2, 'B@B.com', 200.0, '2021-04-02', 'manager', '{"course_area_B"}');
+CALL add_employee('m_C', 'addr_C', 3, 'C@C.com', 300.0, '2021-04-03', 'manager', '{"course_area_C"}');
+CALL add_employee('pti_A', 'addr_A', 1, 'A@A.com', 1.0, '2021-04-01', 'part time instructor', '{"course_area_A"}');
+CALL add_employee('pti_B', 'addr_B', 2, 'B@B.com', 2.0, '2021-04-02', 'part time instructor', '{"course_area_B"}');
+CALL add_employee('pti_C', 'addr_C', 3, 'C@C.com', 3.0, '2021-04-03', 'part time instructor', '{"course_area_C"}');
+CALL add_employee('fti_A', 'addr_A', 1, 'A@A.com', 1.0, '2021-04-01', 'full time instructor', '{"course_area_A"}');
+CALL add_employee('fti_B', 'addr_B', 2, 'B@B.com', 2.0, '2021-04-02', 'full time instructor', '{"course_area_B"}');
+CALL add_employee('fti_C', 'addr_C', 3, 'C@C.com', 3.0, '2021-04-03', 'full time instructor', '{"course_area_C"}');
 -- insert into Course_areas VALUES ('area managed by 9', 9);
 -- insert into Courses VALUES (10, 13, 'test', 'title 10', 'area managed by 9');
 -- insert into Offerings VALUES (10, 10, '2021-02-01', '2021-02-15', NULL, '2021-02-15', 100,100, 100,10);

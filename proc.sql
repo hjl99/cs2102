@@ -129,7 +129,13 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
                     ((SELECT duration FROM Courses where Courses.course_id = course_id) + 1) > S.start_time 
                     or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour')
-                    );
+                    )
+    AND NOT EXISTS (
+                    SELECT 1
+                    FROM pay_slips S
+                    WHERE I.eid = S.eid 
+                    and (num_work_hours + (SELECT duration FROM Courses where Courses.course_id = course_id) > 30)
+    );
 $$ LANGUAGE sql;
 
 /* 7 */
