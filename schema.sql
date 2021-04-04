@@ -103,7 +103,7 @@ CREATE TABLE Offerings (
     start_date DATE,
     end_date DATE,
     registration_deadline DATE,
-    target_number_registrations INTEGER,
+    target_number_registratiozns INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
     eid INTEGER NOT NULL REFERENCES Administrators,
