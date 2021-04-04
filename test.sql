@@ -1,6 +1,10 @@
 /* Sample valid data */
+
+/* All dates start from this month and increment accordingly. If an 'expired' date is needed
+it's march*/
 /* one-indexed. Rid increments by 1, Locations are a single capital letter increment by 1, 
 seating capacity == rid*/
+DELETE FROM Rooms;
 insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
 insert into Rooms values (2,'room_B', 2);
 insert into Rooms values (3,'room_C', 3);
@@ -9,9 +13,10 @@ insert into Rooms values (5,'room_E', 5);
 insert into Rooms values (6,'room_F', 6);
 insert into Rooms values (7,'room_G', 7);
 insert into Rooms values (8,'room_H', 8);
-
-
-
+/* add course areas and its employee. name prefixed with pti, fti, m or a.*/
+CALL add_employee('m_A', 'addr_A', 1, 'A@A.com', 1.0, '2021-04-01', 'manager', '{"course_area_A"}');
+CALL add_employee('m_B', 'addr_B', 1, 'B@B.com', 1.0, '2021-04-02', 'manager', '{"course_area_B"}');
+CALL add_employee('m_C', 'addr_C', 1, 'C@C.com', 1.0, '2021-04-03', 'manager', '{"course_area_C"}');
 -- insert INTO Employees VALUES (9), (10), (11);
 -- insert into Instructors VALUES (11);
 -- insert into Full_time_emp VALUES (9), (10);
