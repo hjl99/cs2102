@@ -102,7 +102,7 @@ AS $$
 DECLARE 
 	cid INTEGER;
 BEGIN
-    INSERT INTO Customers (c_name, address, phone, email)
+    INSERT INTO Customers (cust_name, address, phone, email)
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);

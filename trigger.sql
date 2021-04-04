@@ -1,3 +1,19 @@
+CREATE OR REPLACE FUNCTION customer_total_participation_func() RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+	IF (NEW.cust_id NOT IN (SELECT cust_id FROM Credit_cards)) THEN
+		RAISE EXCEPTION 'Each Customer must own 1 or more credit cards!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER customer_total_participation_trigger
+AFTER INSERT ON Customers
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION customer_total_participation_func();
+
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
@@ -22,7 +38,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER emp_trigger
+CREATE CONSTRAINT TRIGGER emp_trigger
 BEFORE INSERT OR UPDATE ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION emp_check();
@@ -47,7 +63,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER part_time_emp_trigger
+CREATE CONSTRAINT TRIGGER part_time_emp_trigger
 BEFORE INSERT OR UPDATE ON Part_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_emp_check();
@@ -75,7 +91,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER full_time_emp_trigger
+CREATE CONSTRAINT TRIGGER full_time_emp_trigger
 BEFORE INSERT OR UPDATE ON Full_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION full_time_emp_check();
@@ -101,7 +117,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER instructor_trigger
+CREATE CONSTRAINT TRIGGER instructor_trigger
 BEFORE INSERT OR UPDATE ON Instructors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_check();
@@ -123,7 +139,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER part_time_instructor_teaching_hour_trigger
+CREATE CONSTRAINT TRIGGER part_time_instructor_teaching_hour_trigger
 AFTER INSERT OR UPDATE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_instructor_teaching_hour_check();
@@ -149,7 +165,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER instructor_consecutive_sessions_trigger
+CREATE CONSTRAINT TRIGGER instructor_consecutive_sessions_trigger
 BEFORE INSERT OR UPDATE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
