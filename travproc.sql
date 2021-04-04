@@ -37,38 +37,38 @@ CREATE TYPE Session AS (
     start_hr TIME,
     rid INTEGER
 );
-CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
-launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
-DECLARE
-    course_and_area RECORD;
-    temp_id INTEGER;
-    min_seating_cap INTEGER;
-    instructor_id INTEGER;
-    i INTEGER := 0;
-    sess_table RECORD;
-    valid BOOLEAN := 1;
-BEGIN
-    course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
-    WHERE course_id = cid);
-    -- insert sessions
-    WHILE i < coalesce(array_length(sess, 1), 0) LOOP
-        add_session(coid, i+1, start)
-        i := i + 1;
-    END LOOP;
-        -- WITH avail_instructors AS (
-        --     SELECT eid
-        --     FROM Instructors NATURAL JOIN Pay_slips
-        --     WHERE coalesce(num_work_hours, 0) <= 30 
-        -- )
-        -- SELECT eid into temp_id 
-        -- FROM avail_instructors NATURAL JOIN Specializes 
-        -- WHERE Course_areas = course_area;
-    -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
-    --  reg_deadline, target_no, 0, fees, aid);
-    --check if target_no <= seating_cap
-    RAISE EXCEPTION 'Invalid course offering information input';
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
+-- launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+-- DECLARE
+--     course_and_area RECORD;
+--     temp_id INTEGER;
+--     min_seating_cap INTEGER;
+--     instructor_id INTEGER;
+--     i INTEGER := 0;
+--     sess_table RECORD;
+--     valid BOOLEAN := 1;
+-- BEGIN
+--     course_and_area := (SELECT * FROM Courses NATURAL JOIN course_areas
+--     WHERE course_id = cid);
+--     -- insert sessions
+--     WHILE i < coalesce(array_length(sess, 1), 0) LOOP
+--         add_session(coid, i+1, start)
+--         i := i + 1;
+--     END LOOP;
+--         -- WITH avail_instructors AS (
+--         --     SELECT eid
+--         --     FROM Instructors NATURAL JOIN Pay_slips
+--         --     WHERE coalesce(num_work_hours, 0) <= 30 
+--         -- )
+--         -- SELECT eid into temp_id 
+--         -- FROM avail_instructors NATURAL JOIN Specializes 
+--         -- WHERE Course_areas = course_area;
+--     -- INSERT INTO Offerings VALUES (coid, cid, launch_date, NULL, NULL,
+--     --  reg_deadline, target_no, 0, fees, aid);
+--     --check if target_no <= seating_cap
+--     RAISE EXCEPTION 'Invalid course offering information input';
+-- END;
+-- $$ LANGUAGE plpgsql;
 
 
 -- test cases
@@ -201,3 +201,5 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+select * from Course_areas natural join Managers;
