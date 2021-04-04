@@ -86,10 +86,6 @@ AS $$
 		THEN RAISE EXCEPTION 'Employee cannot be removed!';
 		ELSE
 			UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid;
-			-- remove the employee from Part Time Employees, Full Time Employees and Instructors tables
-			DELETE FROM Part_time_emp P WHERE P.eid = reid;
-			DELETE FROM Full_time_emp F WHERE F.eid = reid;
-			DELETE FROM Instructors I WHERE I.eid = reid;
 		END IF;
 	END;
 $$ LANGUAGE plpgsql;
