@@ -105,12 +105,12 @@ CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, 
 DECLARE
     mid INTEGER;
 BEGIN
-    SELECT eid INTO mid FROM Course_areas WHERE name = area;
+    SELECT eid INTO mid FROM Course_areas WHERE course_area_name = area;
     IF mid IS NULL THEN 
         RAISE EXCEPTION 'No manager to the area %', area;
         return;
     END IF;
-    INSERT INTO  Courses (title, description, duration, name)
+    INSERT INTO  Courses (title, description, duration, course_area_name)
     VALUES (title, description, duration, area);
 END;
 $$ LANGUAGE plpgsql;

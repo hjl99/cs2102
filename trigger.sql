@@ -64,6 +64,48 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION session_non_zero_func2();
 
+
+/* 5 */
+CREATE OR REPLACE FUNCTION concurrent_session_func() RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
+			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time) THEN
+		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER concurrent_session_trigger
+BEFORE INSERT ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION concurrent_session_func();
+
+
+/* 6 */
+CREATE OR REPLACE FUNCTION co_date_func() RETURNS TRIGGER AS $$
+DECLARE
+	r RECORD;
+BEGIN
+	SELECT * INTO r FROM Offerings O WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	IF (NEW.s_date > r.end_date) THEN
+		UPDATE Offerings O
+		SET end_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	ELSIF (NEW.s_date < r.start_date) THEN
+		UPDATE Offerings O
+		SET start_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER co_date_trigger
+AFTER INSERT ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION co_date_func();
+
+
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
