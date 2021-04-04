@@ -192,7 +192,29 @@ RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEG
     SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
     FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
     NATURAL JOIN Rooms
+    WHERE course_id = coid
     GROUP BY s_date, start_time, name, seating_capacity;
 $$ LANGUAGE sql;
 
-SELECT * FROM get_available_course_sessions(10);
+CREATE OR REPLACE FUNCTION register_session(in_cust_id INTEGER, in_coid INTEGER, in_sid INTEGER, method TEXT)
+RETURNS VOID AS $$
+DECLARE
+    info1 RECORD;
+    info2 RECORD;
+BEGIN
+    SELECT * INTO info1 FROM Credit_cards where cust_id = in_cust_id;
+    SELECT Sessions.course_id, Offerings.launch_date, rid, Sessions.eid INTO info2 FROM Courses NATURAL JOIN Offerings JOIN Sessions 
+    on Sessions.course_id =Courses.course_id and Sessions.launch_date =Offerings.launch_date
+    WHERE in_sid = sid and in_coid = coid;
+    IF method = 'payment' THEN
+        insert into Registers VALUES (info1.number, info2.course_id, info2.launch_date, 
+        in_sid, CURRENT_DATE, info2.rid, info2.eid);
+    ELSE
+        --redeem package
+        insert into Registers VALUES (info1.number, info2.course_id, info2.launch_date, 
+        in_sid, CURRENT_DATE, info2.rid, info2.eid);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+SELECT * FROM Courses NATURAL JOIN Offerings JOIN Sessions 
+on Sessions.course_id =Courses.course_id and Sessions.launch_date =Offerings.launch_date;

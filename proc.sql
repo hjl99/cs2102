@@ -305,6 +305,7 @@ RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEG
     SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
     FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
     NATURAL JOIN Rooms
+    WHERE course_id = coid
     GROUP BY s_date, start_time, name, seating_capacity;
 $$ LANGUAGE sql;
 

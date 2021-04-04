@@ -103,7 +103,7 @@ CREATE TABLE Offerings (
     start_date DATE,
     end_date DATE,
     registration_deadline DATE,
-    target_number_registratiozns INTEGER,
+    target_number_registrations INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
     eid INTEGER NOT NULL REFERENCES Administrators,
@@ -138,7 +138,7 @@ CREATE TABLE Cancels (
     FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid)
 );
-
+/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,
