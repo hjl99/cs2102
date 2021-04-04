@@ -55,8 +55,8 @@ CREATE TABLE Pay_slips (
     payment_date DATE,
     amt FLOAT,
     num_work_hours INTEGER,
-    num_work_days INTEGER 
-    PRIMARY KEY (eid, payment_date)
+    num_work_days INTEGER,
+    PRIMARY KEY (eid, payment_date),
     CONSTRAINT num_work_hours_non_neg CHECK (num_work_hours >= 0),
     CONSTRAINT num_work_days_non_neg CHECK (num_work_days >= 0),
     CONSTRAINT amt_pos CHECK (amt > 0)
@@ -135,7 +135,7 @@ CREATE TABLE Sessions (
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (sid, course_id, launch_date, rid, eid),
-    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time),    
+    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time)  
 );
 
 -- <----------------------associations----------------------->
