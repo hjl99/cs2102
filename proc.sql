@@ -91,13 +91,14 @@ AS $$
 $$ LANGUAGE plpgsql;
 
 /* 3 */
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
+cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 	RETURNS VOID 
 AS $$
 DECLARE 
 	cid INTEGER;
 BEGIN
-    INSERT INTO Customers (name, address, phone, email)
+    INSERT INTO Customers (c_name, address, phone, email)
     VALUES (cname, caddress, cphone, cemail) RETURNING cust_id INTO cid;
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
 	VALUES (cnumber, cexpiry_date, ccvv, cid);
@@ -167,10 +168,10 @@ DECLARE
     timing TIME;
 BEGIN
     CREATE TEMP TABLE IF NOT EXISTS temp_table AS
-        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', S.date) as day, 
+        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', s_date) as day, 
         start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
         FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
-        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S JOIN Employees E on E.eid = Instructors.eid
+        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
         WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
@@ -236,6 +237,54 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 9 */
+CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
+RETURNS TABLE(room_identifier INTEGER, room_capacity INTEGER, day DATE, array_of_hour TIME[]) AS $$
+DECLARE
+	curr_arr TIME[];
+	curr_date DATE;
+	curr_time TIME;
+	curs refcursor;
+	row_var RECORD;
+	prev_row RECORD;
+	curr_rid INTEGER;
+BEGIN
+	curr_date := start_date;
+	LOOP
+		IF (curr_date > end_date) THEN
+			EXIT;
+		END IF;
+		curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+		OPEN curs FOR SELECT * FROM Sessions WHERE date = curr_date ORDER BY rid ASC, start_time ASC; 
+		LOOP
+			prev_row := row_var;
+			FETCH curs INTO row_var;
+			EXIT WHEN NOT FOUND;
+			IF (prev_row.rid <> row_var.rid and prev_row <> null) THEN
+				room_identifier := prev_row.rid;
+				room_capacity := (SELECT seating_capacity FROM Rooms WHERE rid=room_identifier);
+				day := curr_date;
+				array_of_hour := curr_arr;
+				RETURN NEXT;
+				curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+			END IF;
+			curr_time := row_var.start_time;
+			LOOP
+				IF (curr_time = row_var.end_time) THEN
+					EXIT;
+				END IF;
+				curr_arr := array_remove(curr_arr, curr_time);
+				curr_time := curr_time + INTERVAL '1 HOUR';
+			END LOOP;
+		END LOOP;
+		curr_date := curr_date + INTERVAL '1 DAY';
+		CLOSE curs;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
 RETURNS TABLE (LIKE Course_packages) AS $$
@@ -296,6 +345,17 @@ BEGIN
 	) t);
 END;
 $$ LANGUAGE plpgsql;
+
+
+/* 16 */
+CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
+RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+    SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
+    FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
+    NATURAL JOIN Rooms
+    WHERE course_id = coid
+    GROUP BY s_date, start_time, name, seating_capacity;
+$$ LANGUAGE sql;
 
 
 /* 24 */
