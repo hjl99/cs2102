@@ -409,3 +409,23 @@ CREATE TRIGGER redeems_trigger
 AFTER INSERT ON Redeems
 FOR EACH ROW
 EXECUTE FUNCTION redeems_func();
+
+/* 21 */
+CREATE OR REPLACE FUNCTION session_valid_bit_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF NOT EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=OLD.launch_date and
+			   S.course_id=OLD.course_id and S.s_date=OLD.s_date and S.start_time=OLD.start_time and is_ongoing=true) THEN
+		RAISE EXCEPTION 'Session to be deleted does not exist!';
+	ELSE
+		UPDATE Sessions S
+		SET is_ongoing=false
+		WHERE S.launch_date=OLD.launch_date and S.course_id=OLD.course_id and S.s_date=OLD.s_date and S.start_time=OLD.start_time;
+		RETURN NULL;
+	END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_valid_bit_trigger
+BEFORE DELETE ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION session_valid_bit_func();
