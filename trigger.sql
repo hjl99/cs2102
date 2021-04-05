@@ -336,3 +336,19 @@ CREATE CONSTRAINT TRIGGER instructor_consecutive_sessions_trigger
 BEFORE INSERT OR UPDATE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
+
+/* 19 */
+CREATE OR REPLACE FUNCTION redeems_func() RETURNS TRIGGER AS $$
+DECLARE
+BEGIN
+	UPDATE Buys B
+	SET num_remaining_redemptions = num_remaining_redemptions - 1
+	WHERE B.package_id=NEW.package_id and B.number=NEW.number and B.b_date=NEW.b_date;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER redeems_trigger
+AFTER INSERT ON Redeems
+FOR EACH ROW
+EXECUTE FUNCTION redeems_func();
