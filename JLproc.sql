@@ -360,3 +360,30 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+/* 27 */
+CREATE OR REPLACE FUNCTION top_packages(N INTEGER)
+RETURNS TABLE (package_id INTEGER, num_free_registrations INTEGER, price FLOAT, sale_start_date DATE,
+    sale_end_date DATE, num_package_sold INTEGER) AS $$
+BEGIN
+    WITH 
+    info_table AS (
+        SELECT package_id, num_free_registrations, price, 
+            sale_start_date, sale_end_date, COUNT(*) AS num_package_sold
+        FROM Buys NATURAL JOIN Course_packages
+        WHERE sale_start_date >= DATE_TRUNC(CURRENT_DATE) 
+        GROUP BY package_id
+    ),
+    Nth_info AS (
+        SELECT num_package_sold, price
+        FROM info_table
+        ORDER BY num_package_sold DESC, price DESC
+        LIMIT 1
+        OFFSET N - 1
+    )
+    SELECT *
+    FROM info_table
+    WHERE num_package_sold > SELECT MAX(num_package_sold) FROM Nth_info
+        OR (num_package_sold = SELECT MAX(num_package_sold) FROM Nth_info
+            AND price >= SELECT MAX(price) FROM Nth_info);
+END;
+$$ LANGUAGE plpgsql;
