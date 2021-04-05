@@ -115,11 +115,11 @@ CREATE TABLE Offerings (
     num_target_reg INTEGER,
     seating_capacity INTEGER,
     fees FLOAT,
-    aid INTEGER NOT NULL REFERENCES Administrators,
+    eid INTEGER NOT NULL REFERENCES Administrators,
     PRIMARY KEY (course_id, launch_date),   
     CONSTRAINT start_end_date_validity CHECK (start_date <= end_date),
     CONSTRAINT registration_deadline_validity CHECK (reg_deadline + INTERVAL '10 DAY' <= start_date),
-    CONSTRAINT target_reg_validity CHECK (num_target_reg <= seating_capacity)
+    CONSTRAINT target_reg_validity CHECK (num_target_reg <= seating_capacity) 
 );
 
 CREATE TABLE Sessions (
@@ -131,8 +131,8 @@ CREATE TABLE Sessions (
     launch_date DATE,
     rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE, --if theres no room theres no session too imo
     eid INTEGER NOT NULL REFERENCES Instructors,
-    FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
-    ON DELETE CASCADE,
+    CONSTRAINT offerings_fkey FOREIGN KEY (course_id, launch_date) REFERENCES Offerings 
+    ON DELETE CASCADE deferrable initially immediate,
     PRIMARY KEY (sid, course_id, launch_date, rid, eid),
     CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
     CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
@@ -141,7 +141,7 @@ CREATE TABLE Sessions (
 -- <----------------------associations----------------------->
 CREATE TABLE Cancels (
     c_date DATE,
-    refund_amt INTEGER,
+    refund_amt FLOAT,
     package_credit INTEGER,
     cust_id INTEGER REFERENCES Customers ON DELETE NO ACTION,
     course_id INTEGER,
