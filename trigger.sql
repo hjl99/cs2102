@@ -106,10 +106,10 @@ EXECUTE FUNCTION co_date_func();
 CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
 DECLARE
 BEGIN
-	IF EXISTS (SELECT * FROM Register R WHERE R.launch_date=NEW.launch_date and
-		R.course_id=NEW.course_id) THEN
+	IF EXISTS (SELECT * FROM Registers R WHERE R.launch_date=NEW.launch_date and
+		R.course_id=NEW.course_id and R.number=NEW.number) THEN
 		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
-	ELSIF (NEW.r_date=(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
+	ELSIF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
 		O.course_id=NEW.course_id)) THEN
 		RAISE EXCEPTION 'You cannot register after the deadline!';
 	END IF;
@@ -147,6 +147,23 @@ CREATE TRIGGER sum_capacity_trigger
 AFTER INSERT OR DELETE OR UPDATE ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION sum_capacity_func();
+
+/* 10 */
+CREATE OR REPLACE FUNCTION registration_capacity_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (SELECT count(*) FROM Registers R WHERE R.launch_date=NEW.launch_date and
+			   R.course_id=NEW.course_id and R.sid=NEW.sid and R.rid=NEW.rid and R.eid=NEW.eid) =
+			   (SELECT seating_capacity FROM Rooms R WHERE R.rid=NEW.rid) THEN
+		RAISE EXCEPTION 'The session is full!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER registration_capacity_trigger
+BEFORE INSERT ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION registration_capacity_func();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
