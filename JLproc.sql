@@ -81,6 +81,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 21 */
+CREATE OR REPLACE PROCEDURE update_instructor(co_id INTEGER, sess_id INTEGER, new_instr_id INTEGER) AS $$
+DECLARE
+    sess_date DATE;
+    sess_start_time TIME;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE course_id = co_id AND sid = sess_id) THEN 
+        RAISE EXCEPTION ('Course Session specified does not exist.');
+    ELSIF NOT EXISTS (SELECT 1 FROM Instructors WHERE eid = new_instr_id) THEN
+        RAISE EXCEPTION ('The new instructor ID specified does not exist.');
+    END IF;
+    SELECT s_date, start_time INTO sess_date, sess_start_time 
+        FROM Sessions WHERE course_id = co_id AND sid = sess_id;
+    IF SELECT (CURRENT_TIMESTAMP < (sess_date + sess_start_time)) THEN 
+        RAISE EXCEPTION ('Changes cannot be made to an ongoing or finished session.');
+    ELSE 
+        UPDATE Sessions SET eid = new_instr_id WHERE course_id = co_id AND sid = sess_id;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 25 */
 CREATE OR REPLACE FUNCTION pay_salary()
