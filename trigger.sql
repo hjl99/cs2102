@@ -1,4 +1,3 @@
-/* Will consider combining the 2 functions for using TG_OP */
 /* 1 */
 CREATE OR REPLACE FUNCTION customer_total_participation_func1() RETURNS TRIGGER AS $$
 BEGIN
@@ -34,7 +33,7 @@ EXECUTE FUNCTION customer_total_participation_func2();
 /* 2 */
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
 BEGIN
-	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date)=0) THEN
+	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date and is_ongoing=true)=0) THEN
 		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
 	END IF;
 	RETURN NEW;
@@ -49,7 +48,7 @@ EXECUTE FUNCTION session_non_zero_func1();
 
 CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
 BEGIN
-	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date)=0) THEN
+	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date and is_ongoing=true)=0) THEN
 		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
 	END IF;
 	RETURN NEW;
@@ -67,7 +66,7 @@ EXECUTE FUNCTION session_non_zero_func2();
 CREATE OR REPLACE FUNCTION concurrent_session_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
-			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time) THEN
+			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
 	END IF;
 	RETURN NEW;
@@ -355,7 +354,7 @@ DECLARE
 BEGIN
 	SELECT SUM(DATE_PART('hour', S.end_time - S.start_time)) INTO total_hour
 	FROM Sessions S NATURAL JOIN Part_time_instructors P
-	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date);
+	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date) and is_ongoing=true;
 	
 	IF (total_hour > 30) THEN
 		RAISE EXCEPTION 'The teaching hours of this part time instructor exceeds the limit for the month!';
@@ -379,7 +378,7 @@ BEGIN
 	INTO num_of_consecutive_sessions
 	FROM SESSIONS S
 	WHERE S.s_date = NEW.s_date and 
-		  ((NEW.start_time > S.end_time and DATE_PART('hour', NEW.start_time - S.end_time) < 1) or
+		  ((NEW.start_time > S.end_time and DATE_PART('hour', NEW.start_time - S.end_time) < 1) and is_ongoing=true or
 		  (S.start_time > NEW.end_time and DATE_PART('hour', S.start_time - NEW.end_time) < 1));
 	
 	IF (num_of_consecutive_sessions > 0) THEN
