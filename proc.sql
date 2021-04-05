@@ -320,7 +320,7 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 $$ LANGUAGE sql;
 
 /* 13 */
-CREATE OR REPLACE FUNCTION buy_course_package(cid INTEGER, pid INTEGER)
+CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
 RETURNS VOID AS $$
 DECLARE
 	cnum INTEGER;
@@ -331,6 +331,8 @@ BEGIN
 		(pid IN (SELECT package_id FROM get_available_course_packages())) THEN
 		rnum := (SELECT num_free_registrations FROM get_available_course_packages() WHERE package_id=pid);
 		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
+	ELSE
+		RAISE NOTICE 'UNABLE TO PURCHASE PACKAGE!';
 	END IF;
 END;
 $$ LANGUAGE plpgsql;

@@ -165,6 +165,22 @@ BEFORE INSERT ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION registration_capacity_func();
 
+/* 11 */
+CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF EXISTS (SELECT * FROM Buys B WHERE B.number=NEW.number and B.num_remaining_redemptions > 0) THEN
+		RAISE EXCEPTION 'You can only have 1 active or partially active package!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER active_package_trigger
+BEFORE INSERT ON Buys
+FOR EACH ROW
+EXECUTE FUNCTION active_package_func();
+
+
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
