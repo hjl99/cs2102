@@ -74,8 +74,8 @@ CREATE TABLE Customers (
 CREATE TABLE Rooms (
     rid SERIAL PRIMARY KEY,
     location TEXT,
-    seating_capacity INTEGER 
-    CONSTRAINT  seating_capacity_pos CHECK (seating_capacity > 0)
+    seating_capacity INTEGER
+    CONSTRAINT seating_capacity_pos CHECK (seating_capacity > 0)
 );
 
 
@@ -106,7 +106,6 @@ CREATE TABLE Courses (
 );
 
 CREATE TABLE Offerings (
-    coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
     launch_date DATE,
     start_date DATE,
@@ -129,11 +128,11 @@ CREATE TABLE Sessions (
     end_time TIME,
     course_id INTEGER,
     launch_date DATE,
-    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE, --if theres no room theres no session too imo
-    eid INTEGER NOT NULL REFERENCES Instructors,
+    rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE deferrable initially immediate,
+    eid INTEGER NOT NULL REFERENCES Instructors ON DELETE CASCADE deferrable initially immediate,
     CONSTRAINT offerings_fkey FOREIGN KEY (course_id, launch_date) REFERENCES Offerings 
     ON DELETE CASCADE deferrable initially immediate,
-    PRIMARY KEY (sid, course_id, launch_date, rid, eid),
+    PRIMARY KEY (sid, course_id, launch_date),
     CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
     CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
 );
@@ -147,10 +146,8 @@ CREATE TABLE Cancels (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    rid INTEGER,
-    eid INTEGER,
-    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
-    PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid),
+    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
+    PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = null) or (package_credit = 1 and refund_amt = null))
 );
 /* Trav: considering making pri key number and cust*/
@@ -180,10 +177,8 @@ CREATE TABLE Registers (
     launch_date DATE,
     sid INTEGER,
     r_date DATE,
-    rid INTEGER,
-    eid INTEGER,
-    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION, 
-    PRIMARY KEY (course_id, launch_date, sid, number, r_date, rid, eid)
+    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE NO ACTION, 
+    PRIMARY KEY (course_id, launch_date, sid, number, r_date)
 );
 
 CREATE TABLE  Specializes (
@@ -200,11 +195,9 @@ CREATE TABLE Redeems (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    rid INTEGER,
-    eid INTEGER,
     FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
-    FOREIGN KEY (sid, course_id, launch_date, rid, eid) REFERENCES Sessions ON DELETE NO ACTION,
-    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date, rid, eid),
+    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE NO ACTION,
+    PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date),
     CONSTRAINT date_validity CHECK (b_date <= r_date)
 );
 
