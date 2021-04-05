@@ -12,7 +12,7 @@ CREATE TABLE Employees (
     phone INTEGER,
     email TEXT,
     join_date DATE,
-    addr TEXT,
+    address TEXT,
     depart_date DATE
 );
 
@@ -105,7 +105,6 @@ CREATE TABLE Courses (
     CONSTRAINT duration_pos CHECK (duration > 0)
 );
 
-/* dk why is seating_capacity here tbh */
 CREATE TABLE Offerings (
     coid SERIAL, -- cuz routine 10 gives coid?!
     course_id INTEGER REFERENCES Courses ON DELETE CASCADE,
@@ -117,7 +116,7 @@ CREATE TABLE Offerings (
     seating_capacity INTEGER,
     fees FLOAT,
     aid INTEGER NOT NULL REFERENCES Administrators,
-    PRIMARY KEY (course_id, launch_date),
+    PRIMARY KEY (course_id, launch_date),   
     CONSTRAINT start_end_date_validity CHECK (start_date <= end_date),
     CONSTRAINT registration_deadline_validity CHECK (reg_deadline + INTERVAL '10 DAY' <= start_date),
     CONSTRAINT target_reg_validity CHECK (num_target_reg <= seating_capacity)
@@ -135,7 +134,8 @@ CREATE TABLE Sessions (
     FOREIGN KEY (course_id, launch_date) REFERENCES Offerings
     ON DELETE CASCADE,
     PRIMARY KEY (sid, course_id, launch_date, rid, eid),
-    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time)  
+    CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
+    CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
 );
 
 -- <----------------------associations----------------------->
@@ -153,8 +153,7 @@ CREATE TABLE Cancels (
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid, rid, eid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = null) or (package_credit = 1 and refund_amt = null))
 );
-
-/* Trav: feels like theres a need to recognise payment / redemption routine 17*/
+/* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number INTEGER PRIMARY KEY,

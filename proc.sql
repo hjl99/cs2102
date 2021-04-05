@@ -1,99 +1,84 @@
 /* 1 */
 CREATE OR REPLACE PROCEDURE
-add_employee(name TEXT, address TEXT, 
-             phone INTEGER, email TEXT, 
-             salary_or_hourly_rate FLOAT, join_date DATE, 
-             category TEXT, course_areas TEXT[] DEFAULT ARRAY[]::TEXT[])
+add_employee(name TEXT, address TEXT, phone INTEGER, email TEXT, 
+             salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
+             course_areas TEXT[] DEFAULT ARRAY[]::TEXT[])
 AS $$
-  DECLARE
-    curr_eid INTEGER;
-	carea TEXT;
-  BEGIN
+DECLARE
+curr_eid INTEGER;
+carea TEXT;
+BEGIN
   	IF (category != 'administrator' and category != 'manager'
         and category != 'part time instructor' and category != 'full time instructor')
     THEN
-      RAISE EXCEPTION 'Please insert the correct category!';
+      RAISE EXCEPTION 'Please insert the correct category! E.G. "administrator", 
+      "manager", "part time instructor" or "full time instructor"';
     END IF;
-	
+
     INSERT INTO Employees (name, phone, email, join_date, address)
     VALUES (name, phone, email, join_date, address) RETURNING eid INTO curr_eid;
-   
+
     IF (category = 'part time instructor') THEN
-	  IF (array_length(course_areas, 1) IS NULL) THEN
-	  	RAISE EXCEPTION 'An instructor must specialize in some course areas!';	
-	  END IF;
-	  
-      INSERT INTO Part_time_emp
-      VALUES (curr_eid, salary_or_hourly_rate);
-      INSERT INTO Instructors
-      VALUES (curr_eid);       
-      INSERT INTO Part_time_instructors 
-      VALUES (curr_eid);
-	  
-	  FOREACH carea IN ARRAY course_areas LOOP
-	  	INSERT INTO Specializes
-		VALUES (curr_eid, carea);
-	  END LOOP;
+        IF (array_length(course_areas, 1) IS NULL) THEN
+        RAISE EXCEPTION 'An instructor must specialize in some course areas!';	
+        END IF;
+        
+        INSERT INTO Part_time_emp VALUES (curr_eid, salary_or_hourly_rate);
+        INSERT INTO Instructors VALUES (curr_eid);       
+        INSERT INTO Part_time_instructors VALUES (curr_eid);
+        
+        FOREACH carea IN ARRAY course_areas LOOP
+            INSERT INTO Specializes VALUES (curr_eid, carea);
+        END LOOP;
     ELSE
-      INSERT INTO Full_time_emp
-      VALUES (curr_eid, salary_or_hourly_rate);
-      IF (category = 'administrator') THEN
-	  	IF (array_length(course_areas, 1) > 0) THEN
-			RAISE EXCEPTION 'An administrator must not specialize or manage any course areas!';
-		END IF;
-		
-        INSERT INTO Administrators 
-        VALUES (curr_eid);
-      
-	  ELSIF (category = 'manager') THEN
-	  	IF (array_length(course_areas, 1) IS NULL) THEN
-			RAISE EXCEPTION 'A manager must manages some course areas!';
-		END IF;
-		
-        INSERT INTO Managers       
-        VALUES (curr_eid);
-		
-		FOREACH carea IN ARRAY course_areas LOOP
-			INSERT INTO Course_areas VALUES (carea, curr_eid);
-		END LOOP;
-      
-	  ELSIF (category = 'full time instructor') THEN
-	  	IF (array_length(course_areas, 1) IS NULL) THEN
-			RAISE EXCEPTION 'An instructor must specializes in some course areas!';
-		END IF;
-	  
-        INSERT INTO Instructors
-        VALUES (curr_eid);
-        INSERT INTO Full_time_instructors
-        VALUES (curr_eid);
-		
-		FOREACH carea IN ARRAY course_areas LOOP
-	  		INSERT INTO Specializes
-			VALUES (curr_eid, carea);
-	  	END LOOP;
-      END IF;
+        INSERT INTO Full_time_emp VALUES (curr_eid, salary_or_hourly_rate);
+        IF (category = 'administrator') THEN
+            IF (array_length(course_areas, 1) > 0) THEN
+                RAISE EXCEPTION 'An administrator must not specialize or manage any course areas!';
+            END IF;
+            INSERT INTO Administrators VALUES (curr_eid);
+        ELSIF (category = 'manager') THEN
+            IF (array_length(course_areas, 1) IS NULL) THEN
+                RAISE EXCEPTION 'A manager must manage some course areas!';
+           END IF;
+            INSERT INTO Managers VALUES (curr_eid);
+            FOREACH carea IN ARRAY course_areas LOOP
+                INSERT INTO Course_areas VALUES (carea, curr_eid);
+            END LOOP;
+        ELSIF (category = 'full time instructor') THEN
+            IF (array_length(course_areas, 1) IS NULL) THEN
+                RAISE EXCEPTION 'An instructor must specialize in some course areas!';
+            END IF;
+            INSERT INTO Instructors VALUES (curr_eid);
+            INSERT INTO Full_time_instructors VALUES (curr_eid);
+            FOREACH carea IN ARRAY course_areas LOOP
+                INSERT INTO Specializes VALUES (curr_eid, carea);
+            END LOOP;
+        ELSE 
+            RAISE EXCEPTION 'Something wrong happened on our side';
+        END IF;
     END IF;
-  END;
+END;
 $$ LANGUAGE plpgsql;
 
 /* 2 */
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) 
 AS $$
-	BEGIN
-		IF ((SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
-		   or (SELECT COUNT(*) FROM Conducts C WHERE reid = C.eid and depart_date < C.launch_date) > 0
-		   or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0)
-		THEN RAISE EXCEPTION 'Employee cannot be removed!';
-		ELSE
-			UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid;
-		END IF;
-	END;
+BEGIN
+    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
+        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date) > 0
+        or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
+    THEN 
+        RAISE EXCEPTION 'Employee cannot be removed!';
+    ELSE
+        UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+    END IF;
+END;
 $$ LANGUAGE plpgsql;
 
 /* 3 */
-CREATE OR REPLACE FUNCTION add_customer(cname TEXT, caddress TEXT, cphone INTEGER, cemail TEXT, 
-cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
+CREATE OR REPLACE PROCEDURE add_customer(cname TEXT, caddress TEXT, cphone INTEGER,
+                        cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
 AS $$
 DECLARE 
 	cid INTEGER;
@@ -106,8 +91,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 4 */
-CREATE OR REPLACE FUNCTION update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
-	RETURNS VOID 
+CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
+                                             ccvv INTEGER)
 AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
