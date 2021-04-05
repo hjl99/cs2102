@@ -320,7 +320,7 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 $$ LANGUAGE sql;
 
 /* 13 */
-CREATE OR REPLACE FUNCTION buy_course_package(cid INTEGER, pid INTEGER)
+CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
 RETURNS VOID AS $$
 DECLARE
 	cnum INTEGER;
@@ -331,6 +331,8 @@ BEGIN
 		(pid IN (SELECT package_id FROM get_available_course_packages())) THEN
 		rnum := (SELECT num_free_registrations FROM get_available_course_packages() WHERE package_id=pid);
 		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
+	ELSE
+		RAISE NOTICE 'UNABLE TO PURCHASE PACKAGE!';
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -347,10 +349,10 @@ BEGIN
 	DROP TABLE IF EXISTS tmp, tmp2;
 	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
 	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
 					 FROM Course_packages NATURAL JOIN Buys WHERE Buys.number=cust_num ORDER BY b_date DESC LIMIT 1;
 	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
-	(SELECT date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
 	and C.rid=R.rid and C.eid=R.eid) AS session_date,
 	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
 	and C.rid=R.rid and C.eid=R.eid) AS start_time
@@ -359,7 +361,7 @@ BEGIN
 	ORDER BY session_date ASC, start_time ASC;
 	RETURN (SELECT row_to_json(t)
 	FROM (
-		SELECT name, price, num_free_registrations, num_remaining_redemptions, b_date,
+		SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
 		(
 			SELECT json_agg(d)
 			FROM (
