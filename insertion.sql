@@ -329,6 +329,8 @@ INSERT INTO Courses (duration, description, title, name) VALUES (60, 'Course nam
 -------- Insert Sessions
 
 -- Positve insertions for Sessions
+
+
 -- Negative insertions for Sessions
 
 -- <----------------------associations----------------------->
