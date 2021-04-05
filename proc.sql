@@ -92,11 +92,11 @@ $$ LANGUAGE plpgsql;
 
 /* 4 */
 CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
-                                             ccvv INTEGER)
+                                             cvv INTEGER)
 AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
-	VALUES (cnumber, cexpiry_date, ccvv, cid);
+	VALUES (cnumber, cexpiry_date, cvv, cid);
 END;
 $$ LANGUAGE plpgsql;
 
