@@ -165,6 +165,65 @@ BEFORE INSERT ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION registration_capacity_func();
 
+/* 12 */
+CREATE OR REPLACE FUNCTION package_redemption_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
+	
+	IF EXISTS (SELECT 1
+			   FROM Redeems R NATURAL JOIN Buys B NATURAL JOIN Credit_cards C
+			   WHERE C.cust_id = customer_id
+			   and NEW.sid = R.sid
+			   and NEW.course_id = R.course_id
+			   and NEW.launch_date = R.launch_date
+			   and NEW.rid = R.rid
+			   and NEW.eid = R.eid) THEN
+	 	RAISE EXCEPTION 'Course fee is paid by package redemption!';
+		RETURN NULL;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER course_fee_paid_by_redemption_trigger
+BEFORE INSERT OR UPDATE ON Registers
+FOR EACH ROW EXECUTE FUNCTION package_redemption_check();
+
+CREATE OR REPLACE FUNCTION card_payment_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Buys B NATURAL JOIN Credit_cards C
+	WHERE NEW.package_id = B.package_id
+	and NEW.number = B.number
+	and NEW.b_date = B.b_date;
+	
+	IF EXISTS (SELECT 1
+			   FROM Registers R NATURAL JOIN Credit_cards C
+			   WHERE C.cust_id = customer_id
+			   and NEW.sid = R.sid
+			   and NEW.course_id = R.course_id
+			   and NEW.launch_date = R.launch_date
+			   and NEW.rid = R.rid
+			   and NEW.eid = R.eid) THEN
+		RAISE EXCEPTION 'Course fee is paid by credit card!';
+		RETURN NULL;
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER course_fee_paid_by_card_trigger
+BEFORE INSERT OR UPDATE ON Redeems
+FOR EACH ROW EXECUTE FUNCTION card_payment_check();
+
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
