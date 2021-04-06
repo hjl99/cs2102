@@ -64,24 +64,55 @@ CALL update_credit_card(2, 2, '2021-04-30', 2);
 CALL add_course_packages('package_A', 1, '2021-04-01', '2021-04-30', 1.0);
 
 CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
-CALL add_course('course_A2', 'course_A2', 'course_area_A',2);    
+CALL add_course('course_A2', 'course_A2', 'course_area_A',4);    
 /* Test case for 6 and 10 */
-
+--first course offering we primarily concerned with
 INSERT INTO Offerings VALUES
 (1, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 11);
+-- this offering is to make B have 1 hour left
+INSERT INTO Offerings VALUES
+(2, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 11);
 INSERT INTO Sessions VALUES
 (1, '2021-04-01', '09:00:00', 
 '10:00:00', 1, '2021-03-01', 1, 4);
 INSERT INTO Sessions VALUES
 (3, '2021-04-01', '11:00:00', 
 '12:00:00', 1, '2021-03-01', 1, 4);
+-- make b hav 1 hr left
+INSERT INTO Sessions VALUES
+(1, '2021-04-02', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(2, '2021-04-03', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(3, '2021-04-04', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(4, '2021-04-05', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(5, '2021-04-06', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(6, '2021-04-07', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(7, '2021-04-08', '14:00:00', 
+'18:00:00', 2, '2021-03-01', 2, 7);
+INSERT INTO Sessions VALUES
+(4, '2021-04-08', '14:00:00', 
+'18:00:00', 1, '2021-03-01', 1, 7);
+
+
 SELECT * FROM find_instructors(1,'2021-04-01','10:00');
 
-SELECT eid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
+CREATE TEMP TABLE IF NOT EXISTS temp_table AS
+SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
 FROM Sessions 
 GROUP BY eid;
-
-
+(SELECT hours FROM temp_table WHERE iid = 7) +
+(SELECT duration FROM Courses where Courses.course_id = 1);
 
 
 

@@ -135,7 +135,7 @@ CREATE TABLE Sessions (
     ON DELETE CASCADE deferrable initially immediate,
     PRIMARY KEY (sid, course_id, launch_date),
     CONSTRAINT start_end_time_validity CHECK (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
-    CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))
+    CONSTRAINT lunch_hour_validatity CHECK (start_time not in ('12:00:00', '13:00:00') and end_time not in ('13:00:00', '14:00:00'))--todo
 );
 
 -- <----------------------associations----------------------->
