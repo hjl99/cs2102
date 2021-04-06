@@ -62,11 +62,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 2 */
-CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) 
-AS $$
+CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) AS $$
 BEGIN
     IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
-        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date) > 0
+        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date and is_ongoing=true) > 0
         or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
     THEN 
         RAISE EXCEPTION 'Employee cannot be removed!';
@@ -91,6 +90,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 4 TESTED*/
+DROP PROCEDURE IF EXISTS update_credit_card;
 CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
                                              cvv INTEGER)
 AS $$
@@ -126,6 +126,7 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
                     WHERE I.eid = S.eid
                     and sess_date = S.s_date
                     and (sess_start_hour + INTERVAL '1 hours' * 
+					and is_ongoing=true
                     ((SELECT duration FROM Courses where Courses.course_id = course_id) + 1) > S.start_time 
                     or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour')
@@ -159,7 +160,7 @@ BEGIN
         start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
         FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
         NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
-        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
+        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) and is_ongoing=true
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
         i := date_part('day', start_date);
@@ -217,13 +218,13 @@ BEGIN
 					 FROM Sessions S
 					 WHERE R.rid = S.rid 
 					  and S.date = sess_date 
+					  and is_ongoing=true
 					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
 						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
 END;
 $$ LANGUAGE plpgsql;
 
 /* 9 */
-
 CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
 RETURNS TABLE(rrid INTEGER, capacity INTEGER, dday DATE, arr TIME[]) AS $$
 DECLARE
@@ -246,7 +247,7 @@ BEGIN
 				EXIT;
 			END IF;
 			curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
-			OPEN curs2 FOR SELECT * FROM Sessions S WHERE S.s_date = curr_date and S.rid=room_var.rid ORDER BY start_time ASC;
+			OPEN curs2 FOR SELECT * FROM Sessions S WHERE S.s_date = curr_date and S.rid=room_var.rid and is_ongoing=true ORDER BY start_time ASC;
 			LOOP
 				FETCH curs2 INTO row_var;
 				EXIT WHEN NOT FOUND;
@@ -281,7 +282,7 @@ CREATE TYPE Session AS (
     rid INTEGER,
     instructor_id INTEGER --TO BE REMOVED 
 );
-CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
+CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
 launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
 DECLARE
     course_and_area RECORD;
@@ -311,9 +312,16 @@ BEGIN
         cid, launch_date, sess[i].rid, sess[i].instructor_id);
     END LOOP;
     INSERT INTO Offerings VALUES
-    (coid, cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
+    (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
+
+/* 11 */
+CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
+                                    start_date DATE, end_date DATE, p_price FLOAT) AS $$
+INSERT INTO Course_packages (sale_start_date, sale_end_date, num_free_registrations, package_name, price)
+VALUES (start_date, end_date, num_free, p_name, p_price);
+$$ LANGUAGE sql;
 
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
@@ -323,9 +331,10 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 	WHERE sale_end_date >= CURRENT_DATE and CURRENT_DATE >= sale_start_date;
 $$ LANGUAGE sql;
 
+DROP FUNCTION IF EXISTS buy_course_package;
 /* 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
-RETURNS VOID AS $$
+ AS $$
 DECLARE
 	cnum INTEGER;
 	rnum INTEGER;
@@ -357,9 +366,9 @@ BEGIN
 					 FROM Course_packages NATURAL JOIN Buys WHERE Buys.number=cust_num ORDER BY b_date DESC LIMIT 1;
 	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
 	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid) AS session_date,
+	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS session_date,
 	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid) AS start_time
+	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS start_time
 	FROM Redeems R
 	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
 	ORDER BY session_date ASC, start_time ASC;
@@ -385,20 +394,48 @@ RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEG
     SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
     FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
     NATURAL JOIN Rooms
-    WHERE course_id = coid
+    WHERE course_id = coid and is_ongoing=true
     GROUP BY s_date, start_time, name, seating_capacity;
 $$ LANGUAGE sql;
+
+/* 17 */
+CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
+in_sid INTEGER, method TEXT) AS $$
+DECLARE
+    credit_card_info RECORD;
+    buy_info RECORD;
+BEGIN
+    SELECT * INTO credit_card_info FROM Credit_cards WHERE cust_id = in_cust_id
+    ORDER BY from_date DESC;
+    INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
+    IF method = 'redemption' THEN
+        SELECT * INTO buy_info FROM Buys WHERE EXISTS (
+            SELECT 1
+            FROM Buys B NATURAL JOIN Credit_cards C
+            WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
+            ORDER BY b_date DESC
+        );
+        IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
+        INSERT INTO Redeems VALUES
+        (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
+        cid, in_launch_date, in_sid);
+        --UPDATE Buys SET num_remaining_redemptions = num_remaining_redemptions - 1  assuming this is done by trigger
+    ELSIF method <> 'payment' THEN
+        RAISE EXCEPTION 'The method can only be payment or redemption';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 22 */
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
 BEGIN
-	IF ((SELECT s_date FROM Sessions S WHERE S.course_id=cid and S.launch_date=ld and S.sid=ssid ) > CURRENT_DATE and 
+	IF ((SELECT s_date FROM Sessions S WHERE S.course_id=cid and S.launch_date=ld and S.sid=ssid and is_ongoing=true) > CURRENT_DATE and 
 		(SELECT count(*) FROM Registers R WHERE R.course_id=cid and R.launch_date=ld and R.sid=ssid) <
 		(SELECT seating_capacity FROM Rooms R WHERE R.rid=rrid)) THEN
 		UPDATE Sessions
 		SET rid=rrid
-		WHERE course_id=cid and launch_date=ld and sid=ssid;
+		WHERE course_id=cid and launch_date=ld and sid=ssid and is_ongoing=true;
 	ELSE
 		RAISE NOTICE 'Unable to change room!';
 	END IF;
@@ -431,10 +468,10 @@ RETURNS TABLE (title TEXT, course_area TEXT, start_date DATE, end_date DATE, reg
 BEGIN
 	RETURN QUERY
 	SELECT C.title, C.course_area_name, C.start_date, C.end_date, C.reg_deadline, C.fees, 
-	((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date) - 
+	((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
 	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))::INTEGER AS num_remaining_seats
 	FROM (Offerings NATURAL JOIN Courses) C
-	WHERE C.reg_deadline >= CURRENT_DATE and ((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date) - 
+	WHERE C.reg_deadline >= CURRENT_DATE and ((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
 	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))>0
 	ORDER BY C.reg_deadline ASC, C.title ASC;
 END;

@@ -4,9 +4,11 @@
 it's march*/
 /* one-indexed. Rid increments by 1, Locations are a single capital letter increment by 1, 
 seating capacity == rid*/
+DELETE FROM Redeems;
+DELETE FROM Registers;
+DELETE FROM Sessions;
 DELETE FROM Rooms;
 DELETE FROM Specializes;
-DELETE FROM Sessions;
 DELETE FROM Offerings;
 DELETE FROM Courses;
 DELETE FROM Course_areas;
@@ -20,11 +22,13 @@ DELETE FROM Full_time_emp;
 DELETE FROM Credit_cards;
 DELETE FROM Customers;
 DELETE FROM Employees;
+DELETE FROM Course_packages;
 -- RESETS serial number
 TRUNCATE Customers RESTART IDENTITY CASCADE;
 TRUNCATE Employees RESTART IDENTITY CASCADE;
 TRUNCATE Courses RESTART IDENTITY CASCADE;
 TRUNCATE Offerings RESTART IDENTITY CASCADE;
+TRUNCATE Course_packages RESTART IDENTITY CASCADE;
 insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
 insert into Rooms values (2,'room_B', 2);
 insert into Rooms values (3,'room_C', 3);
@@ -54,12 +58,18 @@ CALL add_customer('c_D', 'addr_D', 20000000, 'D@D.com', 4, '2021-04-30', 4);
 CALL add_customer('c_E', 'addr_E', 30000000, 'E@E.com', 5, '2021-04-30', 5);
 
 CALL update_credit_card(2, 2, '2021-04-30', 2);
+
+CALL add_course_packages('package_A', 1, '2021-04-01', '2021-04-30', 1.0);
+
 CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
 CALL add_course('course_A2', 'course_A2', 'course_area_A',2);
 
-CALL add_course_offering(1,1,1.0,'2021-03-01','2021-03-01', 2, 10, 
- ('2021-04-01', '09:00:00', 1, 4), ('2021-04-02', '10:00:00', 2, 7));
+CALL add_course_offering(1,1.0,'2021-03-01','2021-03-01', 2, 10, 
+ ('2021-04-01', '09:00:00', 1, 4), ('2021-04-02', '10:00:00', 2, 7));    
 
+
+
+CALL register_session(1, 1, '2021-03-01', 1, 'redemption');
 -- insert into Course_areas VALUES ('area managed by 9', 9);
 -- insert into Courses VALUES (10, 13, 'test', 'title 10', 'area managed by 9');
 -- insert into Offerings VALUES (10, 10, '2021-02-01', '2021-02-15', NULL, '2021-02-15', 100,100, 100,10);
