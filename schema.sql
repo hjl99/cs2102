@@ -171,7 +171,7 @@ CREATE TABLE Buys (
     CONSTRAINT num_remaining_redemptions_non_neg CHECK (num_remaining_redemptions >= 0)
 );
 
-/* Requires triggers to enforce that each customer can register for at most one sesion of a course */
+/* Requires triggers to enforce that each customer can register for at most one sesion of a course offering (added)*/
 CREATE TABLE Registers (
     number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
     course_id INTEGER,

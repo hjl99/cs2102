@@ -190,16 +190,15 @@ BEGIN
 	WHERE NEW.number = C.number;
 	
 	IF EXISTS (SELECT 1
-			   FROM Redeems R NATURAL JOIN Buys B NATURAL JOIN Credit_cards C
+			   FROM Redeems R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   and NEW.rid = R.rid
-			   and NEW.eid = R.eid) THEN
+			   and NEW.launch_date = R.launch_date) THEN
 	 	RAISE EXCEPTION 'Course fee is paid by package redemption!';
 		RETURN NULL;
 	END IF;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -214,27 +213,24 @@ DECLARE
 	customer_id INTEGER;
 BEGIN
 	SELECT C.cust_id INTO customer_id
-	FROM Buys B NATURAL JOIN Credit_cards C
-	WHERE NEW.package_id = B.package_id
-	and NEW.number = B.number
-	and NEW.b_date = B.b_date;
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
 	
 	IF EXISTS (SELECT 1
 			   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   and NEW.rid = R.rid
-			   and NEW.eid = R.eid) THEN
+			   and NEW.launch_date = R.launch_date) THEN
 		RAISE EXCEPTION 'Course fee is paid by credit card!';
 		RETURN NULL;
 	END IF;
+
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER course_fee_paid_by_card_trigger
+CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
 FOR EACH ROW EXECUTE FUNCTION card_payment_check();
 
@@ -429,3 +425,40 @@ CREATE TRIGGER session_valid_bit_trigger
 BEFORE DELETE ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION session_valid_bit_func();
+
+/* 22 */
+CREATE OR REPLACE FUNCTION one_registration_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
+	
+	IF EXISTS (SELECT 1
+	 		   FROM Registers R NATURAL JOIN Credit_cards C
+			   WHERE C.cust_id = customer_id
+			   and NEW.course_id = R.course_id
+			   and NEW.launch_date = R.launch_date
+			   UNION
+			   SELECT 1
+			   FROM Redeems R NATURAL JOIN Credit_cards C
+			   WHERE C.cust_id = customer_id
+			   and NEW.course_id = R.course_id
+			   and NEW.launch_date = R.launch_date) THEN
+		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
+		RETURN NULL;
+	END IF;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER one_registration_trigger
+BEFORE INSERT OR UPDATE ON Redeems
+FOR EACH ROW EXECUTE FUNCTION one_registration_check();
+
+CREATE TRIGGER one_registration_trigger
+BEFORE INSERT OR UPDATE ON Registers
+FOR EACH ROW EXECUTE FUNCTION one_registration_check();
