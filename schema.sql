@@ -74,7 +74,7 @@ CREATE TABLE Customers (
 CREATE TABLE Rooms (
     rid SERIAL PRIMARY KEY,
     location TEXT,
-    seating_capacity INTEGER 
+    seating_capacity INTEGER
     CONSTRAINT seating_capacity_pos CHECK (seating_capacity > 0)
 );
 
@@ -130,6 +130,7 @@ CREATE TABLE Sessions (
     launch_date DATE,
     rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE deferrable initially immediate,
     eid INTEGER NOT NULL REFERENCES Instructors ON DELETE CASCADE deferrable initially immediate,
+    is_ongoing BOOLEAN DEFAULT TRUE,
     CONSTRAINT offerings_fkey FOREIGN KEY (course_id, launch_date) REFERENCES Offerings 
     ON DELETE CASCADE deferrable initially immediate,
     PRIMARY KEY (sid, course_id, launch_date),
@@ -148,7 +149,7 @@ CREATE TABLE Cancels (
     sid INTEGER,
     FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
-    CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = null) or (package_credit = 1 and refund_amt = null))
+    CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = NULL) or (package_credit = 1 and refund_amt = NULL) or (package_credit = NULL and refund_amt = NULL))
 );
 /* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */

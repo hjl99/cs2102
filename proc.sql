@@ -66,7 +66,7 @@ CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE)
 AS $$
 BEGIN
     IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
-        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date) > 0
+        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date and is_ongoing=true) > 0
         or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
     THEN 
         RAISE EXCEPTION 'Employee cannot be removed!';
@@ -127,6 +127,7 @@ RETURNS TABLE(eid INTEGER, name TEXT) AS $$
                     WHERE I.eid = S.eid
                     and sess_date = S.s_date
                     and (sess_start_hour + INTERVAL '1 hours' * 
+					and is_ongoing=true
                     ((SELECT duration FROM Courses where Courses.course_id = course_id) + 1) > S.start_time 
                     or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour')
@@ -160,7 +161,7 @@ BEGIN
         start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
         FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
         NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
-        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) 
+        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) and is_ongoing=true
         ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
         i := date_part('day', start_date);
@@ -218,6 +219,7 @@ BEGIN
 					 FROM Sessions S
 					 WHERE R.rid = S.rid 
 					  and S.date = sess_date 
+					  and is_ongoing=true
 					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
 						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
 END;
@@ -225,47 +227,50 @@ $$ LANGUAGE plpgsql;
 
 /* 9 */
 CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
-RETURNS TABLE(room_identifier INTEGER, room_capacity INTEGER, day DATE, array_of_hour TIME[]) AS $$
+RETURNS TABLE(rrid INTEGER, capacity INTEGER, dday DATE, arr TIME[]) AS $$
 DECLARE
 	curr_arr TIME[];
 	curr_date DATE;
 	curr_time TIME;
-	curs refcursor;
+	curs1 CURSOR FOR (SELECT rid FROM Rooms ORDER BY rid ASC);
+	curs2 refcursor;
 	row_var RECORD;
-	prev_row RECORD;
 	curr_rid INTEGER;
+	room_var RECORD;
 BEGIN
-	curr_date := start_date;
+	OPEN curs1;
 	LOOP
-		IF (curr_date > end_date) THEN
-			EXIT;
-		END IF;
-		curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
-		OPEN curs FOR SELECT * FROM Sessions WHERE date = curr_date ORDER BY rid ASC, start_time ASC; 
+		FETCH curs1 into room_var;
+		EXIT WHEN NOT FOUND;
+		curr_date := start_date;
 		LOOP
-			prev_row := row_var;
-			FETCH curs INTO row_var;
-			EXIT WHEN NOT FOUND;
-			IF (prev_row.rid <> row_var.rid and prev_row <> null) THEN
-				room_identifier := prev_row.rid;
-				room_capacity := (SELECT seating_capacity FROM Rooms WHERE rid=room_identifier);
-				day := curr_date;
-				array_of_hour := curr_arr;
-				RETURN NEXT;
-				curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+			IF (curr_date > end_date) THEN
+				EXIT;
 			END IF;
-			curr_time := row_var.start_time;
+			curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
+			OPEN curs2 FOR SELECT * FROM Sessions S WHERE S.s_date = curr_date and S.rid=room_var.rid and is_ongoing=true ORDER BY start_time ASC;
 			LOOP
-				IF (curr_time = row_var.end_time) THEN
-					EXIT;
-				END IF;
-				curr_arr := array_remove(curr_arr, curr_time);
-				curr_time := curr_time + INTERVAL '1 HOUR';
+				FETCH curs2 INTO row_var;
+				EXIT WHEN NOT FOUND;
+				curr_time := row_var.start_time;
+				LOOP
+					IF (curr_time = row_var.end_time) THEN
+						EXIT;
+					END IF;
+					curr_arr := array_remove(curr_arr, curr_time);
+					curr_time := curr_time + INTERVAL '1 HOUR';
+				END LOOP;
 			END LOOP;
+			rrid := room_var.rid;
+			capacity := (SELECT seating_capacity FROM Rooms WHERE rid=room_var.rid);
+			dday := curr_date;
+			arr := curr_arr;
+			RETURN NEXT;
+			curr_date := curr_date + INTERVAL '1 DAY';
+			CLOSE curs2;
 		END LOOP;
-		curr_date := curr_date + INTERVAL '1 DAY';
-		CLOSE curs;
 	END LOOP;
+	CLOSE curs1;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -362,9 +367,9 @@ BEGIN
 					 FROM Course_packages NATURAL JOIN Buys WHERE Buys.number=cust_num ORDER BY b_date DESC LIMIT 1;
 	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
 	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid) AS session_date,
+	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS session_date,
 	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid) AS start_time
+	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS start_time
 	FROM Redeems R
 	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
 	ORDER BY session_date ASC, start_time ASC;
@@ -390,10 +395,25 @@ RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEG
     SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
     FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
     NATURAL JOIN Rooms
-    WHERE course_id = coid
+    WHERE course_id = coid and is_ongoing=true
     GROUP BY s_date, start_time, name, seating_capacity;
 $$ LANGUAGE sql;
 
+/* 22 */
+CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
+AS $$
+BEGIN
+	IF ((SELECT s_date FROM Sessions S WHERE S.course_id=cid and S.launch_date=ld and S.sid=ssid and is_ongoing=true) > CURRENT_DATE and 
+		(SELECT count(*) FROM Registers R WHERE R.course_id=cid and R.launch_date=ld and R.sid=ssid) <
+		(SELECT seating_capacity FROM Rooms R WHERE R.rid=rrid)) THEN
+		UPDATE Sessions
+		SET rid=rrid
+		WHERE course_id=cid and launch_date=ld and sid=ssid and is_ongoing=true;
+	ELSE
+		RAISE NOTICE 'Unable to change room!';
+	END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 24 */
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
@@ -414,6 +434,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+/* 15 */
+CREATE OR REPLACE FUNCTION get_available_course_offerings()
+RETURNS TABLE (title TEXT, course_area TEXT, start_date DATE, end_date DATE, reg_deadline DATE, fees FLOAT, num_remaining_seats INTEGER) AS $$
+BEGIN
+	RETURN QUERY
+	SELECT C.title, C.course_area_name, C.start_date, C.end_date, C.reg_deadline, C.fees, 
+	((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
+	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))::INTEGER AS num_remaining_seats
+	FROM (Offerings NATURAL JOIN Courses) C
+	WHERE C.reg_deadline >= CURRENT_DATE and ((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
+	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))>0
+	ORDER BY C.reg_deadline ASC, C.title ASC;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 25 */
 -- CREATE OR REPLACE FUNCTION pay_salary()
