@@ -7,6 +7,7 @@ seating capacity == rid*/
 DELETE FROM Redeems;
 DELETE FROM Registers;
 DELETE FROM Sessions;
+DELETE FROM Offerings;
 DELETE FROM Rooms;
 DELETE FROM Specializes;
 DELETE FROM Offerings;
@@ -44,6 +45,7 @@ CALL add_employee('m_C', 'addr_C', 30000000, 'C@C.com', 300.0, '2021-04-03', 'ma
 CALL add_employee('pti_A', 'addr_A', 10000000, 'A@A.com', 1.0, '2021-04-01', 'part time instructor', '{"course_area_A"}');
 CALL add_employee('pti_B', 'addr_B', 20000000, 'B@B.com', 2.0, '2021-04-02', 'part time instructor', '{"course_area_B"}');
 CALL add_employee('pti_C', 'addr_C', 30000000, 'C@C.com', 3.0, '2021-04-03', 'part time instructor', '{"course_area_C"}');
+CALL add_employee('pti_A2', 'addr_A2', 10000000, 'A2@A.com', 1.0, '2021-04-01', 'part time instructor', '{"course_area_A"}');
 CALL add_employee('fti_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'full time instructor', '{"course_area_A"}');
 CALL add_employee('fti_B', 'addr_B', 20000000, 'B@B.com', 200, '2021-04-02', 'full time instructor', '{"course_area_B"}');
 CALL add_employee('fti_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'full time instructor', '{"course_area_C"}');
@@ -62,30 +64,110 @@ CALL update_credit_card(2, 2, '2021-04-30', 2);
 CALL add_course_packages('package_A', 1, '2021-04-01', '2021-04-30', 1.0);
 
 CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
-CALL add_course('course_A2', 'course_A2', 'course_area_A',2);
+CALL add_course('course_A2', 'course_A2', 'course_area_A',2);    
+/* Test case for 6 and 10 */
 
-CALL add_course_offering(1,1.0,'2021-03-01','2021-03-01', 2, 10, 
- ('2021-04-01', '09:00:00', 1, 4), ('2021-04-02', '10:00:00', 2, 7));    
+INSERT INTO Offerings VALUES
+(1, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 11);
+INSERT INTO Sessions VALUES
+(1, '2021-04-01', '09:00:00', 
+'10:00:00', 1, '2021-03-01', 1, 4);
+INSERT INTO Sessions VALUES
+(3, '2021-04-01', '11:00:00', 
+'12:00:00', 1, '2021-03-01', 1, 4);
+SELECT * FROM find_instructors(1,'2021-04-01','10:00');
+
+SELECT eid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
+FROM Sessions 
+GROUP BY eid;
 
 
 
-CALL register_session(1, 1, '2021-03-01', 1, 'redemption');
--- insert into Course_areas VALUES ('area managed by 9', 9);
--- insert into Courses VALUES (10, 13, 'test', 'title 10', 'area managed by 9');
--- insert into Offerings VALUES (10, 10, '2021-02-01', '2021-02-15', NULL, '2021-02-15', 100,100, 100,10);
--- CALL add_session(10, 1, '2021-02-13', '20:00:00', 11, 1);
--- insert INTO Employees VALUES (20), (21), (22);
--- insert into Instructors VALUES (20), (21), (22);
--- CALL add_session(10, 1, '2021-04-01',
---                     '10:00', 20, 1);
--- CALL add_session(10, 1, '2021-04-01',
---                     '10:00', 21, 1);
--- CALL add_session(10, 2, '2021-04-01',
---                     '15:00', 20, 1);
--- insert into Pay_slips VALUES (10,'2021-04-30', 2000, 3, 0);
--- insert into Pay_slips VALUES (20,'2021-04-30', 2000, 3, 0);
--- insert into Pay_slips VALUES (21,'2021-04-30', 4000, 2, 0);
--- insert into Specializes VALUES (20, 'area managed by 9');
--- insert into Specializes VALUES (21, 'area managed by 9');
--- SELECT add_customer('a', 'addr',123,'email', 123345,'2022-04-01',123);
--- insert into Registers VALUES (123345, 10, '2021-02-01', 1, '2021-03-01', 1, 20);
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TYPE IF EXISTS Session CASCADE;
+-- (session date, session start hour, and room identifier)
+CREATE TYPE Session AS (
+    start_date DATE,
+    start_hr TIME,
+    rid INTEGER
+);
+-- DROP PROCEDURE IF EXISTS add_course_offering;
+CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
+launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+DECLARE
+    course_and_area RECORD;
+    instructor_id INTEGER;
+    i INTEGER := 0;
+    sess_table RECORD;
+    start_date DATE;
+    end_date DATE;
+    cap INTEGER := 0;
+    valid BOOLEAN := 1;
+BEGIN
+    set constraints offerings_fkey deferred;
+    SELECT * INTO course_and_area FROM Courses WHERE course_id = cid;
+    -- get_available_instructors(cid, sess[i].start_date, sess[i].start_date);
+    FOR i IN 1 .. array_upper(sess,1) LOOP
+        cap := cap + (SELECT seating_capacity FROM Rooms R
+        WHERE R.rid = sess[i].rid);
+        IF start_date IS NULL THEN start_date := sess[i].start_date;
+        ELSIF start_date > sess[i].start_date THEN start_date:= sess[i].start_date;
+        END IF;
+        IF start_date IS NULL THEN end_date := sess[i].end_date;
+        ELSIF end_date < sess[i].start_date THEN end_date:= sess[i].start_date;
+        END IF;
+
+        -- INSERT INTO Sessions VALUES
+        -- (i, CURRENT_DATE, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour', 
+        -- cid, launch_date, sess[i].rid, sess[i].instructor_id);
+    END LOOP;
+    INSERT INTO Offerings VALUES
+    (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION helper1(i INTEGER)
+RETURNS INTEGER AS $$
+DECLARE 
+j INTEGER;
+BEGIN
+    raise notice 'i is %', i;
+    insert into Rooms values (i,'room_B', i);
+    j := helper2(i);
+    if j = 1 THEN
+        raise notice 'hit';
+        ROLLBACK;
+        raise notice 'hit';
+    end if;
+    return 1;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION helper2(i INTEGER)
+RETURNS INTEGER AS $$
+DECLARE 
+j INTEGER;
+BEGIN
+    i := i + 1;
+    raise notice 'j is %', i;
+    IF i = 4  THEN
+        return 1;
+    ELSE
+        insert into Rooms values (i,'room_B', i);
+        j := helper2(i);
+        return j;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

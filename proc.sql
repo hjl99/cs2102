@@ -114,30 +114,37 @@ BEGIN
     VALUES (title, description, duration, area);
 END;
 $$ LANGUAGE plpgsql;
-
+-- DROP FUNCTION IF EXISTS find_instructors(in_course_id INTEGER, sess_date DATE, sess_start_hour TIME);
 /* 6 */
-CREATE OR REPLACE FUNCTION find_instructors(course_id INTEGER, sess_date DATE, sess_start_hour TIME)
-RETURNS TABLE(eid INTEGER, name TEXT) AS $$
-	SELECT I.eid, E.name
-	FROM Instructors I NATURAL JOIN Employees E
+CREATE OR REPLACE FUNCTION find_instructors(in_course_id INTEGER, sess_date DATE, sess_start_hour TIME)
+RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
+BEGIN
+CREATE TEMP TABLE IF NOT EXISTS temp_table1 AS
+SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
+FROM Sessions 
+GROUP BY eid;
+return query SELECT I.eid, E.name
+	FROM Instructors I NATURAL JOIN Employees E NATURAL JOIN Specializes
 	WHERE NOT EXISTS (
                     SELECT 1
                     FROM Sessions S
                     WHERE I.eid = S.eid
                     and sess_date = S.s_date
-                    and (sess_start_hour + INTERVAL '1 hours' * 
 					and is_ongoing=true
-                    ((SELECT duration FROM Courses where Courses.course_id = course_id) + 1) > S.start_time 
+                    and (sess_start_hour
+                    + INTERVAL '1 hours' * ((SELECT duration FROM Courses where Courses.course_id = in_course_id) + 1)
+                    > S.start_time 
                     or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour')
+                    or (
+                        (SELECT hours FROM temp_table1 WHERE iid = I.eid) +
+                        (SELECT duration FROM Courses where Courses.course_id = in_course_id) > 30
                     )
-    AND NOT EXISTS (
-                    SELECT 1
-                    FROM pay_slips S
-                    WHERE I.eid = S.eid 
-                    and (num_work_hours + (SELECT duration FROM Courses where Courses.course_id = course_id) > 30)
-    );
-$$ LANGUAGE sql;
+                    )
+                    AND (SELECT course_area_name FROM Specializes WHERE eid = I.eid) = 
+                    (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id) ;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 7 */
 DROP FUNCTION IF EXISTS get_available_instructors;
@@ -225,6 +232,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 9 */
+DROP FUNCTION IF EXISTS get_available_rooms;
 CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
 RETURNS TABLE(rrid INTEGER, capacity INTEGER, dday DATE, arr TIME[]) AS $$
 DECLARE
@@ -308,7 +316,7 @@ BEGIN
         ELSIF end_date < sess[i].start_date THEN end_date:= sess[i].start_date;
         END IF;
         INSERT INTO Sessions VALUES
-        (i, CURRENT_DATE, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour', 
+        (i, start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour', 
         cid, launch_date, sess[i].rid, sess[i].instructor_id);
     END LOOP;
     INSERT INTO Offerings VALUES
@@ -331,7 +339,6 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 	WHERE sale_end_date >= CURRENT_DATE and CURRENT_DATE >= sale_start_date;
 $$ LANGUAGE sql;
 
-DROP FUNCTION IF EXISTS buy_course_package;
 /* 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
  AS $$
