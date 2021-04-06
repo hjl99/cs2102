@@ -91,6 +91,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 4 TESTED*/
+DROP PROCEDURE IF EXISTS update_credit_card;
 CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
                                              cvv INTEGER)
 AS $$
@@ -277,7 +278,7 @@ CREATE TYPE Session AS (
     rid INTEGER,
     instructor_id INTEGER --TO BE REMOVED 
 );
-CREATE OR REPLACE PROCEDURE add_course_offering(coid INTEGER, cid INTEGER, fees FLOAT,
+CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
 launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
 DECLARE
     course_and_area RECORD;
@@ -307,9 +308,16 @@ BEGIN
         cid, launch_date, sess[i].rid, sess[i].instructor_id);
     END LOOP;
     INSERT INTO Offerings VALUES
-    (coid, cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
+    (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
+
+/* 11 */
+CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
+                                    start_date DATE, end_date DATE, p_price FLOAT) AS $$
+INSERT INTO Course_packages (sale_start_date, sale_end_date, num_free_registrations, package_name, price)
+VALUES (start_date, end_date, num_free, p_name, p_price);
+$$ LANGUAGE sql;
 
 /* 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
@@ -319,9 +327,10 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 	WHERE sale_end_date >= CURRENT_DATE and CURRENT_DATE >= sale_start_date;
 $$ LANGUAGE sql;
 
+DROP FUNCTION IF EXISTS buy_course_package;
 /* 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
-RETURNS VOID AS $$
+ AS $$
 DECLARE
 	cnum INTEGER;
 	rnum INTEGER;
