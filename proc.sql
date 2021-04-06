@@ -62,8 +62,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 2 */
-CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) 
-AS $$
+CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) AS $$
 BEGIN
     IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
         or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date and is_ongoing=true) > 0
@@ -398,6 +397,34 @@ RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEG
     WHERE course_id = coid and is_ongoing=true
     GROUP BY s_date, start_time, name, seating_capacity;
 $$ LANGUAGE sql;
+
+/* 17 */
+CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
+in_sid INTEGER, method TEXT) AS $$
+DECLARE
+    credit_card_info RECORD;
+    buy_info RECORD;
+BEGIN
+    SELECT * INTO credit_card_info FROM Credit_cards WHERE cust_id = in_cust_id
+    ORDER BY from_date DESC;
+    INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
+    IF method = 'redemption' THEN
+        SELECT * INTO buy_info FROM Buys WHERE EXISTS (
+            SELECT 1
+            FROM Buys B NATURAL JOIN Credit_cards C
+            WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
+            ORDER BY b_date DESC
+        );
+        IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
+        INSERT INTO Redeems VALUES
+        (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
+        cid, in_launch_date, in_sid);
+        --UPDATE Buys SET num_remaining_redemptions = num_remaining_redemptions - 1  assuming this is done by trigger
+    ELSIF method <> 'payment' THEN
+        RAISE EXCEPTION 'The method can only be payment or redemption';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 22 */
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
