@@ -452,6 +452,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 23 */
+CREATE OR REPLACE PROCEDURE remove_session(i_course_id INTEGER, i_launch_date DATE, i_sess_number INTEGER)
+AS $$
+DECLARE
+	session_date DATE;
+	session_start_time TIME;
+BEGIN
+	SELECT S.s_date INTO session_date
+	FROM Sessionns S
+	WHERE i_course_id = S.course_id
+	and i_launch_date = S.launch_date
+	and i_sess_number = S.sid;
+
+	SELECT S.start_time INTO session_start_time
+	FROM Sessionns S
+	WHERE i_course_id = S.course_id
+	and i_launch_date = S.launch_date
+	and i_sess_number = S.sid;
+	
+	IF (CURRENT_DATE > session_date or (CURRENT_DATE = session_date and CURRENT_TIME > session_start_time)) THEN
+		RAISE EXCEPTION 'The session has already started!';
+	ELSIF (EXISTS (SELECT 1
+				  FROM Registers R
+				  WHERE R.sid = i_sess_number
+				  and R.course_id = i_course_id
+				  and R.launch_date = i_launch_date
+		  		  UNION
+		       	  SELECT 1
+				  FROM Redeems R
+				  WHERE R.sid = i_sess_number
+				  and R.course_id = i_course_id
+				  and R.launch_date = i_launch_date)) THEN
+		RAISE EXCEPTION 'There is at least one registration for the session!';
+	END IF;
+	
+	DELETE FROM Sessions WHERE i_course_id = course_id and i_launch_date = launch_date and i_sess_number = sid;
+	
+END;
+$$ LANGUAGE plpgsql;
+
 /* 24 */
 CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
