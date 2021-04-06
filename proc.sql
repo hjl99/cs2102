@@ -449,7 +449,13 @@ DECLARE
 	session_date DATE;
 	session_start_time TIME;
 BEGIN
-	SELECT S.s_date, S.start_time INTO session_date, session_start_time
+	SELECT S.s_date INTO session_date
+	FROM Sessionns S
+	WHERE i_course_id = S.course_id
+	and i_launch_date = S.launch_date
+	and i_sess_number = S.sid;
+
+	SELECT S.start_time INTO session_start_time
 	FROM Sessionns S
 	WHERE i_course_id = S.course_id
 	and i_launch_date = S.launch_date
