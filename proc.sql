@@ -118,7 +118,10 @@ $$ LANGUAGE plpgsql;
 /* 6 */
 CREATE OR REPLACE FUNCTION find_instructors(in_course_id INTEGER, sess_date DATE, sess_start_hour TIME)
 RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
+DECLARE
+duration INTEGER := (SELECT duration FROM Courses where Courses.course_id = in_course_id);
 BEGIN
+raise notice 'it is %', duration;
 CREATE TEMP TABLE IF NOT EXISTS temp_table AS
 SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
 FROM Sessions 
@@ -132,14 +135,14 @@ return query SELECT I.eid, E.name
                     and sess_date = S.s_date
 					and is_ongoing=true
                     and (sess_start_hour
-                    + INTERVAL '1 hours' * ((SELECT duration FROM Courses where Courses.course_id = in_course_id) + 1)
+                    + INTERVAL '1 hours' * (duration + 1)
                     > S.start_time 
                     or 
                     sess_start_hour < S.end_time + INTERVAL '1 hour'
-                    or
-                        (SELECT hours FROM temp_table WHERE iid = I.eid) +
-                        (SELECT duration FROM Courses where Courses.course_id = in_course_id) > 30
                     )
+                    ) and (
+                        EXISTS(SELECT 1 from full_time_emp FT WHERE FT.eid = I.eid) or  
+                        COALESCE((SELECT(SELECT hours FROM temp_table WHERE iid = I.eid) + duration), 0) <= 30
                     )
                     AND (SELECT course_area_name FROM Specializes WHERE eid = I.eid) = 
                     (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id) ;

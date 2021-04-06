@@ -107,12 +107,6 @@ INSERT INTO Sessions VALUES
 
 SELECT * FROM find_instructors(1,'2021-04-01','10:00');
 
-CREATE TEMP TABLE IF NOT EXISTS temp_table AS
-SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
-FROM Sessions 
-GROUP BY eid;
-(SELECT hours FROM temp_table WHERE iid = 7) +
-(SELECT duration FROM Courses where Courses.course_id = 1);
 
 
 
