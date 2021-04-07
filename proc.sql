@@ -552,6 +552,82 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 26 */
+CREATE OR REPLACE FUNCTION promote_courses()
+RETURNS TABLE(customer_id INTEGER, customer_name TEXT, ca_of_interest TEXT, course_title TEXT, 
+			  launch_date DATE, reg_deadline DATE, fees FLOAT)
+AS $$
+DECLARE
+	curs CURSOR FOR (SELECT * FROM Customers);
+	ca_curs REFCURSOR;
+	course_curs REFCURSOR;
+	co_curs REFCURSOR;
+	customer RECORD;
+	ca RECORD;
+	course RECORD;
+	co RECORD;
+BEGIN
+	OPEN curs;
+	LOOP
+		FETCH curs INTO customer;
+		EXIT WHEN NOT FOUND;
+		IF NOT EXISTS (SELECT 1 
+					   FROM Registers R NATURAL JOIN Credit_cards C 
+					   WHERE customer.cust_id = C.cust_id 
+					   and R.r_date > DATE(CURRENT_DATE - INTERVAL '6 months') 
+					   UNION 
+					   SELECT 1 
+					   FROM Redeems R NATURAL JOIN Credit_cards C 
+					   WHERE customer.cust_id = C.cust_id 
+					   and R.r_date > DATE(CURRENT_DATE - INTERVAL '6 months')) THEN
+			OPEN ca_curs FOR (WITH Registrations AS 
+							  (SELECT R.sid, R.course_id, R.launch_date, R.r_date
+							   FROM Redeems R NATURAL JOIN Credit_cards C 
+							   WHERE r.cust_id = C.cust_id 
+							   UNION
+							   SELECT R.sid, R.course_id, R.launch_date, R.r_date
+							   FROM Registers R NATURAL JOIN Credit_cards C
+							   WHERE r.cust_id = C.cust_id)
+							  SELECT C.course_area_name
+							  FROM Registrations R NATURAL JOIN Courses C
+							  ORDER BY R.r_date DESC
+						  	  LIMIT 3);					  
+			LOOP
+				FETCH ca_curs INTO ca;
+				EXIT WHEN NOT FOUND;
+				OPEN course_curs FOR (SELECT C.course_id, C.title
+									  FROM Courses C 
+									  WHERE C.course_area_name = ca.course_area_name);
+				LOOP
+					FETCH course_curs INTO course;
+					EXIT WHEN NOT FOUND;
+					OPEN co_curs FOR (SELECT O.launch_date, O.reg_deadline, O.fees
+									  FROM Offerings O
+									  WHERE O.course_id = course.course_id 
+									  and CURRENT_DATE <= O.reg_deadline);
+					LOOP
+						FETCH co_curs INTO co;
+						EXIT WHEN NOT FOUND;
+						customer_id := customer.cust_id;
+						customer_name := customer.cust_name;
+						ca_of_interest := ca.course_area_name;
+						course_title := course.title;
+						launch_date := co.launch_date;
+						reg_deadline := co.reg_deadline;
+						fees := co.fees;
+						RETURN NEXT;
+					END LOOP;
+					CLOSE co_curs;
+				END LOOP;
+				CLOSE course_curs;
+			END LOOP;
+			CLOSE ca_curs;
+		END IF;
+	END LOOP;
+	CLOSE curs;
+END;
+$$ LANGUAGE plpgsql;
+
 /* 25 */
 -- CREATE OR REPLACE FUNCTION pay_salary()
 -- RETURNS @salTable TABLE(eid INTEGER, ename TEXT, estatus TEXT, num_work_days INTEGER, 
