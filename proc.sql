@@ -121,7 +121,6 @@ RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
 DECLARE
 duration INTEGER := (SELECT duration FROM Courses where Courses.course_id = in_course_id);
 BEGIN
-raise notice 'it is %', duration;
 CREATE TEMP TABLE IF NOT EXISTS temp_table AS
 SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
 FROM Sessions 
@@ -138,14 +137,15 @@ return query SELECT I.eid, E.name
                     + INTERVAL '1 hours' * (duration + 1)
                     > S.start_time 
                     or 
-                    sess_start_hour < S.end_time + INTERVAL '1 hour'
+                    sess_start_hour > S.end_time + INTERVAL '1 hour'
                     )
                     ) and (
                         EXISTS(SELECT 1 from full_time_emp FT WHERE FT.eid = I.eid) or  
                         COALESCE((SELECT(SELECT hours FROM temp_table WHERE iid = I.eid) + duration), 0) <= 30
                     )
                     AND (SELECT course_area_name FROM Specializes WHERE eid = I.eid) = 
-                    (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id) ;
+                    (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id);
+    DROP TABLE temp_table;
 END;
 $$ LANGUAGE plpgsql;
 

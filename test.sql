@@ -72,13 +72,14 @@ INSERT INTO Offerings VALUES
 -- this offering is to make B have 1 hour left
 INSERT INTO Offerings VALUES
 (2, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 11);
+/* ------------------------------- Assign sessions ----------------------------- */
 INSERT INTO Sessions VALUES
 (1, '2021-04-01', '09:00:00', 
 '10:00:00', 1, '2021-03-01', 1, 4);
 INSERT INTO Sessions VALUES
 (3, '2021-04-01', '11:00:00', 
 '12:00:00', 1, '2021-03-01', 1, 4);
--- make b hav 1 hr left
+/* -------------- make 7 have 1 hr left --------------*/
 INSERT INTO Sessions VALUES
 (1, '2021-04-02', '14:00:00', 
 '18:00:00', 2, '2021-03-01', 2, 7);
@@ -101,24 +102,15 @@ INSERT INTO Sessions VALUES
 (7, '2021-04-08', '14:00:00', 
 '18:00:00', 2, '2021-03-01', 2, 7);
 INSERT INTO Sessions VALUES
-(4, '2021-04-08', '14:00:00', 
+(4, '2021-04-10', '17:00:00', 
 '18:00:00', 1, '2021-03-01', 1, 7);
+/* -----------------------------------------------*/
 
+SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
+FROM Sessions
+GROUP BY eid;
 
-SELECT * FROM find_instructors(1,'2021-04-01','10:00');
-
-
-
-
-
-
-
-
-
-
-
-
-
+SELECT * FROM find_instructors(1, '2021-04-02', '10:00');
 
 
 DROP TYPE IF EXISTS Session CASCADE;
@@ -145,6 +137,9 @@ BEGIN
     SELECT * INTO course_and_area FROM Courses WHERE course_id = cid;
     -- get_available_instructors(cid, sess[i].start_date, sess[i].start_date);
     FOR i IN 1 .. array_upper(sess,1) LOOP
+
+    END LOOP;
+    FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
         IF start_date IS NULL THEN start_date := sess[i].start_date;
@@ -163,36 +158,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION helper1(i INTEGER)
-RETURNS INTEGER AS $$
-DECLARE 
-j INTEGER;
-BEGIN
-    raise notice 'i is %', i;
-    insert into Rooms values (i,'room_B', i);
-    j := helper2(i);
-    if j = 1 THEN
-        raise notice 'hit';
-        ROLLBACK;
-        raise notice 'hit';
-    end if;
-    return 1;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION helper(i INTEGER)
+-- RETURNS INTEGER AS $$
+-- DECLARE 
+-- j INTEGER;
+-- BEGIN
+--     raise notice 'i is %', i;
+--     insert into Rooms values (i,'room_B', i);
+--     j := helper2(i);
+--     if j = 1 THEN
+--         raise notice 'hit';
+--         ROLLBACK;
+--         raise notice 'hit';
+--     end if;
+--     return 1;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION helper2(i INTEGER)
-RETURNS INTEGER AS $$
-DECLARE 
-j INTEGER;
-BEGIN
-    i := i + 1;
-    raise notice 'j is %', i;
-    IF i = 4  THEN
-        return 1;
-    ELSE
-        insert into Rooms values (i,'room_B', i);
-        j := helper2(i);
-        return j;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
+-- CALL add_course_offering(1, 1.0,'2021-03-01','2021-03-10', 2, 11, 
+-- ('2021-04-02', '09:00:00', 1), ('2021-04-02', '10:00:00', 1), ('2021-04-02', '11:00:00', 1));    
