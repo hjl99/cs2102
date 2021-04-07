@@ -133,12 +133,13 @@ return query SELECT I.eid, E.name
                     WHERE I.eid = S.eid
                     and sess_date = S.s_date
 					and is_ongoing=true
-                    and (sess_start_hour
-                    + INTERVAL '1 hours' * (duration + 1)
-                    > S.start_time 
-                    or 
-                    sess_start_hour > S.end_time + INTERVAL '1 hour'
-                    )
+                    and (
+                            (sess_start_hour >= S.start_time OR
+                            sess_start_hour + INTERVAL '1 hours' * (duration + 1) > S.start_time)
+                        AND
+                            (sess_start_hour < S.start_time OR
+                            S.end_time + INTERVAL '1 hour' > sess_start_hour)
+                    )                           
                     ) and (
                         EXISTS(SELECT 1 from full_time_emp FT WHERE FT.eid = I.eid) or  
                         COALESCE((SELECT(SELECT hours FROM temp_table WHERE iid = I.eid) + duration), 0) <= 30
@@ -290,25 +291,50 @@ DROP TYPE IF EXISTS Session CASCADE;
 CREATE TYPE Session AS (
     start_date DATE,
     start_hr TIME,
-    rid INTEGER,
-    instructor_id INTEGER --TO BE REMOVED 
+    rid INTEGER
 );
+CREATE OR REPLACE FUNCTION helper(sess Session[], idx INTEGER, duration INTEGER, cid INTEGER, in_launch_date DATE)--, idx, duration, cid, launch_date
+RETURNS INTEGER AS $$
+DECLARE 
+i INTEGER;
+j INTEGER;
+res INTEGER;
+sum INTEGER;
+temp RECORD;
+BEGIN
+    IF array_length(sess, 1) IS NULL THEN return 0; END IF;
+    select count(*) into sum from find_instructors(cid, sess[1].start_date, sess[1].start_hr);
+    FOR j IN 1 .. sum LOOP
+        SELECT * INTO temp FROM find_instructors(cid, sess[1].start_date, sess[1].start_hr)
+        offset (j - 1) limit 1;
+        INSERT INTO Sessions VALUES 
+        (idx, sess[1].start_date, sess[1].start_hr, sess[1].start_hr + duration * INTERVAL '1 hour',
+        cid, in_launch_date, sess[1].rid, temp.out_eid);
+        res := helper(sess[2:array_length(sess,1)], idx + 1, duration, cid, in_launch_date);
+        IF res = 1 THEN
+            DELETE FROM Sessions WHERE sid = idx and course_id = cid and launch_date = in_launch_date;
+        ELSE
+            return 0;
+        END IF;
+    END LOOP;
+    return 1;
+END;
+$$ LANGUAGE plpgsql;
+-- DROP PROCEDURE IF EXISTS add_course_offering;
 CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
 launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
 DECLARE
     course_and_area RECORD;
-    temp_id INTEGER;
-    instructor_id INTEGER;
     i INTEGER := 0;
-    sess_table RECORD;
     start_date DATE;
     end_date DATE;
     cap INTEGER := 0;
-    valid BOOLEAN := 1;
+    res INTEGER := 0;
 BEGIN
     set constraints offerings_fkey deferred;
-    SELECT * INTO course_and_area FROM Courses WHERE course_id = cid;
-
+    SELECT * INTO course_and_area FROM Courses 
+    WHERE course_id = cid;
+    res := helper(sess, 1, course_and_area.duration, cid, launch_date);
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
@@ -318,9 +344,6 @@ BEGIN
         IF start_date IS NULL THEN end_date := sess[i].end_date;
         ELSIF end_date < sess[i].start_date THEN end_date:= sess[i].start_date;
         END IF;
-        INSERT INTO Sessions VALUES
-        (i, start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour', 
-        cid, launch_date, sess[i].rid, sess[i].instructor_id);
     END LOOP;
     INSERT INTO Offerings VALUES
     (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
