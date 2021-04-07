@@ -78,12 +78,51 @@ CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
 CALL add_course('course_D2', 'course_D2', 'course_area_qn10',4);  
 CALL add_course('course_D', 'course_D', 'course_area_qn10',1);   
 
-/* function 11 */
-CALL add_course_packages('package_A', 1, '2021-04-01', '2021-04-30', 1.0);
-CALL add_course_packages('package_A', 1, '2021-04-01', '2021-04-30', 1.0);
+/* function 11 (p_name TEXT, num_free INTEGER,
+                start_date DATE, end_date DATE, p_price FLOAT)*/
+CALL add_course_packages('Home Ing', 1, '2021-04-04', '2021-04-29', 61.61);
+CALL add_course_packages('Greenlam', 2, '2021-04-02', '2021-04-27', 82.97);
+CALL add_course_packages('Namfix', 3, '2021-04-03', '2021-04-24', 7.08);
+CALL add_course_packages('Matsoft', 4, '2021-04-04', '2021-04-25', 38.12);
+CALL add_course_packages('Toughjoyfax', 5, '2021-04-02', '2021-04-24', 43.63);
+CALL add_course_packages('Fix San', 6, '2021-04-02', '2021-04-22', 14.54);
+CALL add_course_packages('Domainer', 7, '2021-04-04', '2021-04-28', 88.39);
+CALL add_course_packages('Lotlux', 8, '2021-04-01', '2021-04-29', 4.91);
+CALL add_course_packages('Temp', 9, '2021-04-02', '2021-04-20', 17.54);
+CALL add_course_packages('Kanlam', 10, '2021-04-04', '2021-04-18', 29.7);
+CALL add_course_packages('Transcof', 11, '2021-04-01', '2021-04-24', 95.06);
+CALL add_course_packages('Hatity', 12, '2021-04-03', '2021-04-25', 73.2);
+CALL add_course_packages('Regrant', 13, '2021-04-03', '2021-04-26', 5.17);
+CALL add_course_packages('Fintone', 14, '2021-04-01', '2021-04-24', 2.06);
+CALL add_course_packages('Home Ing', 15, '2021-04-04', '2021-04-26', 70.93);
+CALL add_course_packages('Gembucket', 16, '2021-04-03', '2021-04-26', 68.38);
+CALL add_course_packages('Job', 17, '2021-04-03', '2021-04-23', 55.69);
+CALL add_course_packages('Viva', 18, '2021-04-03', '2021-04-25', 73.84);
+CALL add_course_packages('Cardify', 19, '2021-04-01', '2021-04-21', 8.87);
+CALL add_course_packages('Cardguard', 20, '2021-04-04', '2021-04-21', 70.74);
+CALL add_course_packages('Ronstring', 21, '2021-04-01', '2021-04-19', 94.54);
+CALL add_course_packages('Stim', 22, '2021-04-03', '2021-04-23', 47.94);
+CALL add_course_packages('Toughjoyfax', 23, '2021-04-03', '2021-04-25', 74.98);
+CALL add_course_packages('Cookley', 24, '2021-04-04', '2021-04-27', 61.97);
+CALL add_course_packages('Otcom', 25, '2021-04-02', '2021-04-18', 14.9);
+CALL add_course_packages('Stronghold', 26, '2021-04-02', '2021-04-24', 75.4);
+CALL add_course_packages('Lotlux', 27, '2021-04-03', '2021-04-25', 88.8);
+CALL add_course_packages('Ronstring', 28, '2021-04-03', '2021-04-22', 50.74);
+CALL add_course_packages('Rank', 29, '2021-04-01', '2021-04-28', 56.25);
+CALL add_course_packages('Sonair', 30, '2021-04-01', '2021-04-22', 94.5);
+CALL add_course_packages('Holdlamis', 31, '2021-04-01', '2021-04-24', 70.66);
+CALL add_course_packages('Bigtax', 32, '2021-04-03', '2021-04-22', 33.67);
+CALL add_course_packages('Lotstring', 33, '2021-04-04', '2021-04-24', 52.37);
+CALL add_course_packages('Redhold', 34, '2021-04-04', '2021-04-28', 76.85);
+CALL add_course_packages('Cardify', 35, '2021-04-03', '2021-04-25', 16.8);
+CALL add_course_packages('Vagram', 36, '2021-04-03', '2021-04-28', 1.3);
+CALL add_course_packages('Zontrax', 37, '2021-04-04', '2021-04-18', 5.41);
+CALL add_course_packages('Regrant', 38, '2021-04-24', '2021-04-28', 45.61);
+CALL add_course_packages('Cookley', 39, '2021-04-05', '2021-04-06', 38.98);
+CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 
 /* function 12 */
-
+-- SELECT * FROM get_available_course_packages(); -- expect 38 results
 
 /* Test case for 6 and 10 */
 INSERT INTO Offerings VALUES
