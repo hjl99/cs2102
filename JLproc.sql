@@ -98,8 +98,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
-
 /* 20 */ -- FINISHED
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
@@ -465,7 +463,7 @@ DECLARE
     first_day_of_year DATE := DATE_TRUNC('YEAR', CURRENT_DATE);
     last_day_of_year DATE := DATE_TRUNC('YEAR', CURRENT_DATE) + INTERVAL '1 YEAR' - INTERVAL '1 DAY';
 BEGIN
-    FOR r IN SELECT eid FROM Managers NATURAL JOIN Employees ORDER BY name ASC 
+    FOR r IN SELECT * FROM Managers NATURAL JOIN Employees ORDER BY name ASC 
     LOOP
         manager_name := r.name;
         num_course_areas := (SELECT COUNT(*) FROM Course_areas WHERE eid = r.manager_id);
