@@ -64,12 +64,55 @@ CALL add_employee('fti_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'fu
 CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
 CALL add_employee('a_B', 'addr_B', 20000000, 'B@B.com', 200, '2021-04-02', 'administrator', '{}');
 CALL add_employee('a_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'administrator', '{}');
+
+/* function 4 (cname TEXT, caddress TEXT, cphone INTEGER,
+                        cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER) */
 CALL add_customer('c_A', 'addr_A', 10000000, 'A@A.com', 1, '2021-04-30', 1);
 CALL add_customer('c_B', 'addr_B', 20000000, 'B@B.com', 20, '2021-04-03', 20);
 CALL add_customer('c_C', 'addr_C', 30000000, 'C@C.com', 3, '2021-04-30', 3);
 CALL add_customer('c_D', 'addr_D', 20000000, 'D@D.com', 4, '2021-04-30', 4);
 CALL add_customer('c_E', 'addr_E', 30000000, 'E@E.com', 5, '2021-04-30', 5);
---20
+CALL add_customer('Yovonnda Tansley', '53 Clarendon Center', 3242191859, 'ytansley0@a8.net', 344267768685828, '2021-04-27', 1);
+CALL add_customer('Jeromy Pheby', '70 Service Center', 7855504927, 'jpheby1@wp.com', 5602229854693161302, '2021-04-19', 2);
+CALL add_customer('Joye Ruhben', '1 John Wall Drive', 6088271635, 'jruhben2@ning.com', 3547422918201252, '2021-04-28', 3);
+CALL add_customer('Ardith Devitt', '9 Summerview Terrace', 5127410507, 'adevitt3@delicious.com', 3569438402279243, '2021-04-25', 4);
+CALL add_customer('Florie Taveriner', '9 Hoard Plaza', 6069690410, 'ftaveriner4@whitehouse.gov', 5602239525272626, '2021-04-29', 5);
+CALL add_customer('Brietta Geeves', '24536 Stone Corner Crossing', 5984087453, 'bgeeves5@baidu.com', 5018409688988259038, '2021-04-21', 6);
+CALL add_customer('Berte Allchin', '6857 Acker Parkway', 222964574, 'ballchin6@theglobeandmail.com', 36415363588839, '2021-04-20', 7);
+CALL add_customer('Irvin Rubery', null, null, 'irubery7@census.gov', 5602258766714886994, '2021-04-26', 8);
+CALL add_customer('Tina Studart', '62 Pleasure Crossing', 6533937489, 'tstudart8@ucla.edu', 4026190542040895, '2021-04-23', 9);
+CALL add_customer('Tedd Pask', '23 Northport Way', 027804309, 'tpask9@purevolume.com', 5602231888838036, '2021-04-21', 10);
+CALL add_customer('Joleen McCudden', '11917 Hoepker Street', 4637454164, 'jmccuddena@sakura.ne.jp', 5602214444768042822, '2021-04-21', 11);
+CALL add_customer('Eunice Harcus', '74 Riverside Avenue', 3306850956, 'eharcusb@bizjournals.com', 3556634209887452, '2021-04-20', 12);
+CALL add_customer('Alene Cobello', '78 Ronald Regan Point', 5818818089, 'acobelloc@bizjournals.com', 3538964902455247, '2021-04-19', 13);
+CALL add_customer('Codi Pinchback', '14 Lake View Alley', 2473123922, 'cpinchbackd@tripod.com', 3543908893407629, '2021-04-19', 14);
+CALL add_customer('Zilvia Burk', '33 Anniversary Crossing', 3123391652, 'zburke@thetimes.co.uk', 4017956647721, '2021-04-27', 15);
+CALL add_customer('Ned Ainger', '23485 Grover Junction', 3572863446, 'naingerf@illinois.edu', 20151700074512, '2021-04-26', 16);
+CALL add_customer('Garrett MacEllen', '183 Mariners Cove Plaza', 3196643525, 'gmacelleng@simplemachines.org', 3532690287109259, '2021-04-27', 17);
+CALL add_customer('Audre O'' Liddy', '36 Anniversary Lane', 3972558194, 'aoh@wunderground.com', 63338088312685266, '2021-04-26', 18);
+CALL add_customer('Cathie Wikey', '3578 Hallows Street', 3722316457, 'cwikeyi@marketwatch.com', 3583113677867087, '2021-04-19', 19);
+CALL add_customer('Debbie Rochell', '4 Lyons Pass', 3382313848, 'drochellj@opera.com', 3574355548880754, '2021-04-24', 20);
+CALL add_customer('Ricki Alves', '1854 Brentwood Avenue', 5546007580, 'ralvesk@opensource.org', 337941444751662, '2021-04-28', 21);
+CALL add_customer('Rochelle Runge', '4604 Pearson Alley', 3907221463, 'rrungel@elegantthemes.com', 5048376885624855, '2021-04-20', 22);
+CALL add_customer('Sven Degoey', null, null, 'sdegoeym@storify.com', 3561042532205652, '2021-04-22', 23);
+CALL add_customer('Reinhard Wollers', '530 Russell Trail', 902246212, 'rwollersn@about.com', 4436143781286, '2021-04-22', 24);
+CALL add_customer('Sollie Wince', '48 Butterfield Terrace', 6768290297, 'swinceo@ucsd.edu', 5566571491798778, '2021-04-24', 25);
+CALL add_customer('Jone Whyteman', '56 Larry Circle', 9871180216, 'jwhytemanp@joomla.org', 3531259960127458, '2021-04-25', 26);
+CALL add_customer('Oswald Sprulls', '2965 Saint Paul Avenue', 3963069363, 'osprullsq@baidu.com', 5038665389599810445, '2021-04-27', 27);
+CALL add_customer('Raviv Monnoyer', '39124 Kedzie Hill', 1214667434, 'rmonnoyerr@ucoz.com', 376248979077121, '2021-04-24', 28);
+CALL add_customer('Gery Treherne', '63 Helena Hill', 7356863081, 'gtrehernes@youtu.be', 201692602078413, '2021-04-28', 29);
+CALL add_customer('Reinald Foran', '1 Randy Plaza', 4461726008, 'rforant@usatoday.com', 3535832034640601, '2021-04-26', 30);
+CALL add_customer('Phaidra Pilbury', '2631 Charing Cross Place', 2088745513, 'ppilburyu@craigslist.org', 3531840083584558, '2021-04-21', 31);
+CALL add_customer('Tove Pitcaithley', '2482 Basil Plaza', 767660871, 'tpitcaithleyv@squidoo.com', 5539381006301033, '2021-04-27', 32);
+CALL add_customer('Cobbie Loverock', '0030 Tennessee Drive', 9782306188, 'cloverockw@marriott.com', 3558357778950539, '2021-04-24', 33);
+CALL add_customer('Reider Kopje', '07420 Granby Crossing', 2058915770, 'rkopjex@deliciousdays.com', 30343291101861, '2021-04-20', 34);
+CALL add_customer('Elaina Vinten', '59956 Mosinee Street', '6064393551', 'evinteny@gizmodo.com', 3556242352130975, '2021-04-23', 35);
+CALL add_customer('Janaya Bateman', '45 South Way', 6677999883, null, 560225419693967295, '2021-04-27', 36);
+CALL add_customer('Bale Calderhead', '3 Farmco Road', 915107510, 'bcalderhead10@umich.edu', 5204664107194223, '2021-04-26', 37);
+CALL add_customer('Harriet Povah', null, null, 'hpovah11@mlb.com', 30014477178383, '2021-04-21', 38);
+CALL add_customer('Rainer Bour', '59235 Sunbrook Center', 4511198252, 'rbour12@bizjournals.com', 3529844710949717, '2021-04-26', 39);
+CALL add_customer('Lenette Ouldcott', '2 Northridge Way', 6399016765, 'louldcott13@newsvine.com', 3564093988919293, '2021-04-26', 40);
+
 /*  function 4 (cid INTEGER, cnumber INTEGER, cexpiry_date DATE, cvv INTEGER)*/
 CALL update_credit_card(2, 2, '2021-04-30', 2);
 
@@ -123,6 +166,9 @@ CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 
 /* function 12 */
 -- SELECT * FROM get_available_course_packages(); -- expect 38 results
+
+/* function 13 (cid INTEGER, pid INTEGER)*/
+-- CALL buy_course_package(1, 1);
 
 /* Test case for 6 and 10 */
 INSERT INTO Offerings VALUES

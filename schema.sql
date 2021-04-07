@@ -3,13 +3,13 @@ Course_packages, Credit_cards, Courses, Offerings,
 Sessions, Employees, Part_time_emp,
 Full_time_emp, Instructors, Part_time_instructors, 
 Full_time_instructors, Administrators, Managers, Pay_slips,
-Cancels, Buys, Registers, Specializes, Redeems, Conducts CASCADE;
+Cancels, Buys, Registers, Specializes, Redeems CASCADE;
 
  --<----------------------- company side ----------------------->
 CREATE TABLE Employees (
     eid SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    phone INTEGER,
+    phone BIGINT,
     email TEXT,
     join_date DATE NOT NULL DEFAULT CURRENT_DATE,
     address TEXT,
@@ -66,7 +66,7 @@ CREATE TABLE Pay_slips (
 CREATE TABLE Customers (
     cust_id SERIAL PRIMARY KEY,
     cust_name TEXT NOT NULL,
-    phone INTEGER,
+    phone BIGINT,
     email TEXT,
     address TEXT
 );
@@ -155,11 +155,11 @@ CREATE TABLE Cancels (
 /* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
-    number INTEGER PRIMARY KEY,
+    number BIGINT PRIMARY KEY,
     CVV INTEGER NOT NULL,
     expiry_date DATE NOT NULL,
     cust_id INTEGER NOT NULL REFERENCES Customers ON DELETE CASCADE,
-    from_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    from_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 /* Package might not be offered but customer should be able to finish their remaining redemptions*/

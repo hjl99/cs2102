@@ -76,8 +76,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 3 TESTED*/
-CREATE OR REPLACE PROCEDURE add_customer(cname TEXT, caddress TEXT, cphone INTEGER,
-                        cemail TEXT, cnumber INTEGER, cexpiry_date DATE, ccvv INTEGER)
+CREATE OR REPLACE PROCEDURE add_customer(cname TEXT, caddress TEXT, cphone BIGINT,
+                        cemail TEXT, cnumber BIGINT, cexpiry_date DATE, ccvv INTEGER)
 AS $$
 DECLARE 
 	cid INTEGER;
@@ -91,7 +91,7 @@ $$ LANGUAGE plpgsql;
 
 /* 4 TESTED*/
 DROP PROCEDURE IF EXISTS update_credit_card;
-CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, 
+CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber BIGINT, 
                         cexpiry_date DATE, cvv INTEGER)
 AS $$
 BEGIN
@@ -368,8 +368,7 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 $$ LANGUAGE sql;
 
 /* 13 */
-CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER)
- AS $$
+CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER) AS $$
 DECLARE
 	cnum INTEGER;
 	rnum INTEGER;
