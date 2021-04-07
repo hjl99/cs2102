@@ -285,7 +285,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 10 without validation*/
+/* 10 */
 DROP TYPE IF EXISTS Session CASCADE;
 -- (session date, session start hour, and room identifier)
 CREATE TYPE Session AS (
@@ -335,6 +335,7 @@ BEGIN
     SELECT * INTO course_and_area FROM Courses 
     WHERE course_id = cid;
     res := helper(sess, 1, course_and_area.duration, cid, launch_date);
+    IF res = 1 THEN raise exception 'Valid assignment of instructor to session not found';END IF;
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
