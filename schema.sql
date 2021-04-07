@@ -147,9 +147,10 @@ CREATE TABLE Cancels (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
+    payment_date DATE,
     FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
-    CONSTRAINT cancellation_validity CHECK ((refund_amt > 0.0 and package_credit = NULL) or (package_credit = 1 and refund_amt = NULL) or (package_credit = NULL and refund_amt = NULL))
+    CONSTRAINT cancellation_validity CHECK ((refund_amt >= 0.0 and package_credit = NULL) or (package_credit in (0, 1) and refund_amt = NULL))
 );
 /* Trav: considering making pri key number and cust*/
 /* Contains the owns relationship to enforce key and total participation on credit cards */
