@@ -91,8 +91,8 @@ $$ LANGUAGE plpgsql;
 
 /* 4 TESTED*/
 DROP PROCEDURE IF EXISTS update_credit_card;
-CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, cexpiry_date DATE,
-                                             cvv INTEGER)
+CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber INTEGER, 
+                        cexpiry_date DATE, cvv INTEGER)
 AS $$
 BEGIN
 	INSERT INTO Credit_cards(number, expiry_date, CVV, cust_id)
@@ -101,7 +101,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 5 TESTED*/
-CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, duration INTEGER) AS $$
+CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, 
+                                        duration INTEGER) AS $$
 DECLARE
     mid INTEGER;
 BEGIN
