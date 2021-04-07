@@ -46,27 +46,29 @@ DECLARE
     new_sess_date DATE;
     new_sess_start_time TIME;*/
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) -- If cust_id input wrong
-        THEN RAISE EXCEPTION ('The customer specified does not exist.');
+    IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
+        RAISE EXCEPTION ('The customer specified does not exist.');
     END IF;
 
     -- prev session information
     SELECT number, sid INTO cust_card_number, prev_sess_id
-        FROM Registers
-        WHERE course_id = in_course_id
-            AND launch_date = in_launch_date
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
+    FROM Registers
+    WHERE course_id = in_course_id AND launch_date = in_launch_date
+        AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
 
     -- new session information
     new_sess_rid := SELECT rid FROM Sessions 
         WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id;
     
-    IF prev_sess_id IS NULL THEN RAISE EXCEPTION ('Customer has not registered for the course specified.');
-    ELSIF new_sess_rid IS NULL THEN RAISE EXCEPTION ('The new session specified does not exist.');
+    IF prev_sess_id IS NULL THEN 
+        RAISE EXCEPTION ('Customer has not registered for the course specified.');
+    ELSIF new_sess_rid IS NULL THEN 
+        RAISE EXCEPTION ('The new session specified does not exist.');
     END IF;
 
     /* EITHER Checking for registration deadline */
-    sess_reg_ddl := SELECT reg_deadline FROM Offerings 
+    sess_reg_ddl := 
+        SELECT reg_deadline FROM Offerings 
         WHERE course_id = in_course_id AND launch_date = in_launch_date;
     IF CURRENT_DATE > sess_reg_ddl  -- > or >= ?
         THEN RAISE EXCEPTION ('No update on course sessions allowed after the registration deadline');
@@ -84,14 +86,13 @@ BEGIN
     new_sess_valid_reg_count := SELECT COUNT(*) FROM Registers 
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id);
 
-    IF new_sess_seating_capacity <= new_sess_valid_reg_count THEN RAISE EXCEPTION ('No vacancy in the new session.');
+    IF new_sess_seating_capacity <= new_sess_valid_reg_count THEN 
+        RAISE EXCEPTION ('No vacancy in the new session.');
     ELSE 
         UPDATE Registers 
         SET sid = new_sess_id
-        WHERE course_id = in_course_id 
-        AND launch_date = in_launch_date 
-        AND sid = prev_sess_id 
-        AND number = cust_card_number;
+        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = prev_sess_id 
+            AND number = cust_card_number;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -103,7 +104,6 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
     reg_cust_card_number INTEGER;
-    cancel_count INTEGER;
     late_cancel BOOLEAN;
     sess_redeemed BOOLEAN;
     early_cancel_ddl DATE;
@@ -113,54 +113,69 @@ DECLARE
     payment_date DATE;
     redeemed_package_id INTEGER;
 BEGIN
-    SELECT number, sid INTO reg_cust_card_number, sess_id FROM Registers 
-            WHERE number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
-                AND course_id = in_course_id AND launch_date = launch_d;
+    SELECT number, sid INTO reg_cust_card_number, sess_id 
+    FROM Registers 
+    WHERE number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
+    AND course_id = in_course_id AND launch_date = launch_d;
 
-    IF sess_id IS NULL THEN RAISE EXCEPTION 'No registration to cancel';
+    IF sess_id IS NULL THEN 
+        RAISE EXCEPTION 'No registration to cancel';
     END IF;
 
-    early_cancel_ddl := SELECT (s_date - INTERVAL '7 DAYS') FROM Sessions 
-        WHERE sid = sess_id AND course_id = in_course_id AND launch_date = in_launch_date;
-    late_cancel := CASE WHEN CURRENT_DATE > early_cancel_ddl THEN TRUE ELSE FALSE END;
-
-    redeemed_package_id := SELECT package_id FROM Redeems 
-        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id));
-    sess_redeemed := CASE WHEN redeemed_package_id IS NOT NULL THEN TRUE ELSE FALSE END;
-
+    early_cancel_ddl := SELECT (s_date - INTERVAL '7 DAYS') 
+                        FROM Sessions 
+                        WHERE sid = sess_id AND course_id = in_course_id AND launch_date = in_launch_date;
+    late_cancel := CASE WHEN CURRENT_DATE > early_cancel_ddl THEN TRUE 
+                        ELSE FALSE 
+                    END;
+    redeemed_package_id := SELECT package_id 
+                            FROM Redeems 
+                            WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
+                            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id));
+    sess_redeemed := CASE WHEN redeemed_package_id IS NOT NULL THEN TRUE 
+                        ELSE FALSE 
+                    END;
     refund_amt := CASE 
-                    WHEN (NOT sess_redeemed) AND (NOT late_cancel) 
-                        THEN 0.9 * (SELECT fees FROM Offerings 
+                    WHEN (NOT sess_redeemed) AND (NOT late_cancel) THEN 
+                        0.9 * (SELECT fees FROM Offerings 
                             WHERE course_id = in_course_id AND launch_date = in_launch_date)
                     WHEN (NOT sess_redeemed) AND late_cancel THEN 0
-                    ELSE NULL END;
+                    ELSE NULL 
+                END;
     package_credit := CASE 
-                    WHEN sess_redeemed AND (NOT late_cancel) THEN 1 
-                    WHEN sess_redeemed AND late_cancel THEN 0
-                    ELSE NULL END;
+                        WHEN sess_redeemed AND (NOT late_cancel) THEN 1 
+                        WHEN sess_redeemed AND late_cancel THEN 0
+                        ELSE NULL 
+                    END;
     payment_date := CASE
-                    WHEN sess_redeemed THEN 
-                        (SELECT b_date FROM Redeems
-                        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-                        AND number = reg_cust_card_number)
-                    ELSE (SELECT r_date FROM Registers 
-                        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-                        AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
+                        WHEN sess_redeemed THEN 
+                            (SELECT b_date FROM Redeems
+                            WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
+                                AND number = reg_cust_card_number)
+                        ELSE (SELECT r_date FROM Registers 
+                            WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
+                                AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id))
                     END;
 
-    DELETE FROM Registers WHERE 
-        number = reg_cust_card_number AND course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
-    INSERT INTO Cancels (c_date, refund_amt, package_credit, cust_id, course_id, launch_date, sid, payment_date) 
-        VALUES (CURRENT_DATE, refund_amt, package_credit, in_cust_id, in_course_id, 
+    DELETE FROM Registers 
+    WHERE number = reg_cust_card_number 
+        AND course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+
+    INSERT INTO Cancels (c_date, refund_amt, package_credit, cust_id, course_id, 
+            launch_date, sid, payment_date) 
+    VALUES (CURRENT_DATE, refund_amt, package_credit, in_cust_id, in_course_id, 
             in_launch_date, sess_id, payment_date);
+        
     IF sess_redeemed THEN
-        DELETE FROM Redeems WHERE course_id = in_course_id, launch_date = in_launch_date, sid = sess_id,
-            number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
+        DELETE FROM Redeems 
+        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
+            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
+        
         IF NOT late_cancel THEN
-            UPDATE Buys SET num_remaining_redemptions = num_remaining_redemptions + 1
-                WHERE package_id = redeemed_package_id 
-                    AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
+            UPDATE Buys 
+            SET num_remaining_redemptions = num_remaining_redemptions + 1
+            WHERE package_id = redeemed_package_id 
+            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
         END IF;
     END IF;
 END;
@@ -177,15 +192,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM Instructors WHERE eid = new_instr_id) THEN
         RAISE EXCEPTION ('The new instructor ID specified does not exist.');
     END IF;
+
     SELECT s_date, start_time INTO sess_date, sess_start_time 
-        FROM Sessions WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+    FROM Sessions 
+    WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+
     IF s_date IS NULL THEN 
         RAISE EXCEPTION ('Course Session specified does not exist.');
     ELSIF CURRENT_TIMESTAMP >= (sess_date + sess_start_time) THEN 
         RAISE EXCEPTION ('Changes cannot be made to an ongoing or finished session.');
     ELSE 
         UPDATE Sessions SET eid = new_instr_id 
-            WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -213,24 +231,33 @@ BEGIN
 		EXIT WHEN NOT FOUND;
 		eid := r.eid;
 		name := r.name;
-		partTime := EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE PTE.eid = r.eid);
+		partTime := SELECT EXISTS(SELECT 1 FROM Part_time_emp PTE WHERE PTE.eid = r.eid);
         join_this_month := SELECT DATE_TRUNC('MONTH', join_date) = DATE_TRUNC('MONTH', CURRENT_DATE);
         depart_this_month := SELECT depart_date IS NOT NULL 
             AND DATE_TRUNC('MONTH', depart_date) = DATE_TRUNC('MONTH', CURRENT_DATE);
-        first_work_day := CASE 
-            WHEN join_this_month THEN join_date
-            ELSE DATE_TRUNC('MONTH', CURRENT_DATE) END;
-        last_work_day := CASE
-            WHEN depart_this_month THEN depart_date
-            ELSE DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' END;
+        first_work_day := 
+            CASE 
+                WHEN join_this_month THEN join_date
+                ELSE DATE_TRUNC('MONTH', CURRENT_DATE) 
+            END;
+        last_work_day := 
+            CASE
+                WHEN depart_this_month THEN depart_date
+                ELSE DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' 
+            END;
 
 		IF partTime THEN 
 			status := 'part-time';
-			num_work_hours := SELECT SUM(
-				SELECT ((EXTRACT(EPOCH FROM end_time)::INTEGER - EXTRACT(EPOCH FROM start_time)::INTEGER) / 3600)
-				    FROM Sessions S WHERE S.eid = r.eid 
-                    AND s_date BETWEEN first_work_day AND last_work_day;
-			IF num_work_hours = 0 THEN CONTINUE END IF;
+			num_work_hours := 
+                SELECT SUM(
+				    SELECT ((EXTRACT(EPOCH FROM end_time)::INTEGER - EXTRACT(EPOCH FROM start_time)::INTEGER) / 3600)
+				    FROM Sessions S 
+                    WHERE S.eid = r.eid 
+                        AND s_date BETWEEN first_work_day 
+                        AND last_work_day);
+			IF num_work_hours = 0 THEN 
+                CONTINUE;
+            END IF;
 			num_work_days := NULL;
 			hourly_rate := SELECT hourly_rate FROM Part_time_emp PTE WHERE r.eid=PTE.eid);
 			monthly_salary := NULL;
@@ -238,18 +265,19 @@ BEGIN
 		ELSE
 			status := 'full-time';
 			num_work_hours := NULL;
-			num_work_days := SELECT EXTRACT(DAY FROM last_work_day)::INTEGER 
-                - EXTRACT(DAY FROM first_work_day)::INTEGER + 1;
-			IF num_work_days = 0 THEN CONTINUE END IF; -- Unnecessary
+			num_work_days := SELECT EXTRACT(DAY FROM last_work_day)::INTEGER - EXTRACT(DAY FROM first_work_day)::INTEGER + 1;
+			IF num_work_days = 0 THEN 
+                CONTINUE 
+            END IF; -- Unnecessary
 			hourly_rate := NULL;
 			monthly_salary := SELECT monthly_salary FROM Full_time_emp FTE WHERE FTE.eid = r.eid);
-            days_in_month := SELECT EXTRACT('DAY' FROM 
-                DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY');
+            days_in_month := SELECT EXTRACT('DAY' FROM DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY');
 			amount := monthly_salary * (num_work_days / days_in_month);
 		END IF;
 
 		INSERT INTO Pay_slips (eid, payment_date, amt, num_work_hours, num_work_days) 
-            VALUES (eid, CURRENT_DATE, amount, num_work_hours, num_work_days);
+        VALUES (eid, CURRENT_DATE, amount, num_work_hours, num_work_days);
+
 		RETURN NEXT;
 	END LOOP;
 	CLOSE curs;
@@ -258,7 +286,6 @@ $$ LANGUAGE plpgsql;
 
 
 /* 26 */
-/*
 CREATE OR REPLACE FUNCTION promote_courses()
 RETURNS TABLE (cust_id INTEGER, cust_name TEXT, course_area TEXT, course_id INTEGER, 
     title_C TEXT, launch_date DATE, reg_deadline DATE, fees FLOAT) AS $$
@@ -301,7 +328,7 @@ BEGIN
 	CLOSE curs;
 END;
 $$ LANGUAGE plpgsql;
-*/
+
 
 /* 27 */
 CREATE OR REPLACE FUNCTION top_packages(top_limit_num INTEGER)
@@ -342,7 +369,8 @@ BEGIN
     WITH
     Curr_year_offerings AS (
         SELECT course_id, launch_date, start_date, 
-            (SELECT COUNT(*) FROM Registers R WHERE R.course_id = O.course_id AND R.launch_date = O.launch_date) num_reg
+            (SELECT COUNT(*) FROM Registers R 
+            WHERE R.course_id = O.course_id AND R.launch_date = O.launch_date) num_reg
         FROM Offerings O
         WHERE start_date >= DATE_TRUNC('YEAR', CURRENT_DATE)
     ),
@@ -352,13 +380,16 @@ BEGIN
         GROUP BY course_id
         HAVING COUNT(*) >= 2;
     )
-    SELECT course_id, (SELECT title FROM Courses C WHERE C.course_id = M.course_id) course_title,
-        (SELECT course_area_name FROM Courses C WHERE C.course_id = M.course_id) course_area,
+    SELECT course_id, 
+        (SELECT title FROM Courses C WHERE C.course_id = M.course_id) AS course_title,
+        (SELECT course_area_name FROM Courses C WHERE C.course_id = M.course_id) AS course_area,
         num_offerings, num_reg_latest_off
     FROM Multi_off_courses M
-    WHERE NOT EXISTS (SELECT 1 FROM Curr_year_offerings A, Curr_year_offerings B
-        WHERE M.course_id = A.course_id AND A.course_id = B.course_id AND A.launch_date <> B.launch_date
-                AND A.start_date < B.start_date AND A.num_reg >= B.num_reg)
+    WHERE NOT EXISTS 
+        (SELECT 1 FROM Curr_year_offerings A, Curr_year_offerings B
+        WHERE M.course_id = A.course_id AND A.course_id = B.course_id 
+            AND A.launch_date <> B.launch_date AND A.start_date < B.start_date 
+            AND A.num_reg >= B.num_reg)
     ORDER BY num_reg_latest_off DESC, course_id ASC;
 END;
 $$ LANGUAGE plpgsql;
@@ -396,18 +427,15 @@ BEGIN
                 FROM Registers Rgst
                 WHERE NOT EXISTS (
                     SELECT 1 FROM Redeems Rdm 
-                    WHERE Rdm.course_id = Rgst.course_id 
-                        AND Rdm.launch_date = Rgst.launch_date 
-                        AND Rdm.sid = Rgst.sid
+                    WHERE Rdm.course_id = Rgst.course_id AND Rdm.launch_date = Rgst.launch_date AND Rdm.sid = Rgst.sid
                         AND Rdm.number = Rgst.number)
                 GROUP BY course_id, launch_date)
             + 
             SELECT SUM(offering_fees) 
             FROM
-                (SELECT COUNT(*) * (SELECT fees 
+                (SELECT (COUNT(*) * (SELECT fees 
                                 FROM Offerings O 
-                                WHERE O.course_id = Rgst.course_id 
-                                AND O.launch_date = Rgst.launch_date) offering_fees
+                                WHERE O.course_id = Rgst.course_id AND O.launch_date = Rgst.launch_date)) AS offering_fees
                 FROM Cancels C
                 WHERE refund_amt IS NOT NULL;
                 GROUP BY course_id, launch_date);
@@ -443,8 +471,8 @@ BEGIN
                                     FROM (SELECT course_id, launch_date, end_date FROM Offerings)
                                         NATURAL JOIN (SELECT course_id, course_area_name FROM Courses)
                                         NATURAL JOIN (SELECT * FROM Course_areas)
-                                    WHERE end_date BETWEEN first_day_of_year AND last_day_of_year
-                                    AND eid = manager_id);
+                                    WHERE (end_date BETWEEN first_day_of_year AND last_day_of_year)
+                                        AND eid = manager_id);
         WITH
         Valid_course_offs AS (
             SELECT course_id, launch_date, fees
@@ -452,7 +480,7 @@ BEGIN
                 NATURAL JOIN (SELECT course_id, course_area_name FROM Courses)
                 NATURAL JOIN (SELECT * FROM Course_areas)
             WHERE (end_date BETWEEN first_day_of_year AND last_day_of_year)
-            AND (eid = manager_id)
+            AND eid = manager_id
         ),
         Card_reg_fees_in_Registers AS (
             SELECT (COUNT(*) * fees) registers_card_reg_fees, course_id, launch_date
@@ -471,8 +499,9 @@ BEGIN
             GROUP BY course_id, launch_date, fees
         ),
         No_credit_back_late_cancel_redemp_reg_fees AS (
-            SELECT course_id, launch_date, SUM(reg_fees) cancels_redemp_reg_fees
-            (SELECT ROUND(price / num_free_registrations) session_price
+            SELECT course_id, launch_date, 
+                SUM(reg_fees) cancels_redemp_reg_fees
+                (SELECT ROUND(price / num_free_registrations) session_price
                 FROM Course_packages 
                 WHERE package_id = 
                     (SELECT package_id 
@@ -485,17 +514,17 @@ BEGIN
             GROUP BY course_id, launch_date
         ),
         Redemption_fees_Redeems AS (
-            SELECT course_id, launch_date, SUM(reg_fees) redeems_redemp_reg_fees
-                (SELECT ROUND(price / num_free_registrations) session_price
+            SELECT course_id, launch_date, 
+                SUM(reg_fees) redeems_redemp_reg_fees
+                (SELECT ROUND(price / num_free_registrations) AS session_price
                 FROM Course_packages 
-                WHERE package_id = RV.package_id) reg_fees
+                WHERE package_id = RV.package_id) AS reg_fees
             FROM (Redeems NATURAL JOIN Valid_course_offs) RV
             GROUP BY course_id, launch_date
         ),
         Course_off_fees AS (
             SELECT course_id, launch_date, 
-                (registers_card_reg_fees + cancels_card_reg_fees 
-                    + cancels_redemp_reg_fees + redeems_redemp_reg_fees) net_co_reg_fees
+                (registers_card_reg_fees + cancels_card_reg_fees + cancels_redemp_reg_fees + redeems_redemp_reg_fees) AS net_co_reg_fees
             FROM Card_reg_fees_in_Registers
             NATURAL JOIN Net_cancelled_card_reg_fees
             NATURAL JOIN No_credit_back_late_cancel_redemp_reg_fees
@@ -508,6 +537,7 @@ BEGIN
                                                             FROM Course_off_fees)))
         INTO net_reg_fees_co_ending_this_year, co_title_highest_net_reg_fees
         FROM Course_off_fees COF;
+
         RETURN NEXT;
     END LOOP;
 END;
