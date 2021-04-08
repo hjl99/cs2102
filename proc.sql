@@ -155,67 +155,46 @@ $$ LANGUAGE plpgsql;
 
 /* 7 */
 DROP FUNCTION IF EXISTS get_available_instructors;
-CREATE OR REPLACE FUNCTION get_available_instructors(cid INTEGER, start_date DATE, end_date DATE)
+CREATE OR REPLACE FUNCTION get_available_instructors(in_cid INTEGER, start_date DATE, end_date DATE)
 RETURNS TABLE(e_id INTEGER, i_name TEXT, total_hrs_for_month INTEGER, day INTEGER, hours TIME[]) AS $$
 DECLARE
-    curr record;
+    temp TIME[] := '{}';
     timings TIME[] := ARRAY['09:00','10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
     curs CURSOR FOR (
         SELECT DISTINCT eid FROM Specializes NATURAL JOIN Courses
-        WHERE course_id = cid
+        WHERE course_id = in_cid ORDER BY eid ASC
     );
-    i integer := date_part('day', start_date);
-    j integer := 1;
-    k integer := 0;
+    total_hrs integer;
     timing TIME;
+    curr_date DATE;
 BEGIN
-    CREATE TEMP TABLE IF NOT EXISTS temp_table AS
-        SELECT Instructors.eid as e1, E.name as n1, num_work_hours as w1, date_part('day', s_date) as day, 
-        start_time as t1, EXTRACT(epoch from (end_time-start_time))/3600 as duration
-        FROM Instructors NATURAL JOIN Specializes Spec NATURAL JOIN Courses C 
-        NATURAL JOIN Pay_slips P NATURAL JOIN Sessions S NATURAL JOIN Employees E
-        WHERE course_id = cid and date_part('month', payment_date) = date_part('month', end_date) and is_ongoing=true
-        ORDER BY Instructors.eid, day;
     FOR record IN curs LOOP
-        i := date_part('day', start_date);
-        WHILE i <= date_part('day', end_date) LOOP
-            If exists (SELECT * FROM temp_table WHERE temp_table.day = i) THEN
-                SELECT * INTO curr FROM temp_table 
-                where temp_table.e1 = record.eid and temp_table.day = i;
-                e_id := curr.e1;
-                i_name := curr.n1;
-                total_hrs_for_month := curr.w1;
-                day := i;
-                hours := timings;
-                WHILE k < (SELECT count(*) FROM temp_table 
-                WHERE temp_table.e1 = record.eid and temp_table.day = i) LOOP
-                    SELECT * INTO curr FROM temp_table 
-                    where temp_table.e1 = record.eid and temp_table.day = i OFFSET k;
-                    FOREACH timing IN ARRAY hours LOOP
-                        IF timing = curr.t1 THEN
-                            hours :=  hours[1: j-1]||hours[j + curr.duration:];
-                            EXIT;
-                        END IF;
-                        j:=j+1;
-                    END LOOP;
-                    k:=k+1;
-                END LOOP;
-                k:=0;
-                j:=1;
-                RETURN NEXT;
-            ELSE
-                SELECT * INTO curr FROM temp_table where temp_table.e1 = record.eid LIMIT 1;
-                e_id := curr.e1;
-                i_name := curr.n1;
-                total_hrs_for_month := curr.w1;
-                day := i;
-                hours := timings;
-                RETURN next;
-            END IF; 
-            i := i + 1;
+        curr_date = start_date;
+        WHILE curr_date <= end_date LOOP
+            SELECT sum(EXTRACT(epoch from (end_time-start_time))/3600) INTO total_hrs
+            FROM Sessions S
+            WHERE S.eid = record.eid and date_part('month', s_date) = date_part('month', curr_date)
+            and date_part('year', s_date) = date_part('year', curr_date) and is_ongoing=true;
+            temp := '{}';
+            FOREACH timing IN ARRAY timings LOOP
+                IF NOT EXISTS (
+                    SELECT 1 FROM Sessions S 
+                    WHERE S.start_time <= timing and S.end_time > timing
+                    and s_date = curr_date
+                    and record.eid = eid
+                ) THEN
+                SELECT array_append(temp, timing) INTO temp;
+                END IF;
+            END LOOP;
+            e_id:= record.eid;
+            i_name:= (SELECT name FROM Employees WHERE eid = record.eid);
+            total_hrs_for_month := coalesce(total_hrs, 0);
+            day := date_part('day', curr_date);
+            hours := temp;
+            RETURN NEXT;
+			curr_date := curr_date + INTERVAL '1 DAY';
         END LOOP;
     END LOOP;
-    DROP TABLE temp_table;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -268,7 +247,8 @@ BEGIN
 				EXIT;
 			END IF;
 			curr_arr := array['09:00:00','10:00:00','11:00:00','14:00:00','15:00:00','16:00:00','17:00:00'];
-			OPEN curs2 FOR SELECT * FROM Sessions S WHERE S.s_date = curr_date and S.rid=room_var.rid and is_ongoing=true ORDER BY start_time ASC;
+			OPEN curs2 FOR SELECT * FROM Sessions S WHERE S.s_date = curr_date and S.rid=room_var.rid 
+            and is_ongoing=true ORDER BY start_time ASC;
 			LOOP
 				FETCH curs2 INTO row_var;
 				EXIT WHEN NOT FOUND;
