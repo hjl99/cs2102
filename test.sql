@@ -216,13 +216,13 @@ INSERT INTO Sessions VALUES
 
 
 /* ---------------------fn 8--------------------------*/
-SELECT * FROM find_rooms('2021-04-08', '17:00:00', 1); -- no room 2
-SELECT * FROM find_rooms('2021-04-08', '10:00:00', 1); -- every room
-INSERT INTO Sessions VALUES
-(11, '2021-04-11', '10:00:00', 
-'11:00:00', 2, '2021-03-01', 2, 8);
-SELECT * FROM find_rooms('2021-04-11', '09:00:00', 3); -- no room 2
-CALL remove_session(2, '2021-03-01', 11);
+-- SELECT * FROM find_rooms('2021-04-08', '17:00:00', 1); -- no room 2
+-- SELECT * FROM find_rooms('2021-04-08', '10:00:00', 1); -- every room
+-- INSERT INTO Sessions VALUES
+-- (11, '2021-04-11', '10:00:00', 
+-- '11:00:00', 2, '2021-03-01', 2, 8);
+-- SELECT * FROM find_rooms('2021-04-11', '09:00:00', 3); -- no room 2
+-- CALL remove_session(2, '2021-03-01', 11);
 
 /* ------- Qn 10 Test case -----------*/
 CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
