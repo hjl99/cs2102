@@ -224,15 +224,21 @@ DECLARE
 	sess_end_hour TIME;
 BEGIN
 	sess_end_hour := sess_start_hour + sess_duration * INTERVAL '1 hour';
-	SELECT R.rid
+	RETURN QUERY SELECT R.rid
 	FROM Rooms R
 	WHERE NOT EXISTS (SELECT 1 
 					 FROM Sessions S
 					 WHERE R.rid = S.rid 
-					  and S.date = sess_date 
+					  and S.s_date = sess_date 
 					  and is_ongoing=true
-					  and ((sess_start_hour >= S.start_time and sess_start_hour < S.end_time) 
-						   or (sess_end_hour > S.start_time and sess_end_hour <= S.end_time)));
+					  and (
+                        (sess_start_hour >= S.start_time OR
+                            sess_end_hour > S.start_time)
+                        AND
+                            (sess_start_hour < S.start_time OR
+                            S.end_time > sess_start_hour)
+                        )
+                    );
 END;
 $$ LANGUAGE plpgsql;
 

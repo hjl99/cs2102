@@ -34,20 +34,12 @@ TRUNCATE Courses RESTART IDENTITY CASCADE;
 TRUNCATE Offerings RESTART IDENTITY CASCADE;
 TRUNCATE Course_packages RESTART IDENTITY CASCADE;
 TRUNCATE Rooms RESTART IDENTITY CASCADE;
-insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
-insert into Rooms values (2,'room_B', 2);
-insert into Rooms values (3,'room_C', 3);
-insert into Rooms values (4,'room_D', 4);
-insert into Rooms values (5,'room_E', 5);
-insert into Rooms values (6,'room_A1', 1);
-insert into Rooms values (7,'room_B1', 2);
-insert into Rooms values (8,'room_C1', 3);
-/* add course areas and its employee. name prefixed with pti, fti, m or a.
+
+/* add course areas and the employees specialised in it.
 (name TEXT, address TEXT, phone INTEGER, email TEXT, 
              salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
              course_areas)
 */
-
 CALL add_employee('m_A', 'addr_A', 10000000, 'A@A.com', 100.0, '2021-04-01', 'manager', '{"course_area_A"}');
 CALL add_employee('m_B', 'addr_B', 20000000, 'B@B.com', 200.0, '2021-04-02', 'manager', '{"course_area_B"}');
 CALL add_employee('m_C', 'addr_C', 30000000, 'C@C.com', 300.0, '2021-04-03', 'manager', '{"course_area_C"}');
@@ -63,6 +55,7 @@ CALL add_employee('fti_B', 'addr_B', 20000000, 'B@B.com', 200, '2021-04-02', 'fu
 CALL add_employee('fti_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'full time instructor', '{"course_area_C"}');
 CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
 CALL add_employee('a_B', 'addr_B', 20000000, 'B@B.com', 200, '2021-04-02', 'administrator', '{}');
+CALL add_employee('a_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'administrator', '{}');
 CALL add_employee('a_C', 'addr_C', 30000000, 'C@C.com', 300, '2021-04-03', 'administrator', '{}');
 
 /* function 4 (cname TEXT, caddress TEXT, cphone INTEGER,
@@ -176,6 +169,16 @@ CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 INSERT INTO Offerings VALUES
 (2, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 13);
 
+
+insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
+insert into Rooms values (2,'room_B', 2);
+insert into Rooms values (3,'room_C', 3);
+insert into Rooms values (4,'room_D', 4);
+insert into Rooms values (5,'room_E', 5);
+insert into Rooms values (6,'room_A1', 1);
+insert into Rooms values (7,'room_B1', 2);
+insert into Rooms values (8,'room_C1', 3);
+
 /* ------------------------------- Assign sessions ----------------------------- */
 INSERT INTO Sessions (sid, s_date, start_time, end_time, course_id ,
     launch_date, rid, eid)
@@ -210,9 +213,16 @@ INSERT INTO Sessions VALUES
 INSERT INTO Sessions VALUES
 (8, '2021-04-10', '17:00:00', 
 '18:00:00', 2, '2021-03-01', 1, 8);
-/* -----------------------------------------------*/
 
 
+/* ---------------------fn 8--------------------------*/
+SELECT * FROM find_rooms('2021-04-08', '17:00:00', 1); -- no room 2
+SELECT * FROM find_rooms('2021-04-08', '10:00:00', 1); -- every room
+INSERT INTO Sessions VALUES
+(11, '2021-04-11', '10:00:00', 
+'11:00:00', 2, '2021-03-01', 2, 8);
+SELECT * FROM find_rooms('2021-04-11', '09:00:00', 3); -- no room 2
+CALL remove_session(2, '2021-03-01', 11);
 
 /* ------- Qn 10 Test case -----------*/
 CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
