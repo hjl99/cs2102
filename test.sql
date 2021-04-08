@@ -169,6 +169,8 @@ CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 
 /* function 13 (cid INTEGER, pid INTEGER)*/
 -- CALL buy_course_package(1, 1);
+--negative CASE
+
 
 /* Test case for 6 and 10 */
 INSERT INTO Offerings VALUES
@@ -213,7 +215,13 @@ INSERT INTO Sessions VALUES
 
 
 /* ------- Qn 10 Test case -----------*/
--- CALL add_course_offering(3, 1.0,'2021-03-02','2021-03-15', 2, 13, 
--- ('2021-04-02', '09:00:00', 2), ('2021-04-02', '10:00:00', 1), ('2021-04-02', '11:00:00', 2));    
+CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
+('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2));   
+/* function 24 and function 23 */
+CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);
+CALL remove_session(3, '2021-03-02', 9);
+-- CALL remove_session(3, '2021-03-02', 1121);
+-- CALL remove_session(2, '2021-03-01',5);--fail cuz session has already started
+
 -- CALL add_course_offering(3, 1.0,'2021-03-02','2021-03-15', 2, 13, 
 -- ('2021-04-02', '09:00:00', 2), ('2021-04-02', '10:00:00', 1), ('2021-04-02', '10:00:00', 2));// expect fail
