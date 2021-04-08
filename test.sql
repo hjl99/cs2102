@@ -230,8 +230,19 @@ CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13,
 ('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
 -- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 
 
+/* function 2 */
+CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
+
+CALL remove_employee(17, '2021-05-01');
+-- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
+-- CALL add_employee('fti_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'full time instructor', '{"course_area_A"}');
+-- CALL add_employee('fn2', 'fn2', 30000000, 'D@D.com', 300.0, '2021-04-03', 'manager', '{"course_area_qn10"}');
+
+-- CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);
+
 /* function 15 */
 SELECT * FROM get_available_course_offerings();
+
 
 /* function 24 and function 23 */
 CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);

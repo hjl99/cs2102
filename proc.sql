@@ -60,12 +60,14 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-
+DROP PROCEDURE IF EXISTS remove_employee;
 /* 2 */
-CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, depart_date DATE) AS $$
+CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
-    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid and depart_date < O.registration_deadline) > 0 
-        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid and depart_date < start_date and is_ongoing=true) > 0
+    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid 
+        and in_depart_date < O.reg_deadline) > 0 
+        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid 
+        and in_depart_date < s_date and is_ongoing=true) > 0
         or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
     THEN 
         RAISE EXCEPTION 'Employee cannot be removed!';
