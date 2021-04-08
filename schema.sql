@@ -137,7 +137,7 @@ CREATE TABLE Sessions (
     CONSTRAINT start_end_time_validity CHECK 
     (start_time <= end_time and start_time >= '09:00:00' and end_time <= '18:00:00'),
     CONSTRAINT lunch_hour_validatity CHECK 
-    ((start_time >= '12:00:00' or end_time < '12:00:00') and 
+    ((start_time >= '12:00:00' or end_time <= '12:00:00') and 
     (start_time < '12:00:00' or start_time >= '14:00:00'))
 );
 

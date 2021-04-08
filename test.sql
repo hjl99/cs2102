@@ -107,12 +107,13 @@ CALL add_customer('Rainer Bour', '59235 Sunbrook Center', 4511198252, 'rbour12@b
 CALL add_customer('Lenette Ouldcott', '2 Northridge Way', 6399016765, 'louldcott13@newsvine.com', 3564093988919293, '2021-04-26', 40);
 
 /*  function 4 (cid INTEGER, cnumber INTEGER, cexpiry_date DATE, cvv INTEGER)*/
-CALL update_credit_card(2, 2, '2021-04-30', 2);
+CALL update_credit_card(2, 2, '2021-04-30', 2); -- expect card 2 to be inserted with latest time stamp
 
 /* function 5 (title TEXT, description TEXT, area TEXT, duration INTEGER) */
 CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
 CALL add_course('course_D2', 'course_D2', 'course_area_qn10',4);  
 CALL add_course('course_D', 'course_D', 'course_area_qn10',1);   
+--course added
 
 /* function 11 (p_name TEXT, num_free INTEGER,
                 start_date DATE, end_date DATE, p_price FLOAT)*/
@@ -224,9 +225,14 @@ INSERT INTO Sessions VALUES
 -- SELECT * FROM find_rooms('2021-04-11', '09:00:00', 3); -- no room 2
 -- CALL remove_session(2, '2021-03-01', 11);
 
-/* ------- Qn 10 Test case -----------*/
+/* ------- function 10 Test case -----------*/
 CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
-('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2));   
+('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
+-- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 
+
+/* function 15 */
+SELECT * FROM get_available_course_offerings();
+
 /* function 24 and function 23 */
 CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);
 CALL remove_session(3, '2021-03-02', 9);
