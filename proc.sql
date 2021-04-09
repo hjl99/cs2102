@@ -447,7 +447,7 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
-/* 17 */
+/* 17 TESTED*/
 CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
 in_sid INTEGER, method TEXT) AS $$
 DECLARE
@@ -508,7 +508,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 19 */
+/* 19 TESTED*/
 CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
@@ -520,7 +520,7 @@ DECLARE
     new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
-    cust_card_number INTEGER;
+    cust_card_number BIGINT;
     /*prev_sess_date DATE;
     prev_sess_start_time TIME;
     new_sess_date DATE;
@@ -577,10 +577,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 20 */
+/* 20 TESTED*/
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
-    reg_cust_card_number INTEGER;
+    reg_cust_card_number BIGINT;
     late_cancel BOOLEAN;
     sess_redeemed BOOLEAN;
     early_cancel_ddl DATE;
@@ -667,7 +667,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 21 */
+/* 21 TESTED*/
 CREATE OR REPLACE PROCEDURE update_instructor(in_course_id INTEGER, in_launch_date DATE, 
     sess_id INTEGER, new_instr_id INTEGER) AS $$
 DECLARE
@@ -693,7 +693,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 22 */
+/* 22 TESTED*/
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
 BEGIN
