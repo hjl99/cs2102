@@ -34,7 +34,7 @@ EXECUTE FUNCTION customer_total_participation_func2();
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=NEW.course_id and launch_date=NEW.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering1 must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;
@@ -49,7 +49,7 @@ EXECUTE FUNCTION session_non_zero_func1();
 CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering2 must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;

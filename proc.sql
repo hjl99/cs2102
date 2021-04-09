@@ -283,6 +283,68 @@ CREATE TYPE Session AS (
     start_hr TIME,
     rid INTEGER
 );
+-- DROP PROCEDURE IF EXISTS add_course_offering;
+CREATE OR REPLACE PROCEDURE add_course_offering0(cid INTEGER, fees FLOAT,
+in_launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+DECLARE
+    course_and_area RECORD;
+    last_stops INTEGER[];
+    i INTEGER := 0;
+    j INTEGER := 0;
+    start_date DATE;
+    end_date DATE;
+    cap INTEGER := 0;
+    res INTEGER := 0;
+    sum INTEGER;
+    temp RECORD;
+BEGIN
+    set constraints offerings_fkey deferred;
+    WHILE (i < array_upper(sess,1)) LOOP
+        last_stops[i] = 0;
+        i := i + 1;
+    END LOOP;
+    WHILE (i < array_upper(sess,1) and i >= 0) LOOP
+            j :=last_stops[i];
+            raise notice 'i is % j is %', i, last_stops;
+            select count(*) into sum from find_instructors(cid, sess[j].start_date, sess[j].start_hr);
+            IF sum = 0 THEN
+                i := i - 1;
+                IF i < 0 THEN
+                    RAISE EXCEPTION 'No valid assignment!';
+                ELSE
+                    -- CALL remove_session(cid, in_launch_date, i);--remove session of parent
+                    DELETE FROM Sessions 
+                    WHERE sid = j and course_id = cid and launch_date = in_launch_date;
+                END IF;
+            ELSE
+                SELECT * INTO temp FROM find_instructors(cid, sess[j].start_date, sess[j].start_hr)
+                offset (j) limit 1;
+
+                INSERT INTO Sessions VALUES  --simplify into add session
+                (i, sess[j].start_date, sess[j].start_hr, sess[j].start_hr + course_and_area.duration * INTERVAL '1 hour',
+                cid, in_launch_date, sess[j].rid, temp.out_eid);
+                -- CALL add_session(cid, in_launch_date, i + 1, date_part('DAY', sess[j].start_date), 
+                    -- sess[j].start_hr, temp.out_eid, sess[j].rid);
+                last_stops[i] := last_stops[i] + 1;
+                i := i + 1;
+            END IF;
+    END LOOP;
+    i:= 1;
+    FOR i IN 1 .. array_upper(sess,1) LOOP
+        cap := cap + (SELECT seating_capacity FROM Rooms R
+        WHERE R.rid = sess[i].rid);
+        IF start_date IS NULL THEN start_date := sess[i].start_date;
+        ELSIF start_date > sess[i].start_date THEN start_date:= sess[i].start_date;
+        END IF;
+        IF end_date IS NULL THEN end_date := sess[i].start_date;
+        ELSIF end_date < sess[i].start_date THEN end_date:= sess[i].start_date;
+        END IF;
+    END LOOP;
+    INSERT INTO Offerings VALUES
+    (cid, in_launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION helper(sess Session[], idx INTEGER, duration INTEGER, cid INTEGER, in_launch_date DATE)
 RETURNS INTEGER AS $$
 DECLARE 
@@ -340,6 +402,7 @@ BEGIN
     (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
+
 
 /* 11 */
 CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
