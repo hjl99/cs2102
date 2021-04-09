@@ -476,6 +476,134 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 18 */
+CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
+RETURNS TABLE (course_name TEXT, course_fees INTEGER, sess_date DATE, sess_start_hour TIME, 
+    sess_duration INTEGER, instr_name TEXT) AS $$
+DECLARE
+    curs CURSOR FOR (
+        SELECT DISTINCT course_id, launch_date, sid, fees, s_date, start_time, end_time, eid
+        FROM Registers NATURAL JOIN Sessions NATURAL JOIN
+            (SELECT course_id, launch_date, reg_deadline, fees FROM Offerings) Off
+        WHERE number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
+            AND CURRENT_DATE <= reg_deadline
+        ORDER BY s_date, start_time);
+    r RECORD;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN
+        RAISE EXCEPTION 'Customer specified does not exist';
+    END IF;
+    OPEN curs;
+    LOOP
+        FETCH curs INTO r;
+        EXIT WHEN NOT FOUND;
+        course_name := (SELECT title FROM Courses C WHERE course_id = r.course_id);
+        course_fees := r.fees;
+        sess_date := r.s_date;
+        sess_start_hour := r.start_time;
+        sess_duration := (SELECT EXTRACT(HOUR FROM (r.end_time - r.start_time)));
+        instr_name := (SELECT name FROM Employees WHERE eid = r.eid);
+        RETURN NEXT;
+    END LOOP;
+    CLOSE curs;
+END;
+$$ LANGUAGE plpgsql;
+
+/* 19 */
+CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
+    in_launch_date DATE, new_sess_id INTEGER) AS $$
+DECLARE
+    prev_sess_id INTEGER;
+    prev_sess_rid INTEGER;
+    prev_sess_eid INTEGER;
+    sess_reg_ddl DATE;
+    new_sess_rid INTEGER;
+    new_sess_eid INTEGER;
+    new_sess_seating_capacity INTEGER;
+    new_sess_valid_reg_count INTEGER;
+    cust_card_number INTEGER;
+    /*prev_sess_date DATE;
+    prev_sess_start_time TIME;
+    new_sess_date DATE;
+    new_sess_start_time TIME;*/
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
+        RAISE EXCEPTION 'The customer specified does not exist.';
+    END IF;
+
+    -- prev session information
+    SELECT number, sid INTO cust_card_number, prev_sess_id
+    FROM Registers
+    WHERE course_id = in_course_id AND launch_date = in_launch_date
+        AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
+
+    -- new session information
+    new_sess_rid := (SELECT rid FROM Sessions 
+                    WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id);
+    
+    IF prev_sess_id IS NULL THEN 
+        RAISE EXCEPTION 'Customer has not registered for the course specified.';
+    ELSIF new_sess_rid IS NULL THEN 
+        RAISE EXCEPTION 'The new session specified does not exist.';
+    END IF;
+
+    /* EITHER Checking for registration deadline */
+    sess_reg_ddl := 
+        (SELECT reg_deadline FROM Offerings 
+        WHERE course_id = in_course_id AND launch_date = in_launch_date);
+    IF CURRENT_DATE > sess_reg_ddl  -- > or >= ?
+        THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
+    END IF;
+    /* OR Checking for time - if neither session has started */
+    /*SELECT s_date, start_time INTO prev_sess_date 
+        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = prev_sess_id;
+    SELECT s_date, start_time INTO new_sess_date, new_sess_start_time
+        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = new_sess_id;
+    IF prev_sess_date + prev_sess_start_time <= CURRENT_TIMESTAMP OR new_sess_date + new_sess_end_time <= CURRENT_TIMESTAMP THEN  
+        RAISE EXCEPTION 'Updates involving ongoing or finished session are not allowed.';
+    END IF;*/
+
+    new_sess_seating_capacity := (SELECT seating_capacity FROM Rooms WHERE rid = new_sess_rid);
+    new_sess_valid_reg_count := (SELECT COUNT(*) FROM Registers 
+                            WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id);
+
+    IF new_sess_seating_capacity <= new_sess_valid_reg_count THEN 
+        RAISE EXCEPTION 'No vacancy in the new session.';
+    ELSE 
+        UPDATE Registers 
+        SET sid = new_sess_id
+        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = prev_sess_id 
+            AND number = cust_card_number;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+/* 21 */
+CREATE OR REPLACE PROCEDURE update_instructor(in_course_id INTEGER, in_launch_date DATE, 
+    sess_id INTEGER, new_instr_id INTEGER) AS $$
+DECLARE
+    sess_date DATE;
+    sess_start_time TIME;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Instructors WHERE eid = new_instr_id) THEN
+        RAISE EXCEPTION 'The new instructor specified does not exist.';
+    END IF;
+
+    SELECT s_date, start_time INTO sess_date, sess_start_time 
+    FROM Sessions 
+    WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+
+    IF sess_date IS NULL THEN 
+        RAISE EXCEPTION 'Course Session specified does not exist.';
+    ELSIF CURRENT_TIMESTAMP >= (sess_date + sess_start_time) THEN 
+        RAISE EXCEPTION 'Changes cannot be made to an ongoing or finished session.';
+    ELSE 
+        UPDATE Sessions SET eid = new_instr_id 
+        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
 /* 22 */
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
@@ -551,8 +679,6 @@ BEGIN
     rid, eid);
 END;
 $$ LANGUAGE plpgsql;
-
-
 
 /* 26 */
 CREATE OR REPLACE FUNCTION promote_courses()
