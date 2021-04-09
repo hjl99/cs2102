@@ -308,7 +308,6 @@ BEGIN
     i := 1;
     WHILE (i <= array_upper(sess,1) and i >= 1) LOOP
             j :=last_stops[i];
-            raise notice 'i is % j is %', i, last_stops;
             select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
             IF sum = 0 THEN
                 raise notice 'i isss % ', i;
@@ -316,7 +315,6 @@ BEGIN
                 IF i < 0 THEN
                     RAISE EXCEPTION 'No valid assignment!';
                 ELSE
-                    raise notice 'removing % ', i;
                     IF (i+2 <= array_upper(sess,1)) THEN
                         last_stops[i+1] := 1;
                     END IF;
@@ -326,18 +324,14 @@ BEGIN
             ELSE
                 SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
                 offset (j-1) limit 1;
-                raise notice 'temp is  %', temp;
                 IF temp IS NULL THEN
-                    raise notice 'NULLDFADASDASD';
                     i := i - 1;
-                    raise notice 'removing % ', i;
-                    IF (i+2 <= array_upper(sess,1)) THEN
+                    IF (i+1 <= array_upper(sess,1)) THEN
                         last_stops[i+1] := 1;
                     END IF;
                     DELETE FROM Sessions 
                     WHERE sid = i and course_id = cid and launch_date = in_launch_date;
                 ELSE 
-                    raise notice 'adding % % % % % % % %', j, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
                     cid, in_launch_date, sess[i].rid, temp.out_eid;
                     INSERT INTO Sessions VALUES
                     (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
