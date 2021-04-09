@@ -60,17 +60,17 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-DROP PROCEDURE IF EXISTS remove_employee;
+
 /* 2 */
+DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
-    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid 
-        and in_depart_date < O.reg_deadline) > 0 
-        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid 
-        and in_depart_date < s_date and is_ongoing=true) > 0
-        or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
-    THEN 
-        RAISE EXCEPTION 'Employee cannot be removed!';
+    IF EXISTS (SELECT 1 FROM Offerings O WHERE reid = O.eid and in_depart_date < O.reg_deadline) THEN
+        RAISE EXCEPTION 'This employee is an administrator who is still handling some course offerings!';
+    ELSIF EXISTS (SELECT 1 FROM Sessions WHERE reid = eid and in_depart_date < s_date and is_ongoing=true) THEN
+        RAISE EXCEPTION 'This employee is an instructor who is teaching some course session that starts after the departure date!';
+    ELSIF EXISTS (SELECT 1 FROM Course_areas CA WHERE reid = CA.eid) THEN 
+        RAISE EXCEPTION 'The employee is a manager who is managing some course area!';
     ELSE
         UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
     END IF;
