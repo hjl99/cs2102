@@ -113,6 +113,7 @@ CALL update_credit_card(2, 2, '2021-04-30', 2); -- expect card 2 to be inserted 
 CALL add_course('course_A1', 'course_A1', 'course_area_A',1);
 CALL add_course('course_D2', 'course_D2', 'course_area_qn10',4);  
 CALL add_course('course_D', 'course_D', 'course_area_qn10',1);   
+CALL add_course('course_D1', 'course_D1', 'course_area_qn10',1);   
 --course added
 
 /* function 11 (p_name TEXT, num_free INTEGER,
@@ -165,10 +166,6 @@ CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 -- CALL buy_course_package(1, 1);
 --negative CASE
 
-
-
-
-
 insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
 insert into Rooms values (2,'room_B', 2);
 insert into Rooms values (3,'room_C', 3);
@@ -181,15 +178,17 @@ insert into Rooms values (8,'room_C1', 3);
 BEGIN;
 INSERT INTO Offerings VALUES
 (2, '2021-03-01', '2021-04-01', '2021-04-14', '2021-03-10', 10, 10, 1.0, 13);
+INSERT INTO Offerings VALUES
+(3, '2021-03-01', '2021-04-01', '2021-04-14', '2021-03-10', 10, 10, 1.0, 13);
 /* ------------------------------- Assign sessions ----------------------------- */
 INSERT INTO Sessions (sid, s_date, start_time, end_time, course_id ,
     launch_date, rid, eid)
 VALUES
-(9, '2021-04-01', '09:00:00', 
-'10:00:00', 2, '2021-03-01', 1, 9);
+(1, '2021-04-01', '09:00:00', 
+'10:00:00', 3, '2021-03-01', 1, 9);
 INSERT INTO Sessions VALUES
-(10, '2021-04-01', '11:00:00', 
-'12:00:00', 2, '2021-03-01', 1, 9);
+(2, '2021-04-01', '11:00:00', 
+'12:00:00', 3, '2021-03-01', 1, 9);
 /* --------------  1 hr left --------------*/
 INSERT INTO Sessions VALUES
 (1, '2021-04-02', '14:00:00', 
@@ -213,8 +212,8 @@ INSERT INTO Sessions VALUES
 (7, '2021-04-08', '14:00:00', 
 '18:00:00', 2, '2021-03-01', 2, 8);
 INSERT INTO Sessions VALUES
-(8, '2021-04-10', '17:00:00', 
-'18:00:00', 2, '2021-03-01', 1, 8);
+(3, '2021-04-10', '17:00:00', 
+'18:00:00', 3, '2021-03-01', 1, 8);
 COMMIT;
 
 /* ---------------------fn 8--------------------------*/
@@ -230,8 +229,8 @@ COMMIT;
 SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
 
 /* ------- function 10 Test case -----------*/
--- CALL add_course_offering0(2, 1.0,'2021-03-01','2021-04-15', 2, 13, 
--- ('2021-04-11', '09:00:00', 2), ('2021-04-11', '10:00:00', 1), ('2021-04-11', '11:00:00', 2)); 
+CALL add_course_offering(4, 1.0,'2021-03-02','2021-04-01', 2, 13, 
+('2021-04-11', '09:00:00', 2), ('2021-04-11', '10:00:00', 1), ('2021-04-11', '11:00:00', 2)); 
 -- CALL add_course_offering0(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
 -- ('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
 -- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 
@@ -241,8 +240,6 @@ SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
 /* function 7 */
 
 
-/* */
-CALL 
 
 /* function 2 */
 -- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');

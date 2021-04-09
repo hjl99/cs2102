@@ -284,13 +284,13 @@ CREATE TYPE Session AS (
     rid INTEGER
 );
 -- DROP PROCEDURE IF EXISTS add_course_offering;
-CREATE OR REPLACE PROCEDURE add_course_offering0(cid INTEGER, fees FLOAT,
+CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
 in_launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
 DECLARE
     course_and_area RECORD;
     last_stops INTEGER[];
-    i INTEGER := 0;
-    j INTEGER := 0;
+    i INTEGER := 1;
+    j INTEGER := 1;
     start_date DATE;
     end_date DATE;
     cap INTEGER := 0;
@@ -299,37 +299,37 @@ DECLARE
     temp RECORD;
 BEGIN
     set constraints offerings_fkey deferred;
-    WHILE (i < array_upper(sess,1)) LOOP
-        last_stops[i] = 0;
+    SELECT * INTO course_and_area FROM Courses 
+    WHERE course_id = cid;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        last_stops[i] = 1;
         i := i + 1;
     END LOOP;
-    WHILE (i < array_upper(sess,1) and i >= 0) LOOP
-            j :=last_stops[i];
-            raise notice 'i is % j is %', i, last_stops;
-            select count(*) into sum from find_instructors(cid, sess[j].start_date, sess[j].start_hr);
-            IF sum = 0 THEN
-                i := i - 1;
-                IF i < 0 THEN
-                    RAISE EXCEPTION 'No valid assignment!';
-                ELSE
-                    -- CALL remove_session(cid, in_launch_date, i);--remove session of parent
-                    DELETE FROM Sessions 
-                    WHERE sid = j and course_id = cid and launch_date = in_launch_date;
-                END IF;
+    i := 1;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        j :=last_stops[i];
+        select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        IF sum = 0 or sum < j THEN
+            i := i - 1;
+            IF i < 1 THEN
+                RAISE EXCEPTION 'No valid assignment!';
             ELSE
-                SELECT * INTO temp FROM find_instructors(cid, sess[j].start_date, sess[j].start_hr)
-                offset (j) limit 1;
-
-                INSERT INTO Sessions VALUES  --simplify into add session
-                (i, sess[j].start_date, sess[j].start_hr, sess[j].start_hr + course_and_area.duration * INTERVAL '1 hour',
-                cid, in_launch_date, sess[j].rid, temp.out_eid);
-                -- CALL add_session(cid, in_launch_date, i + 1, date_part('DAY', sess[j].start_date), 
-                    -- sess[j].start_hr, temp.out_eid, sess[j].rid);
-                last_stops[i] := last_stops[i] + 1;
-                i := i + 1;
+                IF (i+1 <= array_upper(sess,1)) THEN
+                    last_stops[i+1] := 1;
+                END IF;
+                DELETE FROM Sessions 
+                WHERE sid = i and course_id = cid and launch_date = in_launch_date;
             END IF;
+        ELSE
+            SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
+            offset (j-1) limit 1;
+            INSERT INTO Sessions VALUES
+            (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
+            cid, in_launch_date, sess[i].rid, temp.out_eid);
+            last_stops[i] := last_stops[i] + 1;
+            i := i + 1;
+        END IF;
     END LOOP;
-    i:= 1;
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
@@ -344,65 +344,6 @@ BEGIN
     (cid, in_launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION helper(sess Session[], idx INTEGER, duration INTEGER, cid INTEGER, in_launch_date DATE)
-RETURNS INTEGER AS $$
-DECLARE 
-i INTEGER;
-j INTEGER;
-res INTEGER;
-sum INTEGER;
-temp RECORD;
-BEGIN
-    IF array_length(sess, 1) IS NULL THEN return 0; END IF;
-    select count(*) into sum from find_instructors(cid, sess[1].start_date, sess[1].start_hr);
-    FOR j IN 1 .. sum LOOP
-        SELECT * INTO temp FROM find_instructors(cid, sess[1].start_date, sess[1].start_hr)
-        offset (j - 1) limit 1;
-        INSERT INTO Sessions VALUES  --simplify into add session
-        (idx, sess[1].start_date, sess[1].start_hr, sess[1].start_hr + duration * INTERVAL '1 hour',
-        cid, in_launch_date, sess[1].rid, temp.out_eid);
-        res := helper(sess[2:array_length(sess,1)], idx + 1, duration, cid, in_launch_date); 
-        IF res = 1 THEN
-            DELETE FROM Sessions WHERE sid = idx and course_id = cid and launch_date = in_launch_date;
-        ELSE
-            return 0;
-        END IF;
-    END LOOP;
-    return 1;
-END;
-$$ LANGUAGE plpgsql;
--- DROP PROCEDURE IF EXISTS add_course_offering;
-CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
-launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
-DECLARE
-    course_and_area RECORD;
-    i INTEGER := 0;
-    start_date DATE;
-    end_date DATE;
-    cap INTEGER := 0;
-    res INTEGER := 0;
-BEGIN
-    set constraints offerings_fkey deferred;
-    SELECT * INTO course_and_area FROM Courses 
-    WHERE course_id = cid;
-    res := helper(sess, 1, course_and_area.duration, cid, launch_date);
-    IF res = 1 THEN raise exception 'Valid assignment of instructor to session not found';END IF;
-    FOR i IN 1 .. array_upper(sess,1) LOOP
-        cap := cap + (SELECT seating_capacity FROM Rooms R
-        WHERE R.rid = sess[i].rid);
-        IF start_date IS NULL THEN start_date := sess[i].start_date;
-        ELSIF start_date > sess[i].start_date THEN start_date:= sess[i].start_date;
-        END IF;
-        IF end_date IS NULL THEN end_date := sess[i].start_date;
-        ELSIF end_date < sess[i].start_date THEN end_date:= sess[i].start_date;
-        END IF;
-    END LOOP;
-    INSERT INTO Offerings VALUES
-    (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
-END;
-$$ LANGUAGE plpgsql;
-
 
 /* 11 */
 CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
@@ -589,22 +530,16 @@ DECLARE
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
     cust_card_number INTEGER;
-    /*prev_sess_date DATE;
-    prev_sess_start_time TIME;
-    new_sess_date DATE;
-    new_sess_start_time TIME;*/
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
         RAISE EXCEPTION 'The customer specified does not exist.';
     END IF;
 
-    -- prev session information
     SELECT number, sid INTO cust_card_number, prev_sess_id
     FROM Registers
     WHERE course_id = in_course_id AND launch_date = in_launch_date
         AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
 
-    -- new session information
     new_sess_rid := (SELECT rid FROM Sessions 
                     WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id);
     
@@ -614,21 +549,12 @@ BEGIN
         RAISE EXCEPTION 'The new session specified does not exist.';
     END IF;
 
-    /* EITHER Checking for registration deadline */
     sess_reg_ddl := 
         (SELECT reg_deadline FROM Offerings 
         WHERE course_id = in_course_id AND launch_date = in_launch_date);
     IF CURRENT_DATE > sess_reg_ddl 
         THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
     END IF;
-    /* OR Checking for time - if neither session has started */
-    /*SELECT s_date, start_time INTO prev_sess_date 
-        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = prev_sess_id;
-    SELECT s_date, start_time INTO new_sess_date, new_sess_start_time
-        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = new_sess_id;
-    IF prev_sess_date + prev_sess_start_time <= CURRENT_TIMESTAMP OR new_sess_date + new_sess_end_time <= CURRENT_TIMESTAMP THEN  
-        RAISE EXCEPTION 'Updates involving ongoing or finished session are not allowed.';
-    END IF;*/
 
     new_sess_seating_capacity := (SELECT seating_capacity FROM Rooms WHERE rid = new_sess_rid);
     new_sess_valid_reg_count := (SELECT COUNT(*) FROM Registers 
@@ -706,7 +632,7 @@ BEGIN
                             (SELECT b_date FROM Redeems
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
                                 AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id))
-                        ELSE (SELECT r_date FROM Registers 
+                        ELSE (SELECT r_date::TIMESTAMP FROM Registers 
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
                                 AND number = reg_cust_card_number)
                     END;
