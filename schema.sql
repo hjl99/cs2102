@@ -131,6 +131,8 @@ CREATE TABLE Sessions (
     rid INTEGER NOT NULL REFERENCES Rooms ON DELETE CASCADE deferrable initially immediate,
     eid INTEGER NOT NULL REFERENCES Instructors ON DELETE CASCADE 
     deferrable initially immediate,
+    unique(s_date, start_time, course_id, launch_date),
+    unique(s_date, start_time, rid)
     is_ongoing BOOLEAN DEFAULT TRUE,
     CONSTRAINT offerings_fkey FOREIGN KEY (course_id, launch_date) REFERENCES Offerings 
     ON DELETE CASCADE deferrable initially immediate,

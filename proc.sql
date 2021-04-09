@@ -124,6 +124,7 @@ RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
 DECLARE
 duration INTEGER := (SELECT duration FROM Courses where Courses.course_id = in_course_id);
 BEGIN
+drop table if exists temp_table;
 CREATE TEMP TABLE IF NOT EXISTS temp_table AS
 SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
 FROM Sessions 
@@ -321,7 +322,6 @@ DECLARE
     res INTEGER := 0;
 BEGIN
     set constraints offerings_fkey deferred;
-
     SELECT * INTO course_and_area FROM Courses 
     WHERE course_id = cid;
     res := helper(sess, 1, course_and_area.duration, cid, launch_date);
@@ -469,7 +469,6 @@ BEGIN
         INSERT INTO Redeems VALUES
         (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
         cid, in_launch_date, in_sid);
-        --UPDATE Buys SET num_remaining_redemptions = num_remaining_redemptions - 1  assuming this is done by trigger
     ELSIF method <> 'payment' THEN
         RAISE EXCEPTION 'The method can only be payment or redemption';
     END IF;
@@ -551,7 +550,7 @@ BEGIN
     sess_reg_ddl := 
         (SELECT reg_deadline FROM Offerings 
         WHERE course_id = in_course_id AND launch_date = in_launch_date);
-    IF CURRENT_DATE > sess_reg_ddl  -- > or >= ?
+    IF CURRENT_DATE > sess_reg_ddl 
         THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
     END IF;
     /* OR Checking for time - if neither session has started */
