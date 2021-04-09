@@ -384,7 +384,7 @@ BEGIN
 		RAISE EXCEPTION 'Each instructor must not be assigned to teach two consecutive course sessions!';
 		RETURN NULL;
 	END IF;
-	RETURN OLD;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -435,13 +435,16 @@ EXECUTE FUNCTION session_valid_bit_func();
 
 CREATE OR REPLACE FUNCTION session_increment_func() RETURNS TRIGGER AS $$
 BEGIN
-	RAISE NOTICE 'T';
 	IF ((SELECT count(*) FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id)=0 and NEW.sid<>1) THEN
 		RAISE EXCEPTION 'Session id should start from 1!';
 	END IF;
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.sid=NEW.sid) THEN
+		RAISE EXCEPTION 'Session id should be strictly increasing by 1!';
+	END IF;
+	IF ((SELECT max(sid) FROM Sessions S WHERE S.launch_date=NEW.launch_date and
+			   S.course_id=NEW.course_id) + 1 <> NEW.sid) THEN 
 		RAISE EXCEPTION 'Session id should be strictly increasing by 1!';
 	END IF;
 	RETURN NEW;
@@ -490,3 +493,28 @@ FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 CREATE TRIGGER one_registration_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
+
+
+/* 26 */
+CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
+DECLARE
+	c_and_co RECORD;
+BEGIN
+    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = NEW.course_id and launch_date=NEW.launch_date;
+    IF (c_and_co is NULL) THEN 
+		RAISE EXCEPTION 'Offering not found';
+    ELSIF (NEW.s_date < c_and_co.reg_deadline) THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    ELSIF (NOW() > c_and_co.reg_deadline) THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE TRIGGER add_sess_trigger
+BEFORE INSERT ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION add_sess_func();

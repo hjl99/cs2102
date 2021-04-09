@@ -755,19 +755,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 24 */
-CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
+CREATE OR REPLACE PROCEDURE add_session(in_cid INTEGER, l_date DATE, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
 DECLARE 
     c_and_co RECORD;
 BEGIN
-    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
-    IF c_and_co is NULL THEN RAISE EXCEPTION 'Offering not found'; END IF;
-    IF sess_day < c_and_co.reg_deadline THEN
-        RAISE EXCEPTION 'The registration should close before commencing';
-    END IF;
-    IF NOW() > c_and_co.reg_deadline THEN
-        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    END IF; --TODO turn to trigger
+    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_cid and launch_date=l_date;
     INSERT INTO Sessions VALUES 
     (sess_id, sess_day, sess_start, sess_start + INTERVAL '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
