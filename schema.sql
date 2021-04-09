@@ -151,7 +151,7 @@ CREATE TABLE Cancels (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    payment_date DATE NOT NULL,
+    payment_date TIMESTAMP NOT NULL,
     FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt >= 0.0 and package_credit = NULL) or (package_credit in (0, 1) and refund_amt = NULL))
@@ -170,7 +170,7 @@ CREATE TABLE Credit_cards (
 CREATE TABLE Buys (
     package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
     number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
-    b_date DATE DEFAULT CURRENT_DATE,
+    b_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     num_remaining_redemptions INTEGER NOT NULL,
     PRIMARY KEY (package_id, number, b_date),
     CONSTRAINT num_remaining_redemptions_non_neg CHECK (num_remaining_redemptions >= 0)
@@ -196,7 +196,7 @@ CREATE TABLE  Specializes (
 CREATE TABLE Redeems ( 
     package_id INTEGER, 
     number BIGINT,
-    b_date DATE,
+    b_date TIMESTAMP,
     r_date DATE,
     course_id INTEGER,
     launch_date DATE,
@@ -204,7 +204,7 @@ CREATE TABLE Redeems (
     FOREIGN KEY (package_id, number, b_date) REFERENCES Buys ON DELETE CASCADE,
     FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE NO ACTION,
     PRIMARY KEY (package_id, number, b_date, course_id, launch_date, sid, r_date),
-    CONSTRAINT date_validity CHECK (b_date <= r_date)
+    CONSTRAINT date_validity CHECK (b_date::date <= r_date)
 );
 
 

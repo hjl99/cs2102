@@ -420,13 +420,13 @@ AFTER INSERT ON Redeems
 FOR EACH ROW
 EXECUTE FUNCTION redeems_func();
 
+
 /* 20 */
-
-
-
-/* 21 */
 CREATE OR REPLACE FUNCTION session_valid_bit_func() RETURNS TRIGGER AS $$
 BEGIN
+	IF (NEW.end_time-NEW.start_time<>(INTERVAL '1 HOURS' * (SELECT duration FROM Courses C WHERE C.course_id=NEW.course_id))) THEN
+		RAISE EXCEPTION 'Invalid session duration!';
+	END IF;
 	IF NOT EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=OLD.launch_date and
 			   S.course_id=OLD.course_id and S.s_date=OLD.s_date and S.start_time=OLD.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'Session to be deleted does not exist!';
@@ -505,6 +505,23 @@ CREATE TRIGGER one_registration_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
+/* 23 */
+CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (NEW.package_credit=1) THEN
+		UPDATE Buys B
+		SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+		WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+		ORDER BY B.b_date DESC LIMIT 1); 
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER refund_redemption_trigger
+AFTER INSERT ON Cancels
+FOR EACH ROW
+EXECUTE FUNCTION refund_redemption_func();
 
 /* 26 */
 CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
@@ -519,6 +536,9 @@ BEGIN
     ELSIF (NOW() > c_and_co.reg_deadline) THEN
         RAISE EXCEPTION 'Course offering’s registration deadline has passed';
     END IF;
+	IF (SELECT EXTRACT(ISODOW FROM NEW.s_date) not in (1,2,3,4,5)) THEN 
+		RAISE EXCEPTION 'Instructor can only conduct sessions on weekdays!';
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
