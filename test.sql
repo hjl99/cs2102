@@ -236,6 +236,8 @@ CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13,
 /* function 7 */
 
 
+/* */
+CALL 
 
 /* function 2 */
 -- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');

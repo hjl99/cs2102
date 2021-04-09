@@ -169,8 +169,14 @@ EXECUTE FUNCTION registration_capacity_func();
 
 /* 11 */
 CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
+DECLARE 
 BEGIN
-	IF EXISTS (SELECT * FROM Buys B WHERE B.number=NEW.number and B.num_remaining_redemptions > 0) THEN
+	DROP TABLE IF EXISTS tmp; 
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number);
+	IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp)) OR EXISTS
+			   (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp) and 
+				(SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+				>=CURRENT_DATE + INTERVAL '7 DAYS') THEN
 		RAISE EXCEPTION 'You can only have 1 active or partially active package!';
 	END IF;
 	RETURN NEW;
@@ -481,7 +487,6 @@ BEGIN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
-
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;

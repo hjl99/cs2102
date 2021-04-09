@@ -459,12 +459,9 @@ BEGIN
     ORDER BY from_date DESC;
     INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
-        SELECT * INTO buy_info FROM Buys WHERE EXISTS (
-            SELECT 1
-            FROM Buys B NATURAL JOIN Credit_cards C
+        SELECT * INTO buy_info FROM Buys B NATURAL JOIN Credit_cards C
             WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
-            ORDER BY b_date DESC
-        );
+            ORDER BY b_date DESC;
         IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
         INSERT INTO Redeems VALUES
         (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
