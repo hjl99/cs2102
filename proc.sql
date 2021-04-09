@@ -627,6 +627,10 @@ DECLARE
 	session_date DATE;
 	session_start_time TIME;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE i_course_id = course_id and i_launch_date = launch_date and i_sess_number = sid) THEN
+        RAISE EXCEPTION 'This sessionn does not exist!';
+    END IF;
+
 	SELECT S.s_date INTO session_date
 	FROM Sessions S
 	WHERE i_course_id = S.course_id
