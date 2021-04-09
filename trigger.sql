@@ -250,7 +250,7 @@ BEGIN
         num := num + 1;
 	END IF;
 
-    IF (num <> 1) THEN 
+    IF (num <> 1) THEN
         RAISE EXCEPTION 'Every employee must be either a part time or full time employee!';
         RETURN NULL;
     END IF;
@@ -259,7 +259,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER emp_trigger
-BEFORE INSERT OR UPDATE ON Employees
+AFTER INSERT OR UPDATE ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION emp_check();
 
@@ -284,7 +284,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER part_time_emp_trigger
-BEFORE INSERT OR UPDATE ON Part_time_emp
+AFTER INSERT OR UPDATE ON Part_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_emp_check();
 
@@ -312,7 +312,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER full_time_emp_trigger
-BEFORE INSERT OR UPDATE ON Full_time_emp
+AFTER INSERT OR UPDATE ON Full_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION full_time_emp_check();
 
@@ -338,7 +338,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE CONSTRAINT TRIGGER instructor_trigger
-BEFORE INSERT OR UPDATE ON Instructors
+AFTER INSERT OR UPDATE ON Instructors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_check();
 
@@ -385,9 +385,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER instructor_consecutive_sessions_trigger
+CREATE TRIGGER instructor_consecutive_sessions_trigger
 BEFORE INSERT OR UPDATE ON Sessions
-DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
 
 /* 19 */
