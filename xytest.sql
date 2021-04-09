@@ -19,3 +19,4 @@ INSERT INTO Redeems (package_id, number, b_date, r_date, course_id, launch_date,
 INSERT INTO Registers (number, course_id, launch_date, sid, r_date, rid, eid) VALUES (999999999, 1, '2021-04-04', 4,'2021-04-04', 2, 4);
 INSERT INTO Registers (number, course_id, launch_date, sid, r_date, rid, eid) VALUES (889999999, 1, '2021-04-04', 4,'2021-04-04', 2, 4);
 INSERT INTO Registers (number, course_id, launch_date, sid, r_date, rid, eid) VALUES (779999999, 1, '2021-04-04', 3,'2021-06-04', 1, 4);
+call add_session(2, 1, '2021-6-4', '10:00:00', 4,1);
