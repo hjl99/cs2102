@@ -68,6 +68,9 @@ BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
+	ELSIF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+				 and S.rid=NEW.NEW.rid) THEN
+		RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
 	END IF;
 	RETURN NEW;
 END;
@@ -404,6 +407,10 @@ CREATE TRIGGER redeems_trigger
 AFTER INSERT ON Redeems
 FOR EACH ROW
 EXECUTE FUNCTION redeems_func();
+
+/* 20 */
+
+
 
 /* 21 */
 CREATE OR REPLACE FUNCTION session_valid_bit_func() RETURNS TRIGGER AS $$
