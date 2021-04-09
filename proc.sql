@@ -306,40 +306,29 @@ BEGIN
         i := i + 1;
     END LOOP;
     i := 1;
-    WHILE (i <= array_upper(sess,1) and i >= 1) LOOP
-            j :=last_stops[i];
-            select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
-            IF sum = 0 THEN
-                i := i - 1;
-                IF i < 0 THEN
-                    RAISE EXCEPTION 'No valid assignment!';
-                ELSE
-                    IF (i+2 <= array_upper(sess,1)) THEN
-                        last_stops[i+1] := 1;
-                    END IF;
-                    DELETE FROM Sessions 
-                    WHERE sid = i and course_id = cid and launch_date = in_launch_date;
-                END IF;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        j :=last_stops[i];
+        select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        IF sum = 0 or sum < j THEN
+            i := i - 1;
+            IF i < 1 THEN
+                RAISE EXCEPTION 'No valid assignment!';
             ELSE
-                SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
-                offset (j-1) limit 1;
-                IF temp IS NULL THEN
-                    i := i - 1;
-                    IF (i+1 <= array_upper(sess,1)) THEN
-                        last_stops[i+1] := 1;
-                    END IF;
-                    DELETE FROM Sessions 
-                    WHERE sid = i and course_id = cid and launch_date = in_launch_date;
-                ELSE 
-                    cid, in_launch_date, sess[i].rid, temp.out_eid;
-                    INSERT INTO Sessions VALUES
-                    (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
-                    cid, in_launch_date, sess[i].rid, temp.out_eid);
-                    last_stops[i] := last_stops[i] + 1;
-                    i := i + 1;
+                IF (i+1 <= array_upper(sess,1)) THEN
+                    last_stops[i+1] := 1;
                 END IF;
-
+                DELETE FROM Sessions 
+                WHERE sid = i and course_id = cid and launch_date = in_launch_date;
             END IF;
+        ELSE
+            SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
+            offset (j-1) limit 1;
+            INSERT INTO Sessions VALUES
+            (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
+            cid, in_launch_date, sess[i].rid, temp.out_eid);
+            last_stops[i] := last_stops[i] + 1;
+            i := i + 1;
+        END IF;
     END LOOP;
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
