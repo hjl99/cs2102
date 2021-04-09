@@ -397,6 +397,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* 15 */
+CREATE OR REPLACE FUNCTION get_available_course_offerings()
+RETURNS TABLE (title TEXT, course_area TEXT, start_date DATE, end_date DATE, reg_deadline DATE, fees FLOAT, num_remaining_seats INTEGER) AS $$
+BEGIN
+	RETURN QUERY
+	SELECT C.title, C.course_area_name, C.start_date, C.end_date, C.reg_deadline, C.fees, 
+	((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
+	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))::INTEGER AS num_remaining_seats
+	FROM (Offerings NATURAL JOIN Courses) C
+	WHERE C.reg_deadline >= CURRENT_DATE and ((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
+	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))>0
+	ORDER BY C.reg_deadline ASC, C.title ASC;
+END;
+$$ LANGUAGE plpgsql;
 
 /* 16 */
 CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
@@ -512,20 +526,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/* 15 */
-CREATE OR REPLACE FUNCTION get_available_course_offerings()
-RETURNS TABLE (title TEXT, course_area TEXT, start_date DATE, end_date DATE, reg_deadline DATE, fees FLOAT, num_remaining_seats INTEGER) AS $$
-BEGIN
-	RETURN QUERY
-	SELECT C.title, C.course_area_name, C.start_date, C.end_date, C.reg_deadline, C.fees, 
-	((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
-	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))::INTEGER AS num_remaining_seats
-	FROM (Offerings NATURAL JOIN Courses) C
-	WHERE C.reg_deadline >= CURRENT_DATE and ((SELECT SUM(seating_capacity) FROM (Rooms NATURAL JOIN Sessions) R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date and is_ongoing=true) - 
-	 (SELECT COUNT(*) FROM Registers R WHERE R.course_id=C.course_id and R.launch_date=C.launch_date))>0
-	ORDER BY C.reg_deadline ASC, C.title ASC;
-END;
-$$ LANGUAGE plpgsql;
+
 
 /* 25 */
 -- CREATE OR REPLACE FUNCTION pay_salary()
