@@ -124,6 +124,7 @@ RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
 DECLARE
 duration INTEGER := (SELECT duration FROM Courses where Courses.course_id = in_course_id);
 BEGIN
+drop table if exists temp_table;
 CREATE TEMP TABLE IF NOT EXISTS temp_table AS
 SELECT eid as iid, sum(EXTRACT(epoch from (end_time-start_time))/3600) as hours
 FROM Sessions 
@@ -321,7 +322,6 @@ DECLARE
     res INTEGER := 0;
 BEGIN
     set constraints offerings_fkey deferred;
-
     SELECT * INTO course_and_area FROM Courses 
     WHERE course_id = cid;
     res := helper(sess, 1, course_and_area.duration, cid, launch_date);
@@ -383,35 +383,43 @@ DECLARE
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN
-	DROP TABLE IF EXISTS tmp, tmp2;
-	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
-	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
-    FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
-					 FROM Course_packages NATURAL JOIN Buys 
-                     WHERE Buys.number=cust_num 
-                     ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
-    SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
-	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS session_date,
-	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS start_time
-	FROM Redeems R
-	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
-	ORDER BY session_date ASC, start_time ASC;
-	RETURN (SELECT row_to_json(t)
-	FROM (
-		SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
-		(
-			SELECT json_agg(d)
-			FROM (
-				SELECT title, session_date, start_time
-				FROM tmp2
-			) d
-		) as redeemed_session_information
-		FROM tmp
-	) t);
+	DROP TABLE IF EXISTS tmp, tmp2, tmp3;
+	CREATE TEMP TABLE IF NOT EXISTS tmp3 AS SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC;
+	cust_num := (SELECT number FROM Buys WHERE number in (SELECT * FROM tmp3) ORDER BY b_date DESC LIMIT 1);
+    IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp3)) OR EXISTS
+            (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp3) and 
+            (SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+            >=CURRENT_DATE + INTERVAL '7 DAYS') THEN
+        SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
+        FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
+                        FROM Course_packages NATURAL JOIN Buys 
+                        WHERE Buys.number=cust_num 
+                        ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
+        SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
+        (SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS session_date,
+        (SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS start_time
+        FROM Redeems R
+        WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
+        ORDER BY session_date ASC, start_time ASC;
+        RETURN (SELECT row_to_json(t)
+        FROM (
+            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
+            (
+                SELECT json_agg(d)
+                FROM (
+                    SELECT title, session_date, start_time
+                    FROM tmp2
+                ) d
+            ) as redeemed_session_information
+            FROM tmp
+        ) t);
+    ELSE
+        RAISE NOTICE 'You have no active package';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -459,17 +467,13 @@ BEGIN
     ORDER BY from_date DESC;
     INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
-        SELECT * INTO buy_info FROM Buys WHERE EXISTS (
-            SELECT 1
-            FROM Buys B NATURAL JOIN Credit_cards C
+        SELECT * INTO buy_info FROM Buys B NATURAL JOIN Credit_cards C
             WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
-            ORDER BY b_date DESC
-        );
+            ORDER BY b_date DESC;
         IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
         INSERT INTO Redeems VALUES
         (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
         cid, in_launch_date, in_sid);
-        --UPDATE Buys SET num_remaining_redemptions = num_remaining_redemptions - 1  assuming this is done by trigger
     ELSIF method <> 'payment' THEN
         RAISE EXCEPTION 'The method can only be payment or redemption';
     END IF;
@@ -551,7 +555,7 @@ BEGIN
     sess_reg_ddl := 
         (SELECT reg_deadline FROM Offerings 
         WHERE course_id = in_course_id AND launch_date = in_launch_date);
-    IF CURRENT_DATE > sess_reg_ddl  -- > or >= ?
+    IF CURRENT_DATE > sess_reg_ddl 
         THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
     END IF;
     /* OR Checking for time - if neither session has started */
@@ -755,19 +759,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* 24 */
-CREATE OR REPLACE PROCEDURE add_session(in_coid INTEGER, sess_id INTEGER, sess_day DATE,
+CREATE OR REPLACE PROCEDURE add_session(in_cid INTEGER, l_date DATE, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
 DECLARE 
     c_and_co RECORD;
 BEGIN
-    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_coid;
-    IF c_and_co is NULL THEN RAISE EXCEPTION 'Offering not found'; END IF;
-    IF sess_day < c_and_co.reg_deadline THEN
-        RAISE EXCEPTION 'The registration should close before commencing';
-    END IF;
-    IF NOW() > c_and_co.reg_deadline THEN
-        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    END IF; --TODO turn to trigger
+    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = in_cid and launch_date=l_date;
     INSERT INTO Sessions VALUES 
     (sess_id, sess_day, sess_start, sess_start + INTERVAL '1 hour' * c_and_co.duration, c_and_co.course_id, c_and_co.launch_date,
     rid, eid);
