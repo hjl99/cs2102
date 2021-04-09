@@ -289,8 +289,8 @@ in_launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC
 DECLARE
     course_and_area RECORD;
     last_stops INTEGER[];
-    i INTEGER := 0;
-    j INTEGER := 0;
+    i INTEGER := 1;
+    j INTEGER := 1;
     start_date DATE;
     end_date DATE;
     cap INTEGER := 0;
@@ -299,37 +299,55 @@ DECLARE
     temp RECORD;
 BEGIN
     set constraints offerings_fkey deferred;
-    WHILE (i < array_upper(sess,1)) LOOP
-        last_stops[i] = 0;
+    SELECT * INTO course_and_area FROM Courses 
+    WHERE course_id = cid;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        last_stops[i] = 1;
         i := i + 1;
     END LOOP;
-    WHILE (i < array_upper(sess,1) and i >= 0) LOOP
+    i := 1;
+    WHILE (i <= array_upper(sess,1) and i >= 1) LOOP
             j :=last_stops[i];
             raise notice 'i is % j is %', i, last_stops;
-            select count(*) into sum from find_instructors(cid, sess[j].start_date, sess[j].start_hr);
+            select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
             IF sum = 0 THEN
+                raise notice 'i isss % ', i;
                 i := i - 1;
                 IF i < 0 THEN
                     RAISE EXCEPTION 'No valid assignment!';
                 ELSE
-                    -- CALL remove_session(cid, in_launch_date, i);--remove session of parent
+                    raise notice 'removing % ', i;
+                    IF (i+2 <= array_upper(sess,1)) THEN
+                        last_stops[i+1] := 1;
+                    END IF;
                     DELETE FROM Sessions 
-                    WHERE sid = j and course_id = cid and launch_date = in_launch_date;
+                    WHERE sid = i and course_id = cid and launch_date = in_launch_date;
                 END IF;
             ELSE
-                SELECT * INTO temp FROM find_instructors(cid, sess[j].start_date, sess[j].start_hr)
-                offset (j) limit 1;
+                SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
+                offset (j-1) limit 1;
+                raise notice 'temp is  %', temp;
+                IF temp IS NULL THEN
+                    raise notice 'NULLDFADASDASD';
+                    i := i - 1;
+                    raise notice 'removing % ', i;
+                    IF (i+2 <= array_upper(sess,1)) THEN
+                        last_stops[i+1] := 1;
+                    END IF;
+                    DELETE FROM Sessions 
+                    WHERE sid = i and course_id = cid and launch_date = in_launch_date;
+                ELSE 
+                    raise notice 'adding % % % % % % % %', j, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
+                    cid, in_launch_date, sess[i].rid, temp.out_eid;
+                    INSERT INTO Sessions VALUES
+                    (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
+                    cid, in_launch_date, sess[i].rid, temp.out_eid);
+                    last_stops[i] := last_stops[i] + 1;
+                    i := i + 1;
+                END IF;
 
-                INSERT INTO Sessions VALUES  --simplify into add session
-                (i, sess[j].start_date, sess[j].start_hr, sess[j].start_hr + course_and_area.duration * INTERVAL '1 hour',
-                cid, in_launch_date, sess[j].rid, temp.out_eid);
-                -- CALL add_session(cid, in_launch_date, i + 1, date_part('DAY', sess[j].start_date), 
-                    -- sess[j].start_hr, temp.out_eid, sess[j].rid);
-                last_stops[i] := last_stops[i] + 1;
-                i := i + 1;
             END IF;
     END LOOP;
-    i:= 1;
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
