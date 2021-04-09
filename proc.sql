@@ -383,35 +383,43 @@ DECLARE
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN
-	DROP TABLE IF EXISTS tmp, tmp2;
-	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
-	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
-    FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
-					 FROM Course_packages NATURAL JOIN Buys 
-                     WHERE Buys.number=cust_num 
-                     ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
-    SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
-	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS session_date,
-	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS start_time
-	FROM Redeems R
-	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
-	ORDER BY session_date ASC, start_time ASC;
-	RETURN (SELECT row_to_json(t)
-	FROM (
-		SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
-		(
-			SELECT json_agg(d)
-			FROM (
-				SELECT title, session_date, start_time
-				FROM tmp2
-			) d
-		) as redeemed_session_information
-		FROM tmp
-	) t);
+	DROP TABLE IF EXISTS tmp, tmp2, tmp3;
+	CREATE TEMP TABLE IF NOT EXISTS tmp3 AS SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC;
+	cust_num := (SELECT number FROM Buys WHERE number in (SELECT * FROM tmp3) ORDER BY b_date DESC LIMIT 1);
+    IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp3)) OR EXISTS
+            (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp3) and 
+            (SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+            >=CURRENT_DATE + INTERVAL '7 DAYS') THEN
+        SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
+        FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
+                        FROM Course_packages NATURAL JOIN Buys 
+                        WHERE Buys.number=cust_num 
+                        ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
+        SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
+        (SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS session_date,
+        (SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS start_time
+        FROM Redeems R
+        WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
+        ORDER BY session_date ASC, start_time ASC;
+        RETURN (SELECT row_to_json(t)
+        FROM (
+            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
+            (
+                SELECT json_agg(d)
+                FROM (
+                    SELECT title, session_date, start_time
+                    FROM tmp2
+                ) d
+            ) as redeemed_session_information
+            FROM tmp
+        ) t);
+    ELSE
+        RAISE NOTICE 'You have no active package';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
