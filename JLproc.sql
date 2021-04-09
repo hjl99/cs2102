@@ -101,7 +101,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/* 20 */ -- FINISHED & TESTED (Redeems undone)
+/* 20 */ -- FINISHED & TESTED
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
     reg_cust_card_number INTEGER;
@@ -127,6 +127,9 @@ BEGIN
 
     IF sess_id IS NULL THEN 
         RAISE EXCEPTION 'No registration to cancel.';
+    ELSIF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions 
+        WHERE sid = sess_id AND course_id = in_course_id AND launch_date = in_launch_date) THEN
+        RAISE EXCEPTION 'Cancelling a session after its start time is not allowed.';
     END IF;
 
     early_cancel_ddl := (SELECT (s_date - INTERVAL '7 DAYS') 
@@ -158,10 +161,10 @@ BEGIN
                         WHEN sess_redeemed THEN 
                             (SELECT b_date FROM Redeems
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-                                AND number = reg_cust_card_number)
+                                AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id))
                         ELSE (SELECT r_date FROM Registers 
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-                                AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id))
+                                AND number = reg_cust_card_number)
                     END;
 
     DELETE FROM Registers 
@@ -291,32 +294,35 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/* 27 */ -- FINISHED
+/* 27 */ -- FINISHED & TESTED
 CREATE OR REPLACE FUNCTION top_packages(top_limit_num INTEGER)
 RETURNS TABLE (package_id INTEGER, num_free_registrations INTEGER, price FLOAT, sale_start_date DATE,
     sale_end_date DATE, num_package_sold INTEGER) AS $$
 BEGIN
+	IF top_limit_num < 1 THEN 
+		RAISE EXCEPTION 'The number of top packages must larger or equal to 1.';
+	END IF;
     RETURN QUERY
     WITH 
     Info_table AS (
-        SELECT package_id, num_free_registrations, price, 
-            sale_start_date, sale_end_date, COUNT(*) AS num_package_sold
-        FROM Buys NATURAL JOIN Course_packages
-        WHERE sale_start_date >= DATE_TRUNC('YEAR', CURRENT_DATE) 
-        GROUP BY package_id
+        SELECT BC.package_id, BC.num_free_registrations, BC.price, 
+            BC.sale_start_date, BC.sale_end_date, COUNT(*)::INTEGER AS num_package_sold
+        FROM (Buys NATURAL JOIN Course_packages) BC
+        WHERE BC.sale_start_date >= DATE_TRUNC('YEAR', CURRENT_DATE) 
+        GROUP BY BC.package_id, BC.num_free_registrations, BC.price, 
+            BC.sale_start_date, BC.sale_end_date
     ),
     Nth_info AS (
-        SELECT num_package_sold, price
-        FROM Info_table
-        ORDER BY num_package_sold DESC, price DESC
+        SELECT IT.num_package_sold, IT.price
+        FROM Info_table IT
+        ORDER BY IT.num_package_sold DESC, IT.price DESC
         LIMIT 1
         OFFSET top_limit_num - 1
     )
     SELECT *
-    FROM Info_table
-    WHERE num_package_sold > (SELECT MAX(num_package_sold) FROM Nth_info)
-        OR (num_package_sold = (SELECT MAX(num_package_sold) FROM Nth_info)
-            AND price >= (SELECT MAX(price) FROM Nth_info));
+    FROM Info_table IT
+    WHERE IT.num_package_sold >= (SELECT COALESCE(MAX(NI.num_package_sold), 0) FROM Nth_info NI)
+	ORDER BY IT.num_package_sold DESC, IT.price DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -324,7 +330,7 @@ $$ LANGUAGE plpgsql;
 /* 28 */
 CREATE OR REPLACE FUNCTION popular_courses() 
 RETURNS TABLE (course_id INTEGER, course_title TEXT, course_area TEXT, 
-    num_offerings INTEGER, num_reg_latest_off INTEGER) AS $$
+    num_offerings_this_year INTEGER, num_reg_of_latest_offering_this_year INTEGER) AS $$
 BEGIN 
     WITH
     Curr_year_offerings AS (
@@ -345,7 +351,7 @@ BEGIN
         (SELECT course_area_name FROM Courses C WHERE C.course_id = M.course_id) AS course_area,
         M.num_offerings, 
 		M.num_reg_latest_off
-	INTO course_id, course_title, course_area, num_offerings, num_reg_latest_off
+	INTO course_id, course_title, course_area, num_offerings_this_year, num_reg_of_latest_offering_this_year
     FROM Multi_off_courses M
     WHERE NOT EXISTS 
         (SELECT 1 FROM Curr_year_offerings A, Curr_year_offerings B
@@ -360,7 +366,7 @@ $$ LANGUAGE plpgsql;
 
 /* 29 */ -- FINISHED & TESTED (Redeems related not done)
 CREATE OR REPLACE FUNCTION view_summary_report(num_month INTEGER) 
-RETURNS TABLE (month INTEGER, year INTEGER, total_salary FLOAT, total_packages_sales_amt FLOAT, 
+RETURNS TABLE (month_year TEXT, total_salary FLOAT, total_packages_sales_amt FLOAT, 
     total_reg_fees_card FLOAT, total_amt_refunded_fees FLOAT, total_num_reg_redeem INTEGER) AS $$
 DECLARE
     first_day_of_month DATE := DATE_TRUNC('MONTH', CURRENT_DATE);
@@ -368,8 +374,7 @@ DECLARE
 BEGIN
     FOR num_month_counter IN 1..num_month 
     LOOP
-        month := (SELECT EXTRACT ('MONTH' FROM first_day_of_month));
-        year := (SELECT EXTRACT ('YEAR' FROM first_day_of_month));
+        month_year := TO_CHAR(first_day_of_month, 'FMMonth YYYY');
         total_salary := (SELECT COALESCE(SUM(amt), 0)
                         FROM Pay_slips 
                         WHERE payment_date BETWEEN first_day_of_month AND last_day_of_month);
