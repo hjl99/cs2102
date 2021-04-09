@@ -183,34 +183,7 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 12 */
-CREATE OR REPLACE FUNCTION package_redemption_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is paid by package redemption!';
-		RETURN NULL;
-	END IF;
-
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER course_fee_paid_by_redemption_trigger
-BEFORE INSERT OR UPDATE ON Registers
-FOR EACH ROW EXECUTE FUNCTION package_redemption_check();
-
-CREATE OR REPLACE FUNCTION card_payment_check()
+CREATE OR REPLACE FUNCTION one_payment_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
 	customer_id INTEGER;
@@ -225,7 +198,34 @@ BEGIN
 			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
-		RAISE EXCEPTION 'Course fee is paid by credit card!';
+	 	RAISE EXCEPTION 'Course fee is already paid!';
+		RETURN NULL;
+	END IF;
+
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER course_fee_payment_trigger
+BEFORE INSERT OR UPDATE ON Registers
+FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
+
+CREATE OR REPLACE FUNCTION registration_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
+	
+	IF NOT EXISTS (SELECT 1
+			   	   FROM Registers R NATURAL JOIN Credit_cards C
+			   	   WHERE C.cust_id = customer_id
+			   	   and NEW.sid = R.sid
+			   	   and NEW.course_id = R.course_id
+			   	   and NEW.launch_date = R.launch_date) THEN
+		RAISE EXCEPTION 'The customer should register the session before making payment by package redemption!';
 		RETURN NULL;
 	END IF;
 
@@ -235,7 +235,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION card_payment_check();
+FOR EACH ROW EXECUTE FUNCTION registration_check();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
