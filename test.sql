@@ -248,7 +248,16 @@ CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13,
 -- CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);
 
 /* function 15 */
-SELECT * FROM get_available_course_offerings();
+-- SELECT * FROM get_available_course_offerings();
+
+/* function 17 */
+-- CALL register_session(5, 2, '2021-03-01', 9, 'payment');
+
+/* function 16 */
+CALL register_session(5, 2, '2021-03-01', 9, 'payment');
+SELECT * FROM get_available_course_sessions(2, '2021-03-01');
+
+
 
 
 /* function 24 and function 23 */

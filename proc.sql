@@ -60,17 +60,17 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
-DROP PROCEDURE IF EXISTS remove_employee;
+
 /* 2 */
+DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
-    IF (SELECT COUNT(*) FROM Offerings O WHERE reid = O.eid 
-        and in_depart_date < O.reg_deadline) > 0 
-        or (SELECT COUNT(*) FROM Sessions WHERE reid = eid 
-        and in_depart_date < s_date and is_ongoing=true) > 0
-        or (SELECT COUNT(*) FROM Course_areas CA WHERE reid = CA.eid) > 0
-    THEN 
-        RAISE EXCEPTION 'Employee cannot be removed!';
+    IF EXISTS (SELECT 1 FROM Offerings O WHERE reid = O.eid and in_depart_date < O.reg_deadline) THEN
+        RAISE EXCEPTION 'This employee is an administrator who is still handling some course offerings!';
+    ELSIF EXISTS (SELECT 1 FROM Sessions WHERE reid = eid and in_depart_date < s_date and is_ongoing=true) THEN
+        RAISE EXCEPTION 'This employee is an instructor who is teaching some course session that starts after the departure date!';
+    ELSIF EXISTS (SELECT 1 FROM Course_areas CA WHERE reid = CA.eid) THEN 
+        RAISE EXCEPTION 'The employee is a manager who is managing some course area!';
     ELSE
         UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
     END IF;
@@ -432,13 +432,19 @@ $$ LANGUAGE plpgsql;
 
 
 /* 16 */
-CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
-RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
-    SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
-    FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
+CREATE OR REPLACE FUNCTION get_available_course_sessions(in_cid INTEGER, in_launch_date DATE) 
+RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+    SELECT s_date, start_time, sid, seating_capacity - 
+    (SELECT count(*) FROM Registers R 
+    WHERE course_id= in_cid and launch_date = in_launch_date and R.sid = 1) as avail_seats
+    FROM Sessions S NATURAL JOIN Instructors NATURAL JOIN Employees
     NATURAL JOIN Rooms
-    WHERE course_id = coid and is_ongoing=true
-    GROUP BY s_date, start_time, name, seating_capacity;
+    WHERE course_id = in_cid and launch_date = in_launch_date and is_ongoing=true
+    and not exists (
+        SELECT 1 FROM Registers R WHERE course_id = in_cid and launch_date = in_launch_date and R.sid= S.sid
+    )
+    GROUP BY s_date, start_time, name, seating_capacity, sid
+    ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
 /* 17 */
@@ -448,7 +454,8 @@ DECLARE
     credit_card_info RECORD;
     buy_info RECORD;
 BEGIN
-    SELECT * INTO credit_card_info FROM Credit_cards WHERE cust_id = in_cust_id
+    SELECT * INTO credit_card_info FROM Credit_cards 
+    WHERE cust_id = in_cust_id
     ORDER BY from_date DESC;
     INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
@@ -502,7 +509,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 19 */ -- DO WE CHECK FOR REGISTRATION DDL OR SESSION START TIME
+/* 19 */
 CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
@@ -710,6 +717,10 @@ DECLARE
 	session_date DATE;
 	session_start_time TIME;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE i_course_id = course_id and i_launch_date = launch_date and i_sess_number = sid) THEN
+        RAISE EXCEPTION 'This sessionn does not exist!';
+    END IF;
+
 	SELECT S.s_date INTO session_date
 	FROM Sessions S
 	WHERE i_course_id = S.course_id
