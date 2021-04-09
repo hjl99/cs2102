@@ -40,7 +40,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER session_non_zero_trigger
+CREATE CONSTRAINT TRIGGER session_non_zero_trigger1
 AFTER INSERT ON Offerings
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
@@ -55,7 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER session_non_zero_trigger
+CREATE CONSTRAINT TRIGGER session_non_zero_trigger2
 AFTER DELETE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
@@ -91,7 +91,8 @@ BEGIN
 	IF (NEW.s_date > r.end_date) THEN
 		UPDATE Offerings O
 		SET end_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
-	ELSIF (NEW.s_date < r.start_date) THEN
+    END IF;
+	IF (NEW.s_date < r.start_date) THEN
 		UPDATE Offerings O
 		SET start_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
 	END IF;
@@ -201,8 +202,8 @@ BEGIN
 	 	RAISE EXCEPTION 'Course fee is already paid!';
 		RETURN NULL;
 	END IF;
-
-	RETURN OLD;
+    NEW.r_date = CURRENT_DATE;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -245,16 +246,18 @@ DECLARE
 BEGIN
     num := 0;
     
-	IF (NEW.eid IN (SELECT eid FROM Part_time_emp))
-	THEN
+	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Full_time_emp))
-    THEN
+    END
+    IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
 
-    IF (num <> 1) THEN
+    IF (num = 0) THEN
         RAISE EXCEPTION 'Every employee must be either a part time or full time employee!';
+        RETURN NULL;
+    ELSIF (num = 2) THEN
+        RAISE EXCEPTION 'Employee cannot be both part time and full time employee!';
         RETURN NULL;
     END IF;
     RETURN OLD;
@@ -273,8 +276,7 @@ DECLARE
     num INTEGER;
 BEGIN
     num := 0;
-	IF (NEW.eid IN (SELECT eid FROM Part_time_instructors))
-	THEN
+	IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
 		num := num + 1;
 	END IF;
 
@@ -300,9 +302,11 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Administrators)) THEN
+    END IF;
+    IF (NEW.eid IN (SELECT eid FROM Administrators)) THEN
         num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Managers)) THEN
+    END IF;
+    IF (NEW.eid IN (SELECT eid FROM Managers)) THEN
         num := num + 1;
 	END IF;
 
@@ -328,7 +332,8 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
+    END IF
+    IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
 
@@ -353,7 +358,9 @@ DECLARE
 BEGIN
 	SELECT SUM(DATE_PART('hour', S.end_time - S.start_time)) INTO total_hour
 	FROM Sessions S NATURAL JOIN Part_time_instructors P
-	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date) and is_ongoing=true;
+	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date) 
+    and DATE_PART('year', S.s_date) = DATE_PART('year', NEW.s_date)
+    and is_ongoing=true;
 	
 	IF (total_hour > 30) THEN
 		RAISE EXCEPTION 'The teaching hours of this part time instructor exceeds the limit for the month!';
@@ -394,7 +401,6 @@ FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
 
 /* 19 */
 CREATE OR REPLACE FUNCTION redeems_func() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	UPDATE Buys B
 	SET num_remaining_redemptions = num_remaining_redemptions - 1
