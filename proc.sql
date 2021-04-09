@@ -283,49 +283,53 @@ CREATE TYPE Session AS (
     start_hr TIME,
     rid INTEGER
 );
-CREATE OR REPLACE FUNCTION helper(sess Session[], idx INTEGER, duration INTEGER, cid INTEGER, in_launch_date DATE)
-RETURNS INTEGER AS $$
-DECLARE 
-i INTEGER;
-j INTEGER;
-res INTEGER;
-sum INTEGER;
-temp RECORD;
-BEGIN
-    IF array_length(sess, 1) IS NULL THEN return 0; END IF;
-    select count(*) into sum from find_instructors(cid, sess[1].start_date, sess[1].start_hr);
-    FOR j IN 1 .. sum LOOP
-        SELECT * INTO temp FROM find_instructors(cid, sess[1].start_date, sess[1].start_hr)
-        offset (j - 1) limit 1;
-        INSERT INTO Sessions VALUES  --simplify into add session
-        (idx, sess[1].start_date, sess[1].start_hr, sess[1].start_hr + duration * INTERVAL '1 hour',
-        cid, in_launch_date, sess[1].rid, temp.out_eid);
-        res := helper(sess[2:array_length(sess,1)], idx + 1, duration, cid, in_launch_date); 
-        IF res = 1 THEN
-            DELETE FROM Sessions WHERE sid = idx and course_id = cid and launch_date = in_launch_date;
-        ELSE
-            return 0;
-        END IF;
-    END LOOP;
-    return 1;
-END;
-$$ LANGUAGE plpgsql;
 -- DROP PROCEDURE IF EXISTS add_course_offering;
 CREATE OR REPLACE PROCEDURE add_course_offering(cid INTEGER, fees FLOAT,
-launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
+in_launch_date DATE, reg_deadline DATE, target_no INTEGER, aid INTEGER, VARIADIC sess Session[]) AS $$
 DECLARE
     course_and_area RECORD;
-    i INTEGER := 0;
+    last_stops INTEGER[];
+    i INTEGER := 1;
+    j INTEGER := 1;
     start_date DATE;
     end_date DATE;
     cap INTEGER := 0;
     res INTEGER := 0;
+    sum INTEGER;
+    temp RECORD;
 BEGIN
     set constraints offerings_fkey deferred;
     SELECT * INTO course_and_area FROM Courses 
     WHERE course_id = cid;
-    res := helper(sess, 1, course_and_area.duration, cid, launch_date);
-    IF res = 1 THEN raise exception 'Valid assignment of instructor to session not found';END IF;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        last_stops[i] = 1;
+        i := i + 1;
+    END LOOP;
+    i := 1;
+    WHILE (i <= array_upper(sess,1)) LOOP
+        j :=last_stops[i];
+        select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        IF sum = 0 or sum < j THEN
+            i := i - 1;
+            IF i < 1 THEN
+                RAISE EXCEPTION 'No valid assignment!';
+            ELSE
+                IF (i+1 <= array_upper(sess,1)) THEN
+                    last_stops[i+1] := 1;
+                END IF;
+                DELETE FROM Sessions 
+                WHERE sid = i and course_id = cid and launch_date = in_launch_date;
+            END IF;
+        ELSE
+            SELECT * INTO temp FROM find_instructors(cid, sess[i].start_date, sess[i].start_hr)
+            offset (j-1) limit 1;
+            INSERT INTO Sessions VALUES
+            (i, sess[i].start_date, sess[i].start_hr, sess[i].start_hr + course_and_area.duration * INTERVAL '1 hour',
+            cid, in_launch_date, sess[i].rid, temp.out_eid);
+            last_stops[i] := last_stops[i] + 1;
+            i := i + 1;
+        END IF;
+    END LOOP;
     FOR i IN 1 .. array_upper(sess,1) LOOP
         cap := cap + (SELECT seating_capacity FROM Rooms R
         WHERE R.rid = sess[i].rid);
@@ -337,7 +341,7 @@ BEGIN
         END IF;
     END LOOP;
     INSERT INTO Offerings VALUES
-    (cid, launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
+    (cid, in_launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -383,35 +387,43 @@ DECLARE
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN
-	DROP TABLE IF EXISTS tmp, tmp2;
-	cust_num := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
-	SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
-    FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
-					 FROM Course_packages NATURAL JOIN Buys 
-                     WHERE Buys.number=cust_num 
-                     ORDER BY b_date DESC LIMIT 1;
-	CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
-    SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
-	(SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS session_date,
-	(SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
-	and C.rid=R.rid and C.eid=R.eid and is_ongoing=true) AS start_time
-	FROM Redeems R
-	WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
-	ORDER BY session_date ASC, start_time ASC;
-	RETURN (SELECT row_to_json(t)
-	FROM (
-		SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
-		(
-			SELECT json_agg(d)
-			FROM (
-				SELECT title, session_date, start_time
-				FROM tmp2
-			) d
-		) as redeemed_session_information
-		FROM tmp
-	) t);
+	DROP TABLE IF EXISTS tmp, tmp2, tmp3;
+	CREATE TEMP TABLE IF NOT EXISTS tmp3 AS SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC;
+	cust_num := (SELECT number FROM Buys WHERE number in (SELECT * FROM tmp3) ORDER BY b_date DESC LIMIT 1);
+    IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp3)) OR EXISTS
+            (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp3) and 
+            (SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+            >=CURRENT_DATE + INTERVAL '7 DAYS') THEN
+        SELECT num_remaining_redemptions, b_date, package_id INTO buy_info 
+        FROM Buys WHERE number=cust_num ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date
+                        FROM Course_packages NATURAL JOIN Buys 
+                        WHERE Buys.number=cust_num 
+                        ORDER BY b_date DESC LIMIT 1;
+        CREATE TEMP TABLE IF NOT EXISTS tmp2 AS 
+        SELECT (SELECT title FROM Courses C WHERE C.course_id=R.course_id) AS title,
+        (SELECT s_date FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS session_date,
+        (SELECT start_time FROM Sessions C WHERE C.sid=R.sid and C.course_id=R.course_id and C.launch_date=R.launch_date
+        and is_ongoing=true) AS start_time
+        FROM Redeems R
+        WHERE package_id=buy_info.package_id and number=cust_num and b_date=buy_info.b_date
+        ORDER BY session_date ASC, start_time ASC;
+        RETURN (SELECT row_to_json(t)
+        FROM (
+            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
+            (
+                SELECT json_agg(d)
+                FROM (
+                    SELECT title, session_date, start_time
+                    FROM tmp2
+                ) d
+            ) as redeemed_session_information
+            FROM tmp
+        ) t);
+    ELSE
+        RAISE NOTICE 'You have no active package';
+    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -459,12 +471,9 @@ BEGIN
     ORDER BY from_date DESC;
     INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
-        SELECT * INTO buy_info FROM Buys WHERE EXISTS (
-            SELECT 1
-            FROM Buys B NATURAL JOIN Credit_cards C
+        SELECT * INTO buy_info FROM Buys B NATURAL JOIN Credit_cards C
             WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
-            ORDER BY b_date DESC
-        );
+            ORDER BY b_date DESC;
         IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
         INSERT INTO Redeems VALUES
         (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
@@ -521,22 +530,16 @@ DECLARE
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
     cust_card_number BIGINT;
-    /*prev_sess_date DATE;
-    prev_sess_start_time TIME;
-    new_sess_date DATE;
-    new_sess_start_time TIME;*/
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
         RAISE EXCEPTION 'The customer specified does not exist.';
     END IF;
 
-    -- prev session information
     SELECT number, sid INTO cust_card_number, prev_sess_id
     FROM Registers
     WHERE course_id = in_course_id AND launch_date = in_launch_date
         AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
 
-    -- new session information
     new_sess_rid := (SELECT rid FROM Sessions 
                     WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = new_sess_id);
     
@@ -546,21 +549,12 @@ BEGIN
         RAISE EXCEPTION 'The new session specified does not exist.';
     END IF;
 
-    /* EITHER Checking for registration deadline */
     sess_reg_ddl := 
         (SELECT reg_deadline FROM Offerings 
         WHERE course_id = in_course_id AND launch_date = in_launch_date);
     IF CURRENT_DATE > sess_reg_ddl 
         THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
     END IF;
-    /* OR Checking for time - if neither session has started */
-    /*SELECT s_date, start_time INTO prev_sess_date 
-        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = prev_sess_id;
-    SELECT s_date, start_time INTO new_sess_date, new_sess_start_time
-        FROM Sessions WHERE course_id = c_id AND launch_date = launch_d AND sid = new_sess_id;
-    IF prev_sess_date + prev_sess_start_time <= CURRENT_TIMESTAMP OR new_sess_date + new_sess_end_time <= CURRENT_TIMESTAMP THEN  
-        RAISE EXCEPTION 'Updates involving ongoing or finished session are not allowed.';
-    END IF;*/
 
     new_sess_seating_capacity := (SELECT seating_capacity FROM Rooms WHERE rid = new_sess_rid);
     new_sess_valid_reg_count := (SELECT COUNT(*) FROM Registers 
@@ -638,7 +632,7 @@ BEGIN
                             (SELECT b_date FROM Redeems
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
                                 AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id))
-                        ELSE (SELECT r_date FROM Registers 
+                        ELSE (SELECT r_date::TIMESTAMP FROM Registers 
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
                                 AND number = reg_cust_card_number)
                     END;

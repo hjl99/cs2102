@@ -34,7 +34,7 @@ EXECUTE FUNCTION customer_total_participation_func2();
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=NEW.course_id and launch_date=NEW.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering1 must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;
@@ -49,7 +49,7 @@ EXECUTE FUNCTION session_non_zero_func1();
 CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering2 must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;
@@ -170,8 +170,14 @@ EXECUTE FUNCTION registration_capacity_func();
 
 /* 11 */
 CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
+DECLARE 
 BEGIN
-	IF EXISTS (SELECT * FROM Buys B WHERE B.number=NEW.number and B.num_remaining_redemptions > 0) THEN
+	DROP TABLE IF EXISTS tmp; 
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number);
+	IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp)) OR EXISTS
+			   (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp) and 
+				(SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+				>=CURRENT_DATE + INTERVAL '7 DAYS') THEN
 		RAISE EXCEPTION 'You can only have 1 active or partially active package!';
 	END IF;
 	RETURN NEW;
@@ -414,13 +420,13 @@ AFTER INSERT ON Redeems
 FOR EACH ROW
 EXECUTE FUNCTION redeems_func();
 
+
 /* 20 */
-
-
-
-/* 21 */
 CREATE OR REPLACE FUNCTION session_valid_bit_func() RETURNS TRIGGER AS $$
 BEGIN
+	IF (NEW.end_time-NEW.start_time<>(INTERVAL '1 HOURS' * (SELECT duration FROM Courses C WHERE C.course_id=NEW.course_id))) THEN
+		RAISE EXCEPTION 'Invalid session duration!';
+	END IF;
 	IF NOT EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=OLD.launch_date and
 			   S.course_id=OLD.course_id and S.s_date=OLD.s_date and S.start_time=OLD.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'Session to be deleted does not exist!';
@@ -487,7 +493,6 @@ BEGIN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
-
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
@@ -500,6 +505,23 @@ CREATE TRIGGER one_registration_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
+/* 23 */
+CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (NEW.package_credit=1) THEN
+		UPDATE Buys B
+		SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+		WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+		ORDER BY B.b_date DESC LIMIT 1); 
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER refund_redemption_trigger
+AFTER INSERT ON Cancels
+FOR EACH ROW
+EXECUTE FUNCTION refund_redemption_func();
 
 /* 26 */
 CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
@@ -514,6 +536,9 @@ BEGIN
     ELSIF (NOW() > c_and_co.reg_deadline) THEN
         RAISE EXCEPTION 'Course offering’s registration deadline has passed';
     END IF;
+	IF (SELECT EXTRACT(ISODOW FROM NEW.s_date) not in (1,2,3,4,5)) THEN 
+		RAISE EXCEPTION 'Instructor can only conduct sessions on weekdays!';
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
