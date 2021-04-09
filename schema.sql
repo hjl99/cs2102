@@ -74,7 +74,7 @@ CREATE TABLE Customers (
 CREATE TABLE Rooms (
     rid SERIAL PRIMARY KEY,
     location TEXT NOT NULL,
-    seating_capacity INTEGER DEFAULT 0
+    seating_capacity INTEGER NOT NULL,
     CONSTRAINT seating_capacity_pos CHECK (seating_capacity > 0)
 );
 
