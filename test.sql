@@ -241,6 +241,8 @@ SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
 /* function 7 */
 
 
+/* */
+CALL 
 
 /* function 2 */
 -- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');

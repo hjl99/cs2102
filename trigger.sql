@@ -170,8 +170,14 @@ EXECUTE FUNCTION registration_capacity_func();
 
 /* 11 */
 CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
+DECLARE 
 BEGIN
-	IF EXISTS (SELECT * FROM Buys B WHERE B.number=NEW.number and B.num_remaining_redemptions > 0) THEN
+	DROP TABLE IF EXISTS tmp; 
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number);
+	IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp)) OR EXISTS
+			   (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp) and 
+				(SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
+				>=CURRENT_DATE + INTERVAL '7 DAYS') THEN
 		RAISE EXCEPTION 'You can only have 1 active or partially active package!';
 	END IF;
 	RETURN NEW;
@@ -184,34 +190,7 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 12 */
-CREATE OR REPLACE FUNCTION package_redemption_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is paid by package redemption!';
-		RETURN NULL;
-	END IF;
-    NEW.r_date = CURRENT_DATE;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER course_fee_paid_by_redemption_trigger
-BEFORE INSERT OR UPDATE ON Registers
-FOR EACH ROW EXECUTE FUNCTION package_redemption_check();
-
-CREATE OR REPLACE FUNCTION card_payment_check()
+CREATE OR REPLACE FUNCTION one_payment_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
 	customer_id INTEGER;
@@ -226,7 +205,34 @@ BEGIN
 			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
-		RAISE EXCEPTION 'Course fee is paid by credit card!';
+	 	RAISE EXCEPTION 'Course fee is already paid!';
+		RETURN NULL;
+	END IF;
+    NEW.r_date = CURRENT_DATE;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER course_fee_payment_trigger
+BEFORE INSERT OR UPDATE ON Registers
+FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
+
+CREATE OR REPLACE FUNCTION registration_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
+	
+	IF NOT EXISTS (SELECT 1
+			   	   FROM Registers R NATURAL JOIN Credit_cards C
+			   	   WHERE C.cust_id = customer_id
+			   	   and NEW.sid = R.sid
+			   	   and NEW.course_id = R.course_id
+			   	   and NEW.launch_date = R.launch_date) THEN
+		RAISE EXCEPTION 'The customer should register the session before making payment by package redemption!';
 		RETURN NULL;
 	END IF;
 
@@ -236,7 +242,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION card_payment_check();
+FOR EACH ROW EXECUTE FUNCTION registration_check();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
@@ -487,7 +493,6 @@ BEGIN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
-
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
