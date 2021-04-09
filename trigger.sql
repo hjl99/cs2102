@@ -505,7 +505,23 @@ CREATE TRIGGER one_registration_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
+/* 23 */
+CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (NEW.package_credit=1) THEN
+		UPDATE Buys B
+		SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+		WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+		ORDER BY B.b_date DESC LIMIT 1); 
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
+CREATE TRIGGER refund_redemption_trigger
+AFTER INSERT ON Cancels
+FOR EACH ROW
+EXECUTE FUNCTION refund_redemption_func();
 
 /* 26 */
 CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
@@ -522,6 +538,7 @@ BEGIN
     END IF;
 	IF (SELECT EXTRACT(ISODOW FROM NEW.s_date) not in (1,2,3,4,5)) THEN 
 		RAISE EXCEPTION 'Instructor can only conduct sessions on weekdays!';
+	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
