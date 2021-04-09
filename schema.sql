@@ -178,7 +178,7 @@ CREATE TABLE Buys (
 
 /* Requires triggers to enforce that each customer can register for at most one sesion of a course offering (added)*/
 CREATE TABLE Registers (
-    number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
+    number BIGINT REFERENCES Credit_cards ON DELETE CASCADE,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
@@ -195,7 +195,7 @@ CREATE TABLE  Specializes (
 
 CREATE TABLE Redeems ( 
     package_id INTEGER, 
-    number INTEGER,
+    number BIGINT,
     b_date DATE,
     r_date DATE,
     course_id INTEGER,

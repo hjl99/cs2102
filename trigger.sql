@@ -40,7 +40,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER session_non_zero_trigger
+CREATE CONSTRAINT TRIGGER session_non_zero_trigger1
 AFTER INSERT ON Offerings
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
@@ -55,7 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER session_non_zero_trigger
+CREATE CONSTRAINT TRIGGER session_non_zero_trigger2
 AFTER DELETE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
@@ -91,7 +91,8 @@ BEGIN
 	IF (NEW.s_date > r.end_date) THEN
 		UPDATE Offerings O
 		SET end_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
-	ELSIF (NEW.s_date < r.start_date) THEN
+    END IF;
+	IF (NEW.s_date < r.start_date) THEN
 		UPDATE Offerings O
 		SET start_date=NEW.s_date WHERE O.launch_date=NEW.launch_date and O.course_id=NEW.course_id;
 	END IF;
@@ -189,34 +190,7 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 12 */
-CREATE OR REPLACE FUNCTION package_redemption_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is paid by package redemption!';
-		RETURN NULL;
-	END IF;
-
-	RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER course_fee_paid_by_redemption_trigger
-BEFORE INSERT OR UPDATE ON Registers
-FOR EACH ROW EXECUTE FUNCTION package_redemption_check();
-
-CREATE OR REPLACE FUNCTION card_payment_check()
+CREATE OR REPLACE FUNCTION one_payment_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
 	customer_id INTEGER;
@@ -231,7 +205,34 @@ BEGIN
 			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
-		RAISE EXCEPTION 'Course fee is paid by credit card!';
+	 	RAISE EXCEPTION 'Course fee is already paid!';
+		RETURN NULL;
+	END IF;
+    NEW.r_date = CURRENT_DATE;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER course_fee_payment_trigger
+BEFORE INSERT OR UPDATE ON Registers
+FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
+
+CREATE OR REPLACE FUNCTION registration_check()
+RETURNS TRIGGER AS $$
+DECLARE
+	customer_id INTEGER;
+BEGIN
+	SELECT C.cust_id INTO customer_id
+	FROM Credit_cards C
+	WHERE NEW.number = C.number;
+	
+	IF NOT EXISTS (SELECT 1
+			   	   FROM Registers R NATURAL JOIN Credit_cards C
+			   	   WHERE C.cust_id = customer_id
+			   	   and NEW.sid = R.sid
+			   	   and NEW.course_id = R.course_id
+			   	   and NEW.launch_date = R.launch_date) THEN
+		RAISE EXCEPTION 'The customer should register the session before making payment by package redemption!';
 		RETURN NULL;
 	END IF;
 
@@ -241,7 +242,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION card_payment_check();
+FOR EACH ROW EXECUTE FUNCTION registration_check();
 
 /* 13 */
 CREATE OR REPLACE FUNCTION emp_check()
@@ -251,16 +252,18 @@ DECLARE
 BEGIN
     num := 0;
     
-	IF (NEW.eid IN (SELECT eid FROM Part_time_emp))
-	THEN
+	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Full_time_emp))
-    THEN
+    END
+    IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
 
-    IF (num <> 1) THEN
+    IF (num = 0) THEN
         RAISE EXCEPTION 'Every employee must be either a part time or full time employee!';
+        RETURN NULL;
+    ELSIF (num = 2) THEN
+        RAISE EXCEPTION 'Employee cannot be both part time and full time employee!';
         RETURN NULL;
     END IF;
     RETURN OLD;
@@ -279,8 +282,7 @@ DECLARE
     num INTEGER;
 BEGIN
     num := 0;
-	IF (NEW.eid IN (SELECT eid FROM Part_time_instructors))
-	THEN
+	IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
 		num := num + 1;
 	END IF;
 
@@ -306,9 +308,11 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Administrators)) THEN
+    END IF;
+    IF (NEW.eid IN (SELECT eid FROM Administrators)) THEN
         num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Managers)) THEN
+    END IF;
+    IF (NEW.eid IN (SELECT eid FROM Managers)) THEN
         num := num + 1;
 	END IF;
 
@@ -334,7 +338,8 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    ELSIF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
+    END IF
+    IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
 
@@ -359,7 +364,9 @@ DECLARE
 BEGIN
 	SELECT SUM(DATE_PART('hour', S.end_time - S.start_time)) INTO total_hour
 	FROM Sessions S NATURAL JOIN Part_time_instructors P
-	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date) and is_ongoing=true;
+	WHERE NEW.eid = S.eid and DATE_PART('month', S.s_date) = DATE_PART('month', NEW.s_date) 
+    and DATE_PART('year', S.s_date) = DATE_PART('year', NEW.s_date)
+    and is_ongoing=true;
 	
 	IF (total_hour > 30) THEN
 		RAISE EXCEPTION 'The teaching hours of this part time instructor exceeds the limit for the month!';
@@ -400,7 +407,6 @@ FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
 
 /* 19 */
 CREATE OR REPLACE FUNCTION redeems_func() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	UPDATE Buys B
 	SET num_remaining_redemptions = num_remaining_redemptions - 1

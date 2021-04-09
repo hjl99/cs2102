@@ -22,7 +22,7 @@ DELETE FROM Instructors;
 DELETE FROM Part_time_emp;
 DELETE FROM Full_time_emp;
 DELETE FROM Buys;
-DELETE FROM Credit_cards;
+DELETE FROM Credit_cards CASCADE;
 DELETE FROM Customers;
 DELETE FROM Pay_slips;
 DELETE FROM Employees;
@@ -159,16 +159,14 @@ CALL add_course_packages('Cookley', 39, '2021-04-05', '2021-04-06', 38.98);
 CALL add_course_packages(NULL, 40, '2021-04-04', '2021-04-18', 1.08);
 
 /* function 12 */
--- SELECT * FROM get_available_course_packages(); -- expect 38 results
+/* SELECT * FROM get_available_course_packages(); -- expect 38 results*/
 
 /* function 13 (cid INTEGER, pid INTEGER)*/
 -- CALL buy_course_package(1, 1);
 --negative CASE
 
 
-/* Test case for 6 and 10 */
-INSERT INTO Offerings VALUES
-(2, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 13);
+
 
 
 insert into Rooms(rid, location, seating_capacity) values (1,'A', 1);
@@ -233,6 +231,10 @@ CALL add_course_offering(3, 1.0,'2021-03-02','2021-04-15', 2, 13,
 ('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
 -- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 
 
+-- /* Test case for 6 and 10 */
+-- INSERT INTO Offerings VALUES
+-- (2, '2021-03-01', '2021-04-01', '2021-04-11', '2021-03-10', 10, 10, 1.0, 13);
+
 /* function 7 */
 
 
@@ -256,10 +258,13 @@ CALL
 -- CALL register_session(5, 2, '2021-03-01', 9, 'payment');
 
 /* function 16 */
-CALL register_session(5, 2, '2021-03-01', 9, 'payment');
+CALL buy_course_package(5, 1);
+CALL register_session(5, 2, '2021-03-01', 9, 'redemption');
 SELECT * FROM get_available_course_sessions(2, '2021-03-01');
+/* function 18 */
+SELECT * FROM get_my_registrations(5);
 
-
+/* function 19 */
 
 
 /* function 24 and function 23 */
