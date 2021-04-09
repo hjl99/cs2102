@@ -432,13 +432,19 @@ $$ LANGUAGE plpgsql;
 
 
 /* 16 */
-CREATE OR REPLACE FUNCTION get_available_course_sessions(coid INTEGER) 
-RETURNS TABLE(sess_date DATE, sess_start TIME, i_name TEXT, seat_remaining INTEGER) AS $$
-    SELECT s_date, start_time, name, seating_capacity - count(*) as avail_seats
-    FROM Sessions NATURAL JOIN Instructors NATURAL JOIN Employees NATURAL JOIN Registers 
+CREATE OR REPLACE FUNCTION get_available_course_sessions(in_cid INTEGER, in_launch_date DATE) 
+RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+    SELECT s_date, start_time, sid, seating_capacity - 
+    (SELECT count(*) FROM Registers R 
+    WHERE course_id= in_cid and launch_date = in_launch_date and R.sid = 1) as avail_seats
+    FROM Sessions S NATURAL JOIN Instructors NATURAL JOIN Employees
     NATURAL JOIN Rooms
-    WHERE course_id = coid and is_ongoing=true
-    GROUP BY s_date, start_time, name, seating_capacity;
+    WHERE course_id = in_cid and launch_date = in_launch_date and is_ongoing=true
+    and not exists (
+        SELECT 1 FROM Registers R WHERE course_id = in_cid and launch_date = in_launch_date and R.sid= S.sid
+    )
+    GROUP BY s_date, start_time, name, seating_capacity, sid
+    ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
 /* 17 */
@@ -448,7 +454,8 @@ DECLARE
     credit_card_info RECORD;
     buy_info RECORD;
 BEGIN
-    SELECT * INTO credit_card_info FROM Credit_cards WHERE cust_id = in_cust_id
+    SELECT * INTO credit_card_info FROM Credit_cards 
+    WHERE cust_id = in_cust_id
     ORDER BY from_date DESC;
     INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
