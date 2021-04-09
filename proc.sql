@@ -61,7 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 2 */
+/* 2 TESTED*/
 DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
@@ -72,7 +72,7 @@ BEGIN
     ELSIF EXISTS (SELECT 1 FROM Course_areas CA WHERE reid = CA.eid) THEN 
         RAISE EXCEPTION 'The employee is a manager who is managing some course area!';
     ELSE
-        UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+        UPDATE Employees SET depart_date = in_depart_date WHERE eid = reid; 
     END IF;
 END;
 $$ LANGUAGE plpgsql;
