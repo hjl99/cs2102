@@ -543,9 +543,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 CREATE TRIGGER add_sess_trigger
 BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION add_sess_func();
+
+/* 29 */
+CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (num_work_hours=null) THEN
+		IF (amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	ELSIF (num_work_hours<>null) THEN
+		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*num_work_hours) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	ELSE
+		RAISE EXCEPTION 'No work hours and work days!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER payslip_validation_trigger
+BEFORE INSERT ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION payslip_validation_func();

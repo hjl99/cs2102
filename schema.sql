@@ -57,9 +57,8 @@ CREATE TABLE Pay_slips (
     num_work_hours INTEGER,
     num_work_days INTEGER,
     PRIMARY KEY (eid, payment_date),
-    CONSTRAINT num_work_hours_non_neg CHECK (num_work_hours >= 0),
-    CONSTRAINT num_work_days_non_neg CHECK (num_work_days >= 0),
-    CONSTRAINT amt_pos CHECK (amt > 0)
+    CONSTRAINT num_work_check CHECK ((num_work_hours>=0 and num_work_days=null) or (num_work_hours=null and num_work_days>=0)),
+    CONSTRAINT amt_pos CHECK (amt >= 0)
 );
 -- <---------------------- Customer side ---------------------->
 
