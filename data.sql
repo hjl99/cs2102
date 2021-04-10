@@ -144,22 +144,22 @@ CALL add_course('EC2000', 'Econ level 2', 'Economics', 2);
 CALL add_course('EC3000', 'Econ level 3', 'Economics', 3);
 
 -- Rooms
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 10);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 20);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 20);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 30);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 80);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 30);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 60);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 40);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 10);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 7);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 4);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 10);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 6);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
 
 -- Course Offerings and Sessions
-CALL add_course_offering(1, 100, '2021-05-03', '2021-04-20', 10, 31, VARIADIC ARRAY[('2021-05-03', '09:00', 1), ('2021-05-05', '15:00', 1)]::Session[]);
-CALL add_course_offering(1, 100, '2021-05-10', '2021-04-25', 10, 32, VARIADIC ARRAY[('2021-05-11', '15:00', 2)]::Session[]);
-CALL add_course_offering(2, 99, '2021-05-17', '2021-05-05', 5, 33, VARIADIC ARRAY[('2021-05-17', '09:00', 3)]::Session[]);
+CALL add_course_offering(1, 100, '2020-09-03', '2020-08-20', 10, 31, VARIADIC ARRAY[('2020-09-03', '09:00', 1), ('2020-09-04', '15:00', 1)]::Session[]);
+CALL add_course_offering(1, 100, '2021-04-12', '2021-03-31', 10, 32, VARIADIC ARRAY[('2021-04-12', '15:00', 2), ('2021-04-15', '09:00', 2)]::Session[]);
+CALL add_course_offering(2, 99, '2021-04-05', '2021-03-25', 5, 33, VARIADIC ARRAY[('2021-04-05', '09:00', 3), ('2021-04-14', '15:00', 4)]::Session[]);
 CALL add_course_offering(3, 193, '2021-05-24', '2021-05-12', 15, 33, VARIADIC ARRAY[('2021-05-24', '15:00', 1), ('2021-05-26', '09:00', 1)]::Session[]);
 CALL add_course_offering(2, 100, '2021-05-10', '2021-04-25', 10, 34, VARIADIC ARRAY[('2021-05-10', '09:00', 2)]::Session[]);
 CALL add_course_offering(4, 199, '2021-05-31', '2021-05-15', 5, 35, VARIADIC ARRAY[('2021-05-31', '09:00', 5)]::Session[]);
