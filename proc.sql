@@ -572,7 +572,7 @@ DECLARE
     refund_amt FLOAT;
     package_credit INTEGER;
     sess_id INTEGER;
-    payment_date DATE;
+    payment_date TIMESTAMP;
     redeemed_package_id INTEGER;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN
