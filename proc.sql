@@ -872,7 +872,7 @@ BEGIN
 							   SELECT C.course_area_name
 							   FROM Registrations R NATURAL JOIN Courses C
 							   ORDER BY R.r_date DESC
-						  	   LIMIT 3))
+						  	   LIMIT 3)
                              SELECT DISTINCT CA.course_area_name
                              FROM CA);					  
 			LOOP

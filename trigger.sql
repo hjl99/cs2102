@@ -68,7 +68,8 @@ BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
-	ELSIF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+	END IF
+    IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
 				 and S.rid=NEW.rid) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
 	END IF;
@@ -636,6 +637,3 @@ FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
 
 /* ?? */
-
-
-CREATE TRIGGER instructor_spec_trigger
