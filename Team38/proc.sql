@@ -395,7 +395,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
 RETURNS json AS $$
 DECLARE
-	cust_num INTEGER;
+	cust_num BIGINT;
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN
