@@ -157,7 +157,16 @@ INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 60);
 INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 40);
 
 -- Course Offerings and Sessions
-CALL add_course_offering(1, 100, '2021-05-03', '2021-04-20', 10, 31, VARIADIC ARRAY[('2021-05-03', '09:00', 1), ('2021-05-06', '14:00', 1)]::Session[]);
+CALL add_course_offering(1, 100, '2021-05-03', '2021-04-20', 10, 31, VARIADIC ARRAY[('2021-05-03', '09:00', 1), ('2021-05-05', '14:00', 1)]::Session[]);
+CALL add_course_offering(1, 100, '2021-05-10', '2021-04-30', 10, 32, VARIADIC ARRAY[('2021-05-11', '14:00', 2)]::Session[]);
+CALL add_course_offering(2, 99, '2021-05-17', '2021-05-10', 5, 33, VARIADIC ARRAY[('2021-05-17', '11:00', 3)]::Session[]);
+CALL add_course_offering(3, 193, '2021-05-24', '2021-05-12', 15, 33, VARIADIC ARRAY[('2021-05-24', '15:00', 1), ('2021-05-26', '09:00', 1)]::Session[]);
+CALL add_course_offering(2, 100, '2021-05-10', '2021-05-10', 10, 34, VARIADIC ARRAY[('2021-05-10', '11:00', 2)]::Session[]);
+CALL add_course_offering(4, 199, '2021-05-31', '2021-05-15', 5, 35, VARIADIC ARRAY[('2021-05-31', '09:00', 5)]::Session[]);
+CALL add_course_offering(5, 89.99, '2021-06-02', '2021-05-20', 10, 36, VARIADIC ARRAY[('2021-06-02', '10:00', 6)]::Session[]);
+CALL add_course_offering(2, 299, '2021-06-02', '2021-05-20', 5, 36, VARIADIC ARRAY[('2021-06-04', '15:00', 4)]::Session[]);
+CALL add_course_offering(7, 109, '2021-06-09', '2021-05-30', 10, 33, VARIADIC ARRAY[('2021-06-10', '09:00', 3)]::Session[]);
+CALL add_course_offering(2, 99, '2021-06-09', '2021-05-30', 5, 39, VARIADIC ARRAY[('2021-06-09', '15:00', 2)]::Session[]);
 
 -- Course Packages
 CALL add_course_package('Package 1', 3, '2021-04-05', '2021-04-30', 199);
@@ -220,6 +229,3 @@ CALL buy_course_package(6, 8);
 CALL buy_course_package(8, 10);
 CALL buy_course_package(9, 7);
 CALL buy_course_package(10, 13);
-
--- this procedure will trigger the each course offering must have one or more sessions trigger
-CALL add_course_offering(1, 100::FLOAT, '2021-05-01'::DATE, '2021-04-20'::DATE, 10, 4, VARIADIC ARRAY[('2021-05-01', '09:00', 1), ('2021-05-03', '14:00', 1)]::Session[]);
