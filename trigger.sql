@@ -176,7 +176,8 @@ CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
 DECLARE 
 BEGIN
 	DROP TABLE IF EXISTS tmp; 
-	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number);
+	CREATE TEMP TABLE IF NOT EXISTS tmp AS SELECT number FROM Credit_cards 
+    WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number);
 	IF EXISTS (SELECT * FROM Buys B WHERE B.num_remaining_redemptions > 0 and B.number IN (SELECT * FROM tmp)) OR EXISTS
 			   (SELECT * FROM Redeems R WHERE R.number IN (SELECT * FROM tmp) and 
 				(SELECT s_date FROM Sessions S WHERE S.sid=R.sid and S.course_id=R.course_id and S.launch_date=R.launch_date)
@@ -657,59 +658,60 @@ EXECUTE FUNCTION instructor_spec_func();
 /* TO USE 24, SWAP INSERT AND DELETE AT THE END OF ROUTINE 20 */
 
 
-CREATE OR REPLACE FUNCTION protect_cancels_func2() RETURNS TRIGGER AS $$
-BEGIN
-	IF NOT EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
-		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
-		RAISE NOTICE 'No registration to Cancel!';
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION protect_cancels_func2() RETURNS TRIGGER AS $$
+-- BEGIN
+-- 	IF NOT EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
+-- 		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
+-- 		RAISE NOTICE 'No registration to Cancel!';
+-- 	END IF;
+-- 	RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE  TRIGGER protect_cancels_trigger2
-BEFORE INSERT ON Cancels
-FOR EACH ROW
-EXECUTE FUNCTION protect_cancels_func2();
+-- CREATE  TRIGGER protect_cancels_trigger2
+-- BEFORE INSERT ON Cancels
+-- FOR EACH ROW
+-- EXECUTE FUNCTION protect_cancels_func2();
 
-CREATE OR REPLACE FUNCTION protect_cancels_func1() RETURNS TRIGGER AS $$
-BEGIN
-	IF EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
-		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
-		RAISE NOTICE 'Cancelled registrations should not be in Registers!';
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- CREATE OR REPLACE FUNCTION protect_cancels_func1() RETURNS TRIGGER AS $$
+-- BEGIN
+-- 	IF EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
+-- 		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
+-- 		RAISE NOTICE 'Cancelled registrations should not be in Registers!';
+-- 	END IF;
+-- 	RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER protect_cancels_trigger1
-AFTER INSERT ON Cancels
-DEFERRABLE INITIALLY DEFERRED
-FOR EACH ROW
-EXECUTE FUNCTION protect_cancels_func1();
+-- CREATE CONSTRAINT TRIGGER protect_cancels_trigger1
+-- AFTER INSERT ON Cancels
+-- DEFERRABLE INITIALLY DEFERRED
+-- FOR EACH ROW
+-- EXECUTE FUNCTION protect_cancels_func1();
 
 CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
 DECLARE
 rec RECORD;
 BEGIN
     rec := (SELECT * FROM Cancels 
-                    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = NEW.number) 
+                    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
                     and 
                     c_date = CURRENT_DATE
                     and 
-                    sid = NEW.sid and launch_date = NEW.launch_date and course_id = NEW.course_id);
+                    sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id);
     IF rec IS NULL
     THEN
         RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
     END IF;
     IF (CURRENT_DATE + INTERVAL '1 day'*7 >= (SELECT s_date FROM Sessions WHERE 
-        sid = NEW.sid and launch_date =  NEW.launch_date and course_id = NEW.course_id))
+        sid = OLD.sid and launch_date =  OLD.launch_date and course_id = OLD.course_id))
     THEN
         IF rec.refund_amt <> 0.9 * (SELECT fees FROM Offerings 
-                        WHERE launch_date =  NEW.launch_date and course_id = NEW.course_id) THEN
+                        WHERE launch_date =  OLD.launch_date and course_id = OLD.course_id) THEN
             RAISE EXCEPTION 'Refund amount is off';
         END IF;
     END IF;
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -723,6 +725,7 @@ BEGIN
     THEN
         RAISE EXCEPTION 'Cancelling registration should mean a withdrawal from registration';
     END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
