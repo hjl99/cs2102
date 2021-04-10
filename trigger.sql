@@ -107,10 +107,10 @@ EXECUTE FUNCTION co_date_func();
 
 /* 8 */
 CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
-DECLARE
 BEGIN
 	IF EXISTS (SELECT * FROM Registers R WHERE R.launch_date=NEW.launch_date and
-		R.course_id=NEW.course_id and R.number=NEW.number) THEN
+		R.course_id=NEW.course_id and R.number in 
+			   (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
 		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
 	ELSIF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
 		O.course_id=NEW.course_id)) THEN
@@ -119,6 +119,7 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER registration_trigger
 BEFORE INSERT ON Registers
@@ -502,7 +503,7 @@ BEFORE INSERT OR UPDATE ON Redeems
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
 CREATE TRIGGER one_registration_trigger
-BEFORE INSERT OR UPDATE ON Registers
+BEFORE INSERT ON Registers 
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
 /* 23 */
@@ -543,9 +544,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 CREATE TRIGGER add_sess_trigger
+BEFORE INSERT ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION add_sess_func();
+
+/* 27 */
+
+
+
+/* 28 */
+CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF (num_work_hours=null) THEN
+		IF (amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	ELSIF (num_work_hours<>null) THEN
+		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*num_work_hours) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	ELSE
+		RAISE EXCEPTION 'No work hours and work days!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER payslip_validation_trigger
 BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION add_sess_func();

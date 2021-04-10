@@ -42,4 +42,4 @@ CALL add_course('CS1000', 'Introduction to CS', 'CS', 2);
 INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 20);
 
 -- this procedure will trigger the each course offering must have one or more sessions trigger
-CALL add_course_offering(1, 100::FLOAT, '2021-05-01'::DATE, '2021-04-20'::DATE, 10, 4, VARIADIC ARRAY[('2021-05-01', '08:00', 1), ('2021-05-03', '13:00', 1)]::Session[]);
+CALL add_course_offering(1, 100::FLOAT, '2021-05-01'::DATE, '2021-04-20'::DATE, 10, 4, VARIADIC ARRAY[('2021-05-01', '09:00', 1), ('2021-05-03', '14:00', 1)]::Session[]);
