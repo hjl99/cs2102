@@ -68,10 +68,14 @@ BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
-	END IF
-    IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+	END IF;
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
 				 and S.rid=NEW.rid) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
+	END IF;
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+				and S.eid=NEW.eid) THEN
+	RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
 	END IF;
 	RETURN NEW;
 END;
@@ -189,7 +193,7 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 9 */
-CREATE OR REPLACE FUNCTION one_payment_only_check()
+CREATE OR REPLACE FUNCTION co_one_reg_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
 	customer_id INTEGER;
@@ -201,10 +205,9 @@ BEGIN
 	IF EXISTS (SELECT 1
 			   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is already paid!';
+	 	RAISE EXCEPTION 'You can only register for one session for each course offering!';
 		RETURN NULL;
 	END IF;
     NEW.r_date = CURRENT_DATE;
@@ -212,9 +215,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER course_fee_payment_insert_trigger
+CREATE TRIGGER course_offering_one_reg_insert_trigger
 BEFORE INSERT ON Registers
-FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
+FOR EACH ROW EXECUTE FUNCTION co_one_reg_only_check();
 
 CREATE OR REPLACE FUNCTION registration_check()
 RETURNS TRIGGER AS $$
@@ -467,9 +470,6 @@ BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION session_increment_func();
 
-
-
-
 /* 18 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -636,4 +636,18 @@ BEFORE DELETE ON Managers
 FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
 
-/* ?? */
+/* 23 */
+CREATE OR REPLACE FUNCTION instructor_spec_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF NOT EXISTS (SELECT * FROM Specializes S WHERE S.eid=NEW.eid) THEN
+		RAISE EXCEPTION 'Each Instructor must specialize in at least 1 area!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER instructor_spec_trigger
+AFTER INSERT ON Instructors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION instructor_spec_func();
