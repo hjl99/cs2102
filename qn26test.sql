@@ -31,22 +31,22 @@ VARIADIC ARRAY[('2021-06-04', '15:00', 2)]::Session[]);
 CALL add_customer('Customer_01', 'caddress 1', 00000001, 'c1@mail.com', 12345678234231201, '2023-01-01', 123);
 CALL buy_course_package(1, 1);
 CALL register_session(1, 2, '2021-05-01', 1, 'redemption');
-CALL register_session(1, 1, '2020-05-01', 1, 'payment');
+-- CALL register_session(1, 1, '2020-05-01', 1, 'payment');
 
 -- non active customers with 2 old offerings
 CALL add_customer('Customer_02', 'caddress 1', 00000001, 'c1@mail.com', 12345678234231202, '2023-01-01', 123);
 CALL buy_course_package(2, 1);
-CALL register_session(2, 1, '2020-05-01', 1, 'redemption');
-CALL register_session(2, 1, '2020-05-02', 1, 'redemption');
+-- CALL register_session(2, 1, '2020-05-01', 1, 'redemption');
+-- CALL register_session(2, 1, '2020-05-02', 1, 'redemption');
 
 CALL add_customer('Customer_03', 'caddress 1', 00000001, 'c1@mail.com', 12345678234231203, '2023-01-01', 123);
-CALL register_session(3, 1, '2020-05-01', 1, 'payment');
-CALL register_session(3, 1, '2020-05-02', 1, 'payment');
+-- CALL register_session(3, 1, '2020-05-01', 1, 'payment');
+-- CALL register_session(3, 1, '2020-05-02', 1, 'payment');
 
 -- active customer with 2 new offerings
 CALL add_customer('Customer_04', 'caddress 1', 00000001, 'c1@mail.com', 12345678234231204, '2023-01-01', 123);
-CALL register_session(4, 2, '2021-05-01', 1, 'payment');
-CALL register_session(4, 2, '2021-05-02', 1, 'payment');
+-- CALL register_session(4, 2, '2021-05-01', 1, 'payment');
+-- CALL register_session(4, 2, '2021-05-02', 1, 'payment');
 
 
 -- expected: 

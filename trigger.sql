@@ -496,7 +496,7 @@ BEGIN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
-	RETURN OLD;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
