@@ -639,19 +639,6 @@ BEGIN
             launch_date, sid, payment_date) 
     VALUES (CURRENT_DATE, refund_amt, package_credit, in_cust_id, in_course_id, 
             in_launch_date, sess_id, payment_date);
-        
-    IF sess_redeemed THEN
-        DELETE FROM Redeems 
-        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
-        
-        IF NOT late_cancel THEN
-            UPDATE Buys 
-            SET num_remaining_redemptions = num_remaining_redemptions + 1
-            WHERE package_id = redeemed_package_id 
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
-        END IF;
-    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
