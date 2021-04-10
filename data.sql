@@ -157,15 +157,17 @@ INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
 INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
 
 -- Course Offerings and Sessions
-CALL add_course_offering(1, 100, '2020-08-10', '2020-08-20', 10, 31, VARIADIC ARRAY[('2020-09-03', '09:00', 1), ('2020-09-04', '15:00', 1)]::Session[]);
-CALL add_course_offering(1, 100, '2021-03-15', '2021-03-31', 10, 32, VARIADIC ARRAY[('2021-04-12', '15:00', 2), ('2021-04-15', '09:00', 2)]::Session[]);
-CALL add_course_offering(2, 99, '2021-03-05', '2021-03-25', 5, 33, VARIADIC ARRAY[('2021-04-05', '09:00', 3), ('2021-04-14', '15:00', 4)]::Session[]);
-CALL add_course_offering(3, 193, '2021-05-04', '2021-05-12', 15, 33, VARIADIC ARRAY[('2021-05-24', '15:00', 1), ('2021-05-26', '09:00', 1)]::Session[]);
-CALL add_course_offering(2, 100, '2021-04-17', '2021-04-25', 10, 34, VARIADIC ARRAY[('2021-05-10', '09:00', 2)]::Session[]);
-CALL add_course_offering(4, 199, '2021-05-01', '2021-05-15', 5, 35, VARIADIC ARRAY[('2021-05-31', '09:00', 5)]::Session[]);
-CALL add_course_offering(5, 89.99, '2021-05-12', '2021-05-20', 10, 36, VARIADIC ARRAY[('2021-06-02', '09:00', 6)]::Session[]);
+
+CALL add_course_offering(1, 100, '2020-08-10', '2021-05-01', 10, 31, VARIADIC ARRAY[('2021-05-11', '09:00', 1), ('2021-05-11', '15:00', 1)]::Session[]);
+CALL add_course_offering(1, 100, '2021-03-15', '2021-05-02', 10, 32, VARIADIC ARRAY[('2021-05-12', '15:00', 2), ('2021-05-15', '09:00', 2)]::Session[]);
+CALL add_course_offering(2, 99, '2021-03-05', '2021-04-30', 5, 33, VARIADIC ARRAY[('2021-05-15', '09:00', 3), ('2021-05-14', '15:00', 4)]::Session[]);
+CALL add_course_offering(3, 193, '2021-05-04', '2021-05-12', 5, 33, VARIADIC ARRAY[('2021-05-24', '15:00', 1), ('2021-05-26', '09:00', 1)]::Session[]);
+CALL add_course_offering(2, 100, '2021-04-17', '2021-04-26', 4, 34, VARIADIC ARRAY[('2021-05-10', '09:00', 2)]::Session[]);
+
+CALL add_course_offering(4, 199, '2021-05-01', '2021-05-15', 5, 35, VARIADIC ARRAY[('2021-05-30', '09:00', 5)]::Session[]);
+CALL add_course_offering(5, 89.99, '2021-05-12', '2021-05-20', 4, 36, VARIADIC ARRAY[('2021-06-02', '09:00', 6)]::Session[]);
 CALL add_course_offering(2, 299, '2021-05-05', '2021-05-20', 5, 36, VARIADIC ARRAY[('2021-06-04', '15:00', 4)]::Session[]);
-CALL add_course_offering(7, 109, '2021-05-14', '2021-05-30', 10, 33, VARIADIC ARRAY[('2021-06-10', '09:00', 3)]::Session[]);
+CALL add_course_offering(7, 109, '2021-05-14', '2021-05-30', 4, 33, VARIADIC ARRAY[('2021-06-10', '09:00', 3)]::Session[]);
 CALL add_course_offering(2, 99, '2021-05-20', '2021-05-30', 5, 39, VARIADIC ARRAY[('2021-06-09', '15:00', 2)]::Session[]);
 
 -- Course Packages
@@ -231,34 +233,17 @@ CALL buy_course_package(9, 7);
 CALL buy_course_package(10, 13);
 
 -- Registers sessions
-CALL register_session(1, 1, '2021-05-03', 1, 'payment');
-CALL register_session(2, 1, '2021-05-03', 1, 'redemption');
-CALL register_session(1, 2, '2021-05-17', 1, 'redemption');
-CALL register_session(3, 3, '2021-05-24', 1, 'payment');
-CALL register_session(1, 3, '2021-05-24', 1, 'payment');
-CALL register_session(1, 4, '2021-05-31', 1, 'payment');
-CALL register_session(3, 4, '2021-05-31', 1, 'redemption');
-CALL register_session(3, 5, '2021-06-02', 1, 'payment');
-CALL register_session(4, 1, '2021-05-10', 1, 'payment');
-CALL register_session(4, 2, '2021-05-10', 1, 'payment');
-CALL register_session(5, 7, '2021-06-09', 1, 'redemption');
-CALL register_session(10, 7, '2021-06-09', 1, 'redemption');
-CALL register_session(10, 1, '2021-05-10', 1, 'redemption');
-CALL register_session(10, 2, '2021-05-17', 1, 'redemption');
-CALL register_session(10, 3, '2021-05-24', 1, 'redemption');
-CALL register_session(10, 5, '2021-06-02', 1, 'redemption');
+CALL register_session(1, 1,  '2020-08-10', 1,'payment');
+CALL register_session(2, 1,  '2021-03-15', 1,'redemption');
+CALL register_session(1, 2, '2021-03-05', 1, 'redemption');
+CALL register_session(3, 3,  '2021-05-04', 1, 'payment');
+CALL register_session(1, 2,  '2021-04-17', 1, 'payment');
+CALL register_session(1, 4,  '2021-05-01', 1, 'payment');
+CALL register_session(3, 5,  '2021-05-12', 1, 'redemption');
+CALL register_session(3, 2,  '2021-05-05', 1, 'payment');
+CALL register_session(4, 7,  '2021-05-14', 1, 'payment');
+CALL register_session(4, 2, '2021-05-20', 1, 'payment');
+CALL register_session(1, 1,  '2020-08-10', 2,'payment');
+CALL register_session(2, 1,  '2021-03-15', 2,'redemption');
+CALL register_session(1, 2, '2021-03-05', 2, 'redemption');
 
--- Pay slips
-SELECT * FROM pay_salary();
-
--- Cancels
-CALL cancel_registration(1, 1, '2021-05-03');
-CALL cancel_registration(1, 2, '2021-05-17');
-CALL cancel_registration(2, 1, '2021-05-03');
-CALL cancel_registration(3, 3, '2021-05-24');
-CALL cancel_registration(1, 3, '2021-05-24');
-CALL cancel_registration(10, 5, '2021-06-02');
-CALL cancel_registration(10, 3, '2021-05-24');
-CALL cancel_registration(5, 7, '2021-06-09');
-CALL cancel_registration(1, 4, '2021-05-31');
-CALL cancel_registration(10, 7, '2021-06-09');

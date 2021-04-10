@@ -308,9 +308,7 @@ BEGIN
     i := 1;
     WHILE (i <= array_upper(sess,1)) LOOP
         j :=last_stops[i];
-        raise notice 'j i s %', j;
         select count(*) into total from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
-        raise notice 'total is %', total;
         IF total = 0 or total < j THEN
             i := i - 1;
             IF i < 1 THEN
@@ -484,35 +482,6 @@ BEGIN
         IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
         INSERT INTO Redeems VALUES
         (buy_info.package_id, credit_card_info.number, buy_info.b_date, CURRENT_DATE, 
-        cid, in_launch_date, in_sid);
-    ELSIF method <> 'payment' THEN
-        RAISE EXCEPTION 'The method can only be payment or redemption';
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE PROCEDURE register_session26(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
-in_sid INTEGER, method TEXT) AS $$
-DECLARE
-    credit_card_info RECORD;
-    buy_info RECORD;
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE cid = course_id 
-    and in_launch_date = launch_date and in_sid = sid) THEN
-        RAISE EXCEPTION 'This session does not exist!';
-    END IF;
-    SELECT * INTO credit_card_info FROM Credit_cards 
-    WHERE cust_id = in_cust_id
-    ORDER BY from_date DESC;
-    INSERT INTO Registers VALUES 
-    (credit_card_info.number, cid, in_launch_date, in_sid, '2020-09-01');
-    IF method = 'redemption' THEN
-        SELECT * INTO buy_info FROM Buys B NATURAL JOIN Credit_cards C
-            WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
-            ORDER BY b_date DESC;
-        IF buy_info is NULL THEN RAISE EXCEPTION 'There are no avail packages to redeem from'; END IF;
-        INSERT INTO Redeems VALUES
-        (buy_info.package_id, credit_card_info.number, buy_info.b_date, '2020-09-01', 
         cid, in_launch_date, in_sid);
     ELSIF method <> 'payment' THEN
         RAISE EXCEPTION 'The method can only be payment or redemption';
