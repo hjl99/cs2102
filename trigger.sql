@@ -157,7 +157,9 @@ CREATE OR REPLACE FUNCTION registration_capacity_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF (SELECT count(*) FROM Registers R WHERE R.launch_date=NEW.launch_date and
 			   R.course_id=NEW.course_id and R.sid=NEW.sid) =
-			   (SELECT seating_capacity FROM Rooms R WHERE R.rid=NEW.rid) THEN
+			   (SELECT seating_capacity FROM Rooms WHERE rid=
+			   (SELECT S.rid FROM Sessions S WHERE S.launch_date=NEW.launch_date and
+			   S.course_id=NEW.course_id and S.sid=NEW.sid)) THEN
 		RAISE EXCEPTION 'The session is full!';
 	END IF;
 	RETURN NEW;
