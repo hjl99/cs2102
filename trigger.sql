@@ -62,7 +62,7 @@ FOR EACH ROW
 EXECUTE FUNCTION session_non_zero_func2();
 
 
-/* 5 */
+/* 3 */
 CREATE OR REPLACE FUNCTION concurrent_session_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
@@ -82,7 +82,7 @@ FOR EACH ROW
 EXECUTE FUNCTION concurrent_session_func();
 
 
-/* 6 */
+/* 4 */
 CREATE OR REPLACE FUNCTION co_date_func() RETURNS TRIGGER AS $$
 DECLARE
 	r RECORD;
@@ -105,24 +105,23 @@ AFTER INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION co_date_func();
 
-/* 8 */
-CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
+/* 5 */
+CREATE OR REPLACE FUNCTION registration_ddl_check_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
-		O.course_id=NEW.course_id)) THEN
-		RAISE EXCEPTION 'You cannot register after the deadline!';
+	IF (NEW.r_date > (SELECT reg_deadline FROM Offerings O WHERE O.launch_date = NEW.launch_date and
+		O.course_id = NEW.course_id)) THEN
+		RAISE EXCEPTION 'You cannot register for or update sessions after the deadline!';
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-
-CREATE TRIGGER registration_trigger
-BEFORE INSERT ON Registers
+CREATE TRIGGER registration_ddl_check_trigger
+BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW
-EXECUTE FUNCTION registration_func();
+EXECUTE FUNCTION registration_ddl_check_func();
 
-/* 9 */
+/* 6 */
 CREATE OR REPLACE FUNCTION sum_capacity_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF (TG_OP='INSERT') THEN
@@ -148,7 +147,7 @@ AFTER INSERT OR DELETE OR UPDATE ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION sum_capacity_func();
 
-/* 10 */
+/* 7 */
 CREATE OR REPLACE FUNCTION registration_capacity_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF (SELECT count(*) FROM Registers R WHERE R.launch_date=NEW.launch_date and
@@ -167,7 +166,7 @@ BEFORE INSERT ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION registration_capacity_func();
 
-/* 11 */
+/* 8 */
 CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
 DECLARE 
 BEGIN
@@ -188,7 +187,7 @@ BEFORE INSERT ON Buys
 FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
-/* 12 */
+/* 9 */
 CREATE OR REPLACE FUNCTION one_payment_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -243,7 +242,7 @@ CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
 FOR EACH ROW EXECUTE FUNCTION registration_check();
 
-/* 13 */
+/* 10 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -274,7 +273,7 @@ AFTER INSERT OR UPDATE ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION emp_check();
 
-/* 14 */
+/* 11 */
 CREATE OR REPLACE FUNCTION part_time_emp_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -298,7 +297,7 @@ AFTER INSERT OR UPDATE ON Part_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_emp_check();
 
-/* 15 */
+/* 12 */
 CREATE OR REPLACE FUNCTION full_time_emp_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -328,7 +327,7 @@ AFTER INSERT OR UPDATE ON Full_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION full_time_emp_check();
 
-/* 16 */
+/* 13 */
 CREATE OR REPLACE FUNCTION instructor_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -355,7 +354,7 @@ AFTER INSERT OR UPDATE ON Instructors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_check();
 
-/* 17 */
+/* 14 */
 CREATE OR REPLACE FUNCTION part_time_instructor_teaching_hour_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -379,7 +378,7 @@ AFTER INSERT OR UPDATE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_instructor_teaching_hour_check();
 
-/* 18 */
+/* 15 */
 CREATE OR REPLACE FUNCTION instructor_consecutive_sessions_check()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -404,7 +403,7 @@ CREATE TRIGGER instructor_consecutive_sessions_trigger
 BEFORE INSERT OR UPDATE ON Sessions
 FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
 
-/* 19 */
+/* 16 */
 CREATE OR REPLACE FUNCTION redeems_func() RETURNS TRIGGER AS $$
 BEGIN
 	UPDATE Buys B
@@ -420,7 +419,7 @@ FOR EACH ROW
 EXECUTE FUNCTION redeems_func();
 
 
-/* 20 */
+/* 17 */
 CREATE OR REPLACE FUNCTION session_valid_bit_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF (NEW.end_time-NEW.start_time<>(INTERVAL '1 HOURS' * (SELECT duration FROM Courses C WHERE C.course_id=NEW.course_id))) THEN
@@ -470,7 +469,7 @@ EXECUTE FUNCTION session_increment_func();
 
 
 
-/* 23 */
+/* 18 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF (NEW.package_credit IS NOT NULL) THEN
@@ -493,7 +492,7 @@ AFTER INSERT ON Cancels
 FOR EACH ROW
 EXECUTE FUNCTION refund_redemption_func();
 
-/* 26 */
+/* 19 */
 CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
 DECLARE
 	c_and_co RECORD;
@@ -518,11 +517,8 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION add_sess_func();
 
-/* 27 */
 
-
-
-/* 28 */
+/* 20 */
 CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
 DECLARE
 	jd DATE;
@@ -575,7 +571,7 @@ FOR EACH ROW
 EXECUTE FUNCTION remove_reg_sess();
 
 
-/* 29 */
+/* 21 */
 CREATE OR REPLACE FUNCTION session_start_time_func() RETURNS TRIGGER AS $$
 BEGIN
 	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
@@ -591,23 +587,7 @@ BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
 
-/* 30 */
-CREATE OR REPLACE FUNCTION update_session_reg_ddl_check_func() RETURNS TRIGGER AS $$
-BEGIN
-	IF CURRENT_DATE > (SELECT reg_deadline FROM Offerings 
-        WHERE course_id = OLD.course_id AND launch_date = OLD.launch_date) THEN 
-		RAISE EXCEPTION 'Updating sessions after the registration deadline is not allowed.';
-    END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_session_reg_ddl_check_trigger
-BEFORE UPDATE ON Registers
-FOR EACH ROW
-EXECUTE FUNCTION update_session_reg_ddl_check_func();
-
-/* 32 */
+/* 22 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
 BEGIN
 	RAISE NOTICE 'Please use the remove_employee() function to remove employee!';
@@ -655,7 +635,7 @@ BEFORE DELETE ON Managers
 FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
 
-/* 33 */
+/* ?? */
 
 CREATE OR REPLACE FUNCTION instructor_spec_func() RETURNS TRIGGER AS $$
 BEGIN
