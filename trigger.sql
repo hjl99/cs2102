@@ -466,6 +466,25 @@ CREATE TRIGGER one_registration_trigger
 BEFORE INSERT ON Registers 
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
+/* 24 */
+CREATE OR REPLACE FUNCTION remove_reg_sess() RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM Registers R 
+        WHERE R.sid = OLD.sid and R.course_id = OLD.course_id 
+        and R.launch_date = OLD.launch_date)
+    THEN
+        RAISE EXCEPTION 'Cannot delete. There is at least one registration for the session!';
+        RETURN NULL;
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER remove_reg_sess_trigger
+BEFORE DELETE ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION remove_reg_sess();
+
 /* 23 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -503,9 +522,9 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER add_sess_trigger
-BEFORE INSERT ON Sessions
+CREATE CONSTRAINT TRIGGER add_sess_trigger
+AFTER INSERT ON Sessions
+DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION add_sess_func();
 
@@ -536,24 +555,7 @@ BEFORE INSERT ON Pay_slips
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
 
-/* 24 */
-CREATE OR REPLACE FUNCTION remove_reg_sess() RETURNS TRIGGER AS $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM Registers R 
-        WHERE R.sid = OLD.sid and R.course_id = OLD.course_id 
-        and R.launch_date = OLD.launch_date)
-    THEN
-        RAISE EXCEPTION 'Cannot delete. There is at least one registration for the session!';
-        RETURN NULL;
-    END IF;
-    RETURN OLD;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER remove_reg_sess_trigger
-BEFORE DELETE ON Sessions
-FOR EACH ROW
-EXECUTE FUNCTION remove_reg_sess();
 
 
 /* 29 */
