@@ -655,50 +655,31 @@ EXECUTE FUNCTION instructor_spec_func();
 
 
 /* 24 */
-/* TO USE 24, SWAP INSERT AND DELETE AT THE END OF ROUTINE 20 */
+CREATE OR REPLACE FUNCTION protect_cancels_func2() RETURNS TRIGGER AS $$
+BEGIN
+	IF NOT EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
+		in (SELECT number FROM Credit_cards WHERE cust_id=NEW.cust_id)) THEN
+		RAISE NOTICE 'No registration to Cancel!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-
--- CREATE OR REPLACE FUNCTION protect_cancels_func2() RETURNS TRIGGER AS $$
--- BEGIN
--- 	IF NOT EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
--- 		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
--- 		RAISE NOTICE 'No registration to Cancel!';
--- 	END IF;
--- 	RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE  TRIGGER protect_cancels_trigger2
--- BEFORE INSERT ON Cancels
--- FOR EACH ROW
--- EXECUTE FUNCTION protect_cancels_func2();
-
--- CREATE OR REPLACE FUNCTION protect_cancels_func1() RETURNS TRIGGER AS $$
--- BEGIN
--- 	IF EXISTS (SELECT * FROM Registers R WHERE R.course_id=new.course_id and R.launch_date=NEW.launch_date and R.sid=NEW.sid and R.number 
--- 		in (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
--- 		RAISE NOTICE 'Cancelled registrations should not be in Registers!';
--- 	END IF;
--- 	RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE CONSTRAINT TRIGGER protect_cancels_trigger1
--- AFTER INSERT ON Cancels
--- DEFERRABLE INITIALLY DEFERRED
--- FOR EACH ROW
--- EXECUTE FUNCTION protect_cancels_func1();
+CREATE  TRIGGER protect_cancels_trigger2
+BEFORE INSERT ON Cancels
+FOR EACH ROW
+EXECUTE FUNCTION protect_cancels_func2();
 
 CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
 DECLARE
 rec RECORD;
 BEGIN
-    rec := (SELECT * FROM Cancels 
-                    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
-                    and 
-                    c_date = CURRENT_DATE
-                    and 
-                    sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id);
+    SELECT * INTO FROM Cancels 
+    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
+            and 
+            c_date = CURRENT_DATE
+			and 
+            sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id;
     IF rec IS NULL
     THEN
         RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
