@@ -696,18 +696,37 @@ BEGIN
             c_date = CURRENT_DATE
 			and 
             sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id;
-    IF rec IS NULL
+    
+	IF rec IS NULL
     THEN
         RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
     END IF;
-    IF (CURRENT_DATE + INTERVAL '1 day'*7 >= (SELECT s_date FROM Sessions WHERE 
+
+    IF (CURRENT_DATE + INTERVAL '1 day'*7 <= (SELECT s_date FROM Sessions WHERE 
         sid = OLD.sid and launch_date =  OLD.launch_date and course_id = OLD.course_id))
     THEN
-        IF rec.refund_amt <> 0.9 * (SELECT fees FROM Offerings 
+		IF rec.package_credit = NULL THEN
+			IF rec.refund_amt <> 0.9 * (SELECT fees FROM Offerings 
                         WHERE launch_date =  OLD.launch_date and course_id = OLD.course_id) THEN
-            RAISE EXCEPTION 'Refund amount is off';
-        END IF;
+            	RAISE EXCEPTION 'Refund amount is off';
+			END IF;
+		ELSE 
+        	IF rec.package_credit <> 1 THEN
+            	RAISE EXCEPTION 'Number of sessions credited back is off';
+			END IF;
+		END IF;
+	ELSE 
+		IF rec.package_credit = NULL THEN
+			IF rec.refund_amt <> 0 THEN
+            	RAISE EXCEPTION 'Refund amount is off';
+			END IF;
+        ELSE 
+			IF rec.package_credit <> 0 THEN
+            	RAISE EXCEPTION 'Number of sessions credited back is off';
+			END IF;
+		END IF;
     END IF;
+
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
