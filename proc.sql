@@ -864,7 +864,7 @@ BEGIN
 					   FROM Registers R NATURAL JOIN Credit_cards C 
 					   WHERE customer.cust_id = C.cust_id 
 					   and R.r_date > DATE(CURRENT_DATE - INTERVAL '6 months')) THEN
-			OPEN ca_curs FOR (WITH CA AS
+			OPEN ca_curs FOR (WITH CAreas AS
                               (WITH Registrations AS 
 							   (SELECT R.sid, R.course_id, R.launch_date, R.r_date
 							    FROM Registers R NATURAL JOIN Credit_cards C
@@ -873,8 +873,8 @@ BEGIN
 							   FROM Registrations R NATURAL JOIN Courses C
 							   ORDER BY R.r_date DESC
 						  	   LIMIT 3)
-                             SELECT DISTINCT CA.course_area_name
-                             FROM CA);					  
+                             SELECT DISTINCT CAreas.course_area_name
+                             FROM CAreas);					  
 			LOOP
 				FETCH ca_curs INTO ca;
 				EXIT WHEN NOT FOUND;
