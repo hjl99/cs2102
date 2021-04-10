@@ -1,4 +1,4 @@
--- Correct cases
+-- Correct cases :
 CALL add_employee('Manager_01', 'maddress 1', 10000001, 'm1@mail.com', 15000, '2020-08-31', 'manager', ARRAY['CS']);
 CALL add_employee('Part_time_instructor_01', 'ptiaddress 1', 20000001, 'pti1@mail.com', 80, '2021-01-01', 'part time instructor', ARRAY ['CS']);
 CALL add_employee('Full_time_instructor_01', 'ftiaddress 1', 30000001, 'fti1@mail.com', 2000, '2021-01-01', 'full time instructor', ARRAY ['CS']);
