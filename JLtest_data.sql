@@ -1,4 +1,4 @@
-/* FOR Function 18, 19, 20, 21, 25, 26, 27, 28, 29, 30 */ 
+/* FOR Function 18, 19, 20, 21, 25, 27, 28, 29, 30 */ 
 
 DELETE FROM Redeems;
 DELETE FROM Registers;
@@ -66,6 +66,7 @@ INSERT INTO Full_time_instructors (eid) VALUES
 INSERT INTO Managers (eid)VALUES
 	(3),
 	(4);
+
 INSERT INTO Administrators (eid) VALUES
 	(5),
 	(6),
@@ -82,26 +83,39 @@ INSERT INTO Customers (cust_name, phone, email, address) VALUES
 	('7', 77, '777', '7777');
 	
 INSERT INTO Credit_cards (number, CVV, expiry_date, cust_id, from_date) VALUES
+	-- Customer 1
 	(11111111, 555, DATE'2023-01-01', 1, DATE'2000-01-01'),
 	(11111112, 555, DATE'2023-01-01', 1, DATE'2000-01-01'),
 	(11111113, 555, DATE'2023-01-01', 1, DATE'2000-01-01'),
+	-- Customer 2
 	(21111111, 555, DATE'2023-01-01', 2, DATE'2000-01-01'),
+	-- Customer 3
 	(31111111, 555, DATE'2023-01-01', 3, DATE'2000-01-01'),
+	-- Customer 4
 	(41111111, 555, DATE'2023-01-01', 4, DATE'2000-01-01'),
+	-- Customer 5
 	(51111111, 555, DATE'2023-01-01', 5, DATE'2000-01-01'),
+	-- Customer 6
 	(61111111, 555, DATE'2023-01-01', 6, DATE'2000-01-01'),
+	-- Customer 7
 	(71111111, 555, DATE'2023-01-01', 7, DATE'2000-01-01');
 
 INSERT INTO Rooms (location, seating_capacity) VALUES 
+	-- Room 1
 	('Room01_location', 100),
+	-- Room 2
 	('Room02_location', 100);
 
 INSERT INTO Course_areas (course_area_name, eid) VALUES
+	-- Course Area 1
 	('course_area_1', 3),
+	-- Course Area 2
 	('course_area_2', 4);
 
 INSERT INTO Courses (duration, description, title, course_area_name) VALUES
+	-- Course 1
 	(2, 'course1', 'course1', 'course_area_1'),
+	-- Course 2
 	(2, 'course2', 'course2', 'course_area_2');
 
 INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, package_name, price) VALUES
@@ -112,9 +126,12 @@ INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_d
 	(DATE'2021-01-01', 5, DATE'2021-05-01', '0101-0501-5', 500);
 
 INSERT INTO Offerings (course_id, launch_date, start_date, end_date, reg_deadline, num_target_reg, seating_capacity, fees, eid) VALUES
+	-- Course 1, ending this year
 	(1, DATE'2021-03-01', DATE'2021-04-01', DATE'2021-04-30', DATE'2021-03-22', 300, 300, 500, 5),
 	(1, DATE'2021-03-02', DATE'2021-10-01', DATE'2021-10-01', DATE'2021-09-21', 100, 100, 500, 6),
+	-- Course 1, ending next year
 	(1, DATE'2022-03-03', DATE'2022-05-01', DATE'2022-06-02', DATE'2022-04-21', 200, 200, 500, 6),
+	-- Course 2
 	(2, DATE'2021-04-01', DATE'2021-04-02', DATE'2021-04-02', DATE'2021-03-23', 100, 100, 500, 6),
 	(2, DATE'2021-04-02', DATE'2021-05-02', DATE'2021-05-02', DATE'2021-04-22', 100, 100, 500, 5);
 
@@ -122,7 +139,7 @@ INSERT INTO Sessions (course_id, launch_date, sid, s_date, start_time, end_time,
 	-- Course 1 Offering 1	
 	(1, DATE'2021-03-01', 1, DATE'2021-04-01', TIME'09:00:00', TIME'10:00:00', 1, 1), 
 	(1, DATE'2021-03-01', 2, DATE'2021-04-01', TIME'15:00:00', TIME'16:00:00', 2, 2), 
-	(1, DATE'2021-03-01', 3, DATE'2021-04-10', TIME'09:00:00', TIME'10:00:00', 1, 2), -- session starting tmr
+	(1, DATE'2021-03-01', 3, DATE'2021-04-11', TIME'09:00:00', TIME'10:00:00', 1, 2), -- session starting tmr
 	(1, DATE'2021-03-01', 4, DATE'2021-04-30', TIME'09:00:00', TIME'10:00:00', 1, 2), -- session starting after 7 days
 	-- Course 1 Offering 2	
 	(1, DATE'2021-03-02', 1, DATE'2021-10-01', TIME'09:00:00', TIME'10:00:00', 1, 1),
@@ -152,17 +169,17 @@ INSERT INTO Registers (number, course_id, launch_date, sid, r_date) VALUES
 
 INSERT INTO Buys (package_id, number, b_date, num_remaining_redemptions) VALUES
 	(1, 11111113, DATE'2021-01-01', 0), -- After 1 redemption
-	(5, 21111111, DATE'2021-01-01', 5),
+	(5, 21111111, DATE'2021-01-01', 5), -- No redemption
 	(5, 41111111, DATE'2021-01-01', 4), -- After 1 redemption
 	(5, 51111111, DATE'2021-01-01', 4), -- After 1 redemption
 	(5, 71111111, DATE'2021-01-01', 4); -- After 1 redemption
 
 INSERT INTO Redeems (package_id, number, b_date, r_date, course_id, launch_date, sid) VALUES
-	-- Course 1 Offering 1 Session 1
+	-- Customer 1, Course 1 Offering 1 Session 1
 	(1, 11111113, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 1),
-	-- Course 1 Offering 1 Session 3
+	-- Customer 5, Course 1 Offering 1 Session 3
 	(5, 51111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 3),
-	-- Course 1 Offering 1 Session 4
+	-- Customer 7, Course 1 Offering 1 Session 4
 	(5, 71111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 4),
-	-- Course 2 Offering 1
+	-- Customer 4, Course 2 Offering 1 Session 1
 	(5, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
