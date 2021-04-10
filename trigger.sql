@@ -29,7 +29,7 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION customer_total_participation_func2();
 
-/* Will consider combining the 2 functions for using TG_OP */
+
 /* 2 */
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
 BEGIN
@@ -110,6 +110,7 @@ AFTER INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION co_date_func();
 
+
 /* 5 */
 CREATE OR REPLACE FUNCTION registration_ddl_check_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -125,6 +126,7 @@ CREATE TRIGGER registration_ddl_check_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION registration_ddl_check_func();
+
 
 /* 6 */
 CREATE OR REPLACE FUNCTION sum_capacity_func() RETURNS TRIGGER AS $$
@@ -152,6 +154,7 @@ AFTER INSERT OR DELETE OR UPDATE ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION sum_capacity_func();
 
+
 /* 7 */
 CREATE OR REPLACE FUNCTION registration_capacity_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -170,6 +173,7 @@ CREATE TRIGGER registration_capacity_trigger
 BEFORE INSERT ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION registration_capacity_func();
+
 
 /* 8 */
 CREATE OR REPLACE FUNCTION active_package_func() RETURNS TRIGGER AS $$
@@ -192,6 +196,7 @@ CREATE TRIGGER active_package_trigger
 BEFORE INSERT ON Buys
 FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
+
 
 /* 9 */
 CREATE OR REPLACE FUNCTION co_one_reg_only_check()
@@ -247,6 +252,7 @@ CREATE TRIGGER course_fee_payment_trigger
 BEFORE INSERT OR UPDATE ON Redeems
 FOR EACH ROW EXECUTE FUNCTION registration_check();
 
+
 /* 10 */
 CREATE OR REPLACE FUNCTION emp_check()
 RETURNS TRIGGER AS $$
@@ -278,6 +284,7 @@ AFTER INSERT OR UPDATE ON Employees
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION emp_check();
 
+
 /* 11 */
 CREATE OR REPLACE FUNCTION part_time_emp_check()
 RETURNS TRIGGER AS $$
@@ -301,6 +308,7 @@ CREATE CONSTRAINT TRIGGER part_time_emp_trigger
 AFTER INSERT OR UPDATE ON Part_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_emp_check();
+
 
 /* 12 */
 CREATE OR REPLACE FUNCTION full_time_emp_check()
@@ -332,6 +340,7 @@ AFTER INSERT OR UPDATE ON Full_time_emp
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION full_time_emp_check();
 
+
 /* 13 */
 CREATE OR REPLACE FUNCTION instructor_check()
 RETURNS TRIGGER AS $$
@@ -359,6 +368,7 @@ AFTER INSERT OR UPDATE ON Instructors
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION instructor_check();
 
+
 /* 14 */
 CREATE OR REPLACE FUNCTION part_time_instructor_teaching_hour_check()
 RETURNS TRIGGER AS $$
@@ -382,6 +392,7 @@ CREATE CONSTRAINT TRIGGER part_time_instructor_teaching_hour_trigger
 AFTER INSERT OR UPDATE ON Sessions
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION part_time_instructor_teaching_hour_check();
+
 
 /* 15 */
 CREATE OR REPLACE FUNCTION instructor_consecutive_sessions_check()
@@ -407,6 +418,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER instructor_consecutive_sessions_trigger
 BEFORE INSERT OR UPDATE ON Sessions
 FOR EACH ROW EXECUTE FUNCTION instructor_consecutive_sessions_check();
+
 
 /* 16 */
 CREATE OR REPLACE FUNCTION redeems_func() RETURNS TRIGGER AS $$
@@ -471,6 +483,7 @@ BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION session_increment_func();
 
+
 /* 18 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -493,6 +506,7 @@ CREATE TRIGGER refund_redemption_trigger
 AFTER INSERT ON Cancels
 FOR EACH ROW
 EXECUTE FUNCTION refund_redemption_func();
+
 
 /* 19 */
 CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
@@ -589,6 +603,7 @@ BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
 
+
 /* 22 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -636,6 +651,7 @@ CREATE TRIGGER emp_del_trigger8
 BEFORE DELETE ON Managers
 FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
+
 
 /* 23 */
 CREATE OR REPLACE FUNCTION instructor_spec_func() RETURNS TRIGGER AS $$

@@ -1,4 +1,4 @@
-/* 1  TESTED*/
+/* Routine 1 */
 CREATE OR REPLACE PROCEDURE
 add_employee(name TEXT, address TEXT, phone INTEGER, email TEXT, 
              salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
