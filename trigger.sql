@@ -188,7 +188,7 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 9 */
-CREATE OR REPLACE FUNCTION one_payment_only_check()
+CREATE OR REPLACE FUNCTION co_one_reg_only_check()
 RETURNS TRIGGER AS $$
 DECLARE
 	customer_id INTEGER;
@@ -200,10 +200,9 @@ BEGIN
 	IF EXISTS (SELECT 1
 			   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
 			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is already paid!';
+	 	RAISE EXCEPTION 'You can only register for one session for each course offering!';
 		RETURN NULL;
 	END IF;
     NEW.r_date = CURRENT_DATE;
@@ -211,9 +210,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER course_fee_payment_insert_trigger
+CREATE TRIGGER course_offering_one_reg_insert_trigger
 BEFORE INSERT ON Registers
-FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
+FOR EACH ROW EXECUTE FUNCTION co_one_reg_only_check();
 
 CREATE OR REPLACE FUNCTION registration_check()
 RETURNS TRIGGER AS $$
@@ -466,9 +465,6 @@ BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION session_increment_func();
 
-
-
-
 /* 18 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -636,6 +632,5 @@ FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
 
 /* ?? */
-
 
 CREATE TRIGGER instructor_spec_trigger
