@@ -92,7 +92,7 @@ CREATE TABLE Course_packages (
 
 CREATE TABLE Course_areas (
     course_area_name TEXT PRIMARY KEY,
-    eid INTEGER NOT NULL REFERENCES Managers
+    eid INTEGER NOT NULL REFERENCES Managers /* manager should be changed before leaving */
 );
 
 CREATE TABLE Courses (
@@ -151,7 +151,7 @@ CREATE TABLE Cancels (
     launch_date DATE,
     sid INTEGER,
     payment_date TIMESTAMP NOT NULL,
-    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* for book keeping purposes */
+    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* sessions wont be deleted due to valid bit */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt >= 0.0 and package_credit = NULL) or (package_credit in (0, 1) and refund_amt = NULL))
 );
@@ -168,7 +168,7 @@ CREATE TABLE Credit_cards (
 /* Package might not be offered but customer should be able to finish their remaining redemptions*/
 CREATE TABLE Buys (
     package_id INTEGER REFERENCES Course_packages ON DELETE SET NULL, 
-    number INTEGER REFERENCES Credit_cards ON DELETE CASCADE,
+    number BIGINT REFERENCES Credit_cards ON DELETE CASCADE,
     b_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     num_remaining_redemptions INTEGER NOT NULL,
     PRIMARY KEY (package_id, number, b_date),

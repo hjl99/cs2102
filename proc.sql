@@ -61,7 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 2 */
+/* 2 TESTED*/
 DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
@@ -72,7 +72,7 @@ BEGIN
     ELSIF EXISTS (SELECT 1 FROM Course_areas CA WHERE reid = CA.eid) THEN 
         RAISE EXCEPTION 'The employee is a manager who is managing some course area!';
     ELSE
-        UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+        UPDATE Employees SET depart_date = in_depart_date WHERE eid = reid; 
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -148,8 +148,8 @@ return query SELECT I.eid, E.name
                         EXISTS(SELECT 1 from full_time_emp FT WHERE FT.eid = I.eid) or  
                         COALESCE((SELECT(SELECT hours FROM temp_table WHERE iid = I.eid) + duration), 0) <= 30
                     )
-                    AND (SELECT course_area_name FROM Specializes WHERE eid = I.eid) = 
-                    (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id);
+                    AND ((SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id) 
+                    in (SELECT course_area_name FROM Specializes WHERE eid = I.eid));
     DROP TABLE temp_table;
 END;
 $$ LANGUAGE plpgsql;
@@ -295,7 +295,7 @@ DECLARE
     end_date DATE;
     cap INTEGER := 0;
     res INTEGER := 0;
-    sum INTEGER;
+    total INTEGER;
     temp RECORD;
 BEGIN
     set constraints offerings_fkey deferred;
@@ -308,8 +308,10 @@ BEGIN
     i := 1;
     WHILE (i <= array_upper(sess,1)) LOOP
         j :=last_stops[i];
-        select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
-        IF sum = 0 or sum < j THEN
+        raise notice 'j i s %', j;
+        select count(*) into total from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        raise notice 'total is %', total;
+        IF total = 0 or total < j THEN
             i := i - 1;
             IF i < 1 THEN
                 RAISE EXCEPTION 'No valid assignment!';
@@ -363,7 +365,7 @@ $$ LANGUAGE sql;
 /* 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER) AS $$
 DECLARE
-	cnum INTEGER;
+	cnum BIGINT;
 	rnum INTEGER;
 BEGIN
 	cnum := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);
@@ -411,7 +413,7 @@ BEGIN
         ORDER BY session_date ASC, start_time ASC;
         RETURN (SELECT row_to_json(t)
         FROM (
-            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
+            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date::date,
             (
                 SELECT json_agg(d)
                 FROM (
@@ -459,7 +461,7 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
-/* 17 */
+/* 17 TESTED*/
 CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
 in_sid INTEGER, method TEXT) AS $$
 DECLARE
@@ -484,6 +486,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+drop function if exists get_my_registrations;
 /* 18 */
 CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
 RETURNS TABLE (course_name TEXT, course_fees FLOAT, sess_date DATE, sess_start_hour TIME, 
@@ -517,7 +520,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 19 */
+/* 19 TESTED*/
 CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
@@ -529,7 +532,7 @@ DECLARE
     new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
-    cust_card_number INTEGER;
+    cust_card_number BIGINT;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
         RAISE EXCEPTION 'The customer specified does not exist.';
@@ -571,10 +574,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 20 */
+/* 20 TESTED*/
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
-    reg_cust_card_number INTEGER;
+    reg_cust_card_number BIGINT;
     late_cancel BOOLEAN;
     sess_redeemed BOOLEAN;
     early_cancel_ddl DATE;
@@ -661,7 +664,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 21 */
+/* 21 TESTED*/
 CREATE OR REPLACE PROCEDURE update_instructor(in_course_id INTEGER, in_launch_date DATE, 
     sess_id INTEGER, new_instr_id INTEGER) AS $$
 DECLARE
@@ -687,7 +690,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 22 */
+/* 22 TESTED*/
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
 BEGIN
