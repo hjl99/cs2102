@@ -295,7 +295,7 @@ DECLARE
     end_date DATE;
     cap INTEGER := 0;
     res INTEGER := 0;
-    sum INTEGER;
+    total INTEGER;
     temp RECORD;
 BEGIN
     set constraints offerings_fkey deferred;
@@ -308,8 +308,8 @@ BEGIN
     i := 1;
     WHILE (i <= array_upper(sess,1)) LOOP
         j :=last_stops[i];
-        select count(*) into sum from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
-        IF sum = 0 or sum < j THEN
+        select count(*) into total from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        IF total = 0 or total < j THEN
             i := i - 1;
             IF i < 1 THEN
                 RAISE EXCEPTION 'No valid assignment!';
@@ -363,7 +363,7 @@ $$ LANGUAGE sql;
 /* 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER) AS $$
 DECLARE
-	cnum INTEGER;
+	cnum BIGINT;
 	rnum INTEGER;
 BEGIN
 	cnum := (SELECT number FROM Credit_cards WHERE cust_id=cid ORDER BY from_date DESC LIMIT 1);

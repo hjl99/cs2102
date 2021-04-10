@@ -255,7 +255,7 @@ BEGIN
     
 	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    END
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
@@ -339,7 +339,7 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    END IF
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
