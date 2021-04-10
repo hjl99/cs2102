@@ -502,11 +502,16 @@ FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 /* 23 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF (NEW.package_credit=1) THEN
-		UPDATE Buys B
-		SET B.num_remaining_redemptions=num_remaining_redemptions + 1
-		WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
-		ORDER BY B.b_date DESC LIMIT 1); 
+	IF (NEW.package_credit IS NOT NULL) THEN
+		DELETE FROM Redeems R
+		WHERE R.course_id = NEW.course_id AND R.launch_date = NEW.launch_date AND R.sid = NEW.sid
+            AND R.number IN (SELECT number FROM Credit_cards WHERE cust_id = NEW.cust_id);
+		IF (NEW.package_credit = 1) THEN
+			UPDATE Buys B
+			SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+			WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+			ORDER BY B.b_date DESC LIMIT 1); 
+		END IF;
 	END IF;
 	RETURN NEW;
 END;
@@ -614,6 +619,22 @@ CREATE TRIGGER session_start_time_trigger
 BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
+
+/* 30 */
+CREATE OR REPLACE FUNCTION update_session_reg_ddl_check_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF CURRENT_DATE > (SELECT reg_deadline FROM Offerings 
+        WHERE course_id = OLD.course_id AND launch_date = OLD.launch_date) THEN 
+		RAISE EXCEPTION 'Updating sessions after the registration deadline is not allowed.';
+    END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_session_reg_ddl_check_trigger
+BEFORE UPDATE ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION update_session_reg_ddl_check_func();
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
