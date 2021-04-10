@@ -459,6 +459,7 @@ $$ LANGUAGE plpgsql;
 /* Routine 16 */
 CREATE OR REPLACE FUNCTION get_available_course_sessions(in_cid INTEGER, in_launch_date DATE) 
 RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEGER) AS $$
+BEGIN
     RETURN QUERY
     SELECT s_date, start_time, sid, seating_capacity - 
     (SELECT count(*) FROM Registers R 
@@ -471,6 +472,7 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     )
     GROUP BY s_date, start_time, name, seating_capacity, sid
     ORDER BY s_date ASC, start_time ASC;
+END;
 $$ LANGUAGE sql;
 
 
