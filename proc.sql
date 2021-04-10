@@ -803,7 +803,6 @@ BEGIN
                 WHEN depart_this_month THEN r.depart_date
                 ELSE DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' 
             END;
-
 		IF partTime THEN 
 			status := 'part-time';
 			num_work_hours := 
