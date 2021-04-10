@@ -468,6 +468,10 @@ DECLARE
     credit_card_info RECORD;
     buy_info RECORD;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE i_course_id = course_id 
+    and in_launch_date = launch_date and i_sess_number = sid) THEN
+        RAISE EXCEPTION 'This session does not exist!';
+    END IF;
     SELECT * INTO credit_card_info FROM Credit_cards 
     WHERE cust_id = in_cust_id
     ORDER BY from_date DESC;
