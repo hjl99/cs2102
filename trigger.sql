@@ -480,7 +480,7 @@ BEGIN
             AND R.number IN (SELECT number FROM Credit_cards WHERE cust_id = NEW.cust_id);
 		IF (NEW.package_credit = 1) THEN
 			UPDATE Buys B
-			SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+			SET num_remaining_redemptions=num_remaining_redemptions + 1
 			WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
 			ORDER BY B.b_date DESC LIMIT 1); 
 		END IF;
@@ -693,17 +693,17 @@ CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
 DECLARE
 rec RECORD;
 BEGIN
-    rec := (SELECT * FROM Cancels 
-                    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
-                    and 
-                    c_date = CURRENT_DATE
-                    and 
-                    sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id);
+    SELECT * INTO rec FROM Cancels 
+        WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
+        and 
+        c_date = CURRENT_DATE
+        and 
+        sid = OLD.sid and launch_date = OLD.launch_date and course_id = OLD.course_id;
     IF rec IS NULL
     THEN
         RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
     END IF;
-    IF (CURRENT_DATE + INTERVAL '1 day'*7 >= (SELECT s_date FROM Sessions WHERE 
+    IF (CURRENT_DATE + INTERVAL '1 day'*7 <= (SELECT s_date FROM Sessions WHERE 
         sid = OLD.sid and launch_date =  OLD.launch_date and course_id = OLD.course_id))
     THEN
         IF rec.refund_amt <> 0.9 * (SELECT fees FROM Offerings 
