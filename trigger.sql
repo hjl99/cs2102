@@ -108,11 +108,7 @@ EXECUTE FUNCTION co_date_func();
 /* 8 */
 CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF EXISTS (SELECT * FROM Registers R WHERE R.launch_date=NEW.launch_date and
-		R.course_id=NEW.course_id and R.number in 
-			   (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
-		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
-	ELSIF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
+	IF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
 		O.course_id=NEW.course_id)) THEN
 		RAISE EXCEPTION 'You cannot register after the deadline!';
 	END IF;
@@ -472,31 +468,7 @@ FOR EACH ROW
 EXECUTE FUNCTION session_increment_func();
 
 
-/* 22 */
-CREATE OR REPLACE FUNCTION one_registration_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-	 		   FROM Registers R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
-		RETURN NULL;
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER one_registration_trigger
-BEFORE INSERT ON Registers 
-FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
 /* 23 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
@@ -682,3 +654,8 @@ CREATE TRIGGER emp_del_trigger8
 BEFORE DELETE ON Managers
 FOR EACH ROW
 EXECUTE FUNCTION emp_del_func();
+
+/* 33 */
+
+
+CREATE TRIGGER instructor_spec_trigger
