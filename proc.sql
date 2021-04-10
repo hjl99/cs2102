@@ -375,7 +375,7 @@ BEGIN
 		rnum := (SELECT num_free_registrations FROM get_available_course_packages() WHERE package_id=pid);
 		INSERT INTO Buys (number, package_id, num_remaining_redemptions) VALUES (cnum, pid, rnum);
 	ELSE
-		RAISE NOTICE 'UNABLE TO PURCHASE PACKAGE!';
+		RAISE EXCEPTION 'UNABLE TO PURCHASE PACKAGE!';
 	END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -468,14 +468,15 @@ DECLARE
     credit_card_info RECORD;
     buy_info RECORD;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE i_course_id = course_id 
-    and in_launch_date = launch_date and i_sess_number = sid) THEN
+    IF NOT EXISTS (SELECT 1 FROM Sessions WHERE cid = course_id 
+    and in_launch_date = launch_date and in_sid = sid) THEN
         RAISE EXCEPTION 'This session does not exist!';
     END IF;
     SELECT * INTO credit_card_info FROM Credit_cards 
     WHERE cust_id = in_cust_id
     ORDER BY from_date DESC;
-    INSERT INTO Registers VALUES (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
+    INSERT INTO Registers VALUES 
+    (credit_card_info.number, cid, in_launch_date, in_sid, CURRENT_DATE);
     IF method = 'redemption' THEN
         SELECT * INTO buy_info FROM Buys B NATURAL JOIN Credit_cards C
             WHERE C.cust_id = in_cust_id AND B.num_remaining_redemptions > 0
@@ -643,19 +644,6 @@ BEGIN
             launch_date, sid, payment_date) 
     VALUES (CURRENT_DATE, refund_amt, package_credit, in_cust_id, in_course_id, 
             in_launch_date, sess_id, payment_date);
-        
-    IF sess_redeemed THEN
-        DELETE FROM Redeems 
-        WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
-        
-        IF NOT late_cancel THEN
-            UPDATE Buys 
-            SET num_remaining_redemptions = num_remaining_redemptions + 1
-            WHERE package_id = redeemed_package_id 
-            AND number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id);
-        END IF;
-    END IF;
 END;
 $$ LANGUAGE plpgsql;
 
