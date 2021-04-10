@@ -655,7 +655,7 @@ EXECUTE FUNCTION instructor_spec_func();
 
 /* 24 */
 /* TO USE 24, SWAP INSERT AND DELETE AT THE END OF ROUTINE 20 */
-/*
+
 
 CREATE OR REPLACE FUNCTION protect_cancels_func2() RETURNS TRIGGER AS $$
 BEGIN
@@ -688,4 +688,39 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION protect_cancels_func1();
 
-*/
+CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM Cancels 
+                    WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = NEW.number) 
+                    and 
+                    sid = NEW.sid and launch_date =  NEW.launch_date and course_id = NEW.course_id)
+    THEN
+        RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION protect_refund_func2() RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM Registers 
+                    WHERE number in (SELECT number FROM Credit_cards WHERE cust_id = NEW.cust_id) 
+                    and 
+                    sid = NEW.sid and launch_date =  NEW.launch_date and course_id = NEW.course_id)
+    THEN
+        RAISE EXCEPTION 'Cancelling registration should mean a withdrawal from registration';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE CONSTRAINT TRIGGER protect_refund_amt1
+AFTER DELETE ON Registers
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION protect_refund_func1();
+
+CREATE CONSTRAINT TRIGGER protect_refund_amt2
+AFTER INSERT ON Cancels
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION protect_refund_func2();

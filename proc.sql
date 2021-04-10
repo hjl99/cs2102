@@ -622,15 +622,13 @@ BEGIN
                             WHERE course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id
                                 AND number = reg_cust_card_number)
                     END;
-
-    DELETE FROM Registers 
-    WHERE number = reg_cust_card_number 
-        AND course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
-
     INSERT INTO Cancels (c_date, refund_amt, package_credit, cust_id, course_id, 
             launch_date, sid, payment_date) 
     VALUES (CURRENT_DATE, refund_amt, package_credit, in_cust_id, in_course_id, 
             in_launch_date, sess_id, payment_date);
+    DELETE FROM Registers 
+    WHERE number = reg_cust_card_number 
+        AND course_id = in_course_id AND launch_date = in_launch_date AND sid = sess_id;
 END;
 $$ LANGUAGE plpgsql;
 
