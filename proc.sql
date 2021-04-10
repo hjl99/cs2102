@@ -159,7 +159,8 @@ return query SELECT I.eid, E.name
 END;
 $$ LANGUAGE plpgsql;
 
-/* 7 */
+
+/* Routine 7 */
 DROP FUNCTION IF EXISTS get_available_instructors;
 CREATE OR REPLACE FUNCTION get_available_instructors(in_cid INTEGER, start_date DATE, end_date DATE)
 RETURNS TABLE(e_id INTEGER, i_name TEXT, total_hrs_for_month INTEGER, day INTEGER, hours TIME[]) AS $$
@@ -204,7 +205,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 8 */
+
+/* Routine 8 */
 CREATE OR REPLACE FUNCTION find_rooms(sess_date DATE, sess_start_hour TIME, sess_duration INTEGER)
 RETURNS TABLE(rid INTEGER) AS $$
 DECLARE
@@ -229,7 +231,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 9 */
+
+/* Routine 9 */
 DROP FUNCTION IF EXISTS get_available_rooms;
 CREATE OR REPLACE FUNCTION get_available_rooms(start_date DATE, end_date DATE)
 RETURNS TABLE(rrid INTEGER, capacity INTEGER, dday DATE, arr TIME[]) AS $$
@@ -280,9 +283,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* 10 */
+/* Uses triggers 2, 3, 14, 15, 17, and 19 to check for violations,  4, 6 to update offerings */
 DROP TYPE IF EXISTS Session CASCADE;
--- (session date, session start hour, and room identifier)
 CREATE TYPE Session AS (
     start_date DATE,
     start_hr TIME,
@@ -350,14 +354,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 11 */
+
+/* Routine 11 */
 CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
                                     start_date DATE, end_date DATE, p_price FLOAT) AS $$
 INSERT INTO Course_packages (sale_start_date, sale_end_date, num_free_registrations, package_name, price)
 VALUES (start_date, end_date, num_free, p_name, p_price);
 $$ LANGUAGE sql;
 
-/* 12 */
+
+/* Routine 12 */
 CREATE OR REPLACE FUNCTION get_available_course_packages()
 RETURNS TABLE (LIKE Course_packages) AS $$
 	SELECT * 
@@ -365,7 +371,8 @@ RETURNS TABLE (LIKE Course_packages) AS $$
 	WHERE sale_end_date >= CURRENT_DATE and CURRENT_DATE >= sale_start_date;
 $$ LANGUAGE sql;
 
-/* 13 */
+
+/* Routine 13 */
 CREATE OR REPLACE PROCEDURE buy_course_package(cid INTEGER, pid INTEGER) AS $$
 DECLARE
 	cnum BIGINT;
@@ -384,7 +391,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/* 14 */
+/* Routine 14 */
 CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
 RETURNS json AS $$
 DECLARE
@@ -432,7 +439,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 15 */
+
+/* Routine 15 */
 CREATE OR REPLACE FUNCTION get_available_course_offerings()
 RETURNS TABLE (title TEXT, course_area TEXT, start_date DATE, end_date DATE, reg_deadline DATE, fees FLOAT, num_remaining_seats INTEGER) AS $$
 BEGIN
@@ -448,7 +456,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-/* 16 */
+/* Routine 16 */
 CREATE OR REPLACE FUNCTION get_available_course_sessions(in_cid INTEGER, in_launch_date DATE) 
 RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEGER) AS $$
     SELECT s_date, start_time, sid, seating_capacity - 
@@ -464,7 +472,9 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
-/* 17 TESTED*/
+
+/* Routine 17 */
+/* Uses triggers 5, 7, 9 */
 CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
 in_sid INTEGER, method TEXT) AS $$
 DECLARE
@@ -494,8 +504,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+
+/* Routine 18 */
 drop function if exists get_my_registrations;
-/* 18 */
 CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
 RETURNS TABLE (course_name TEXT, course_fees FLOAT, sess_date DATE, sess_start_hour TIME, 
     sess_duration INTEGER, instr_name TEXT) AS $$
@@ -519,7 +531,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 19 TESTED*/
+
+/* Routine 19 */
+/* Uses triggers 5 */
 CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
@@ -562,7 +576,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 20 TESTED*/
+
+/* Routine 20 */
+/* Uses triggers 18 to update Buys, 24 to check */
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
     reg_cust_card_number BIGINT;
@@ -637,7 +653,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 21 TESTED*/
+
+/* Routine 21 */
+/* Uses triggers 14 and 15 to check instructor teaching constraints */
 CREATE OR REPLACE PROCEDURE update_instructor(in_course_id INTEGER, in_launch_date DATE, 
     sess_id INTEGER, new_instr_id INTEGER) AS $$
 DECLARE
@@ -663,7 +681,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 22 TESTED*/
+
+/* Routine 22 */
+/* Uses trigger 3 to check for constraint violations */
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
 BEGIN
@@ -679,7 +699,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 23 */
+
+/* Routine 23 */
+/* Uses triggers 3, 14, 15, 17, and 19 to check violations,  4, 6 to update offerings */
 CREATE OR REPLACE PROCEDURE remove_session(i_course_id INTEGER, i_launch_date DATE, i_sess_number INTEGER)
 AS $$
 DECLARE
@@ -723,7 +745,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 24 */
+
+/* Routine 24 */
+/* Uses triggers 3, 14, 15, 17, and 19 to check violations,  4, 6 to update offerings */
 CREATE OR REPLACE PROCEDURE add_session(in_cid INTEGER, l_date DATE, sess_id INTEGER, sess_day DATE,
                                 sess_start TIME, eid INTEGER, rid INTEGER) AS $$
 DECLARE 
@@ -736,7 +760,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 25 */
+
+/* Routine 25 */
+/* */
 CREATE OR REPLACE FUNCTION pay_salary()
 RETURNS TABLE(eid INTEGER, name TEXT, status TEXT, num_work_days INTEGER, 
 	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT) AS $$

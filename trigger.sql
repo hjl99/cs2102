@@ -82,7 +82,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER concurrent_session_trigger
-BEFORE INSERT ON Sessions
+BEFORE INSERT OR UPDATE ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION concurrent_session_func();
 
