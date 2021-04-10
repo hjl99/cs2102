@@ -61,7 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 2 */
+/* 2 TESTED*/
 DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
@@ -72,7 +72,7 @@ BEGIN
     ELSIF EXISTS (SELECT 1 FROM Course_areas CA WHERE reid = CA.eid) THEN 
         RAISE EXCEPTION 'The employee is a manager who is managing some course area!';
     ELSE
-        UPDATE Employees E SET E.depart_date = depart_date WHERE E.eid = reid; 
+        UPDATE Employees SET depart_date = in_depart_date WHERE eid = reid; 
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -459,7 +459,7 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     ORDER BY s_date ASC, start_time ASC;
 $$ LANGUAGE sql;
 
-/* 17 */
+/* 17 TESTED*/
 CREATE OR REPLACE PROCEDURE register_session(in_cust_id INTEGER, cid INTEGER, in_launch_date DATE,
 in_sid INTEGER, method TEXT) AS $$
 DECLARE
@@ -517,7 +517,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 19 */
+/* 19 TESTED*/
 CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_id INTEGER, 
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
@@ -529,7 +529,7 @@ DECLARE
     new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
-    cust_card_number INTEGER;
+    cust_card_number BIGINT;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN 
         RAISE EXCEPTION 'The customer specified does not exist.';
@@ -571,10 +571,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 20 */
+/* 20 TESTED*/
 CREATE OR REPLACE PROCEDURE cancel_registration(in_cust_id INTEGER, in_course_id INTEGER, in_launch_date DATE) AS $$
 DECLARE
-    reg_cust_card_number INTEGER;
+    reg_cust_card_number BIGINT;
     late_cancel BOOLEAN;
     sess_redeemed BOOLEAN;
     early_cancel_ddl DATE;
@@ -661,7 +661,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 21 */
+/* 21 TESTED*/
 CREATE OR REPLACE PROCEDURE update_instructor(in_course_id INTEGER, in_launch_date DATE, 
     sess_id INTEGER, new_instr_id INTEGER) AS $$
 DECLARE
@@ -687,7 +687,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 22 */
+/* 22 TESTED*/
 CREATE OR REPLACE PROCEDURE update_room(cid INTEGER, ld DATE, ssid INTEGER, rrid INTEGER)
 AS $$
 BEGIN

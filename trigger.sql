@@ -214,7 +214,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER course_fee_payment_trigger
+CREATE TRIGGER course_fee_payment_insert_trigger
 BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
 
@@ -237,7 +237,7 @@ BEGIN
 		RETURN NULL;
 	END IF;
 
-	RETURN OLD;
+	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
