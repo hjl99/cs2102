@@ -550,10 +550,7 @@ CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
     prev_sess_id INTEGER;
-    prev_sess_rid INTEGER;
-    prev_sess_eid INTEGER;
     new_sess_rid INTEGER;
-    new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
     cust_card_number BIGINT;
