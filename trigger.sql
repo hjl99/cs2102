@@ -575,3 +575,67 @@ CREATE TRIGGER payslip_validation_trigger
 BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
+
+/* 29 */
+CREATE OR REPLACE FUNCTION session_start_time_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
+        WHERE S.sid = OLD.sid AND S.course_id = OLD.course_id AND S.launch_date = OLD.launch_date) THEN
+		RAISE EXCEPTION 'Cancelling a session after its start time is not allowed.';
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_start_time_trigger
+BEFORE DELETE ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION session_start_time_func();
+
+/* 32 */
+CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
+BEGIN
+	RAISE NOTICE 'Please use the remove_employee() function to remove employee!';
+	RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER emp_del_trigger1
+BEFORE DELETE ON Employees
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger2
+BEFORE DELETE ON Part_time_emp
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger3
+BEFORE DELETE ON Full_time_emp
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger4
+BEFORE DELETE ON Instructors
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger5
+BEFORE DELETE ON Part_time_instructors
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger6
+BEFORE DELETE ON Full_time_instructors
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger7
+BEFORE DELETE ON Administrators
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
+
+CREATE TRIGGER emp_del_trigger8
+BEFORE DELETE ON Managers
+FOR EACH ROW
+EXECUTE FUNCTION emp_del_func();
