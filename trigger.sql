@@ -566,10 +566,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER remove_reg_sess_trigger
+CREATE TRIGGER payslip_validation_trigger
 BEFORE DELETE ON Sessions
 FOR EACH ROW
-EXECUTE FUNCTION remove_reg_sess();
+EXECUTE FUNCTION payslip_validation_func();
 
 
 /* 21 */
