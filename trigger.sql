@@ -486,12 +486,6 @@ BEGIN
 	 		   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   UNION
-			   SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
@@ -499,10 +493,6 @@ BEGIN
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER one_registration_trigger
-BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
 CREATE TRIGGER one_registration_trigger
 BEFORE INSERT ON Registers 
