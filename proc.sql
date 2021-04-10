@@ -148,8 +148,8 @@ return query SELECT I.eid, E.name
                         EXISTS(SELECT 1 from full_time_emp FT WHERE FT.eid = I.eid) or  
                         COALESCE((SELECT(SELECT hours FROM temp_table WHERE iid = I.eid) + duration), 0) <= 30
                     )
-                    AND (SELECT course_area_name FROM Specializes WHERE eid = I.eid) = 
-                    (SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id);
+                    AND ((SELECT course_area_name FROM Courses C WHERE C.course_id = in_course_id) 
+                    in (SELECT course_area_name FROM Specializes WHERE eid = I.eid));
     DROP TABLE temp_table;
 END;
 $$ LANGUAGE plpgsql;
@@ -308,7 +308,9 @@ BEGIN
     i := 1;
     WHILE (i <= array_upper(sess,1)) LOOP
         j :=last_stops[i];
+        raise notice 'j i s %', j;
         select count(*) into total from find_instructors(cid, sess[i].start_date, sess[i].start_hr);
+        raise notice 'total is %', total;
         IF total = 0 or total < j THEN
             i := i - 1;
             IF i < 1 THEN
@@ -484,9 +486,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+drop function if exists get_my_registrations;
 /* 18 */
 CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
-RETURNS TABLE (course_name TEXT, course_fees INTEGER, sess_date DATE, sess_start_hour TIME, 
+RETURNS TABLE (course_name TEXT, course_fees FLOAT, sess_date DATE, sess_start_hour TIME, 
     sess_duration INTEGER, instr_name TEXT) AS $$
 DECLARE
     curs CURSOR FOR (
