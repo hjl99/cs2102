@@ -54,7 +54,7 @@ CREATE TABLE Pay_slips (
     eid INTEGER REFERENCES Employees ON DELETE CASCADE,
     payment_date DATE,
     amt FLOAT NOT NULL,
-         INTEGER,
+    num_work_hours INTEGER,
     num_work_days INTEGER,
     PRIMARY KEY (eid, payment_date),
     CONSTRAINT num_work_check CHECK ((num_work_hours>=0 and num_work_days=null) or (num_work_hours=null and num_work_days>=0)),
@@ -150,7 +150,7 @@ CREATE TABLE Cancels (
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
-    payment_date TIMESTAMP NOT NULL,
+    git TIMESTAMP NOT NULL,
     FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE SET NULL, /* sessions wont be deleted due to valid bit */
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt >= 0.0 and package_credit = NULL) or (package_credit in (0, 1) and refund_amt = NULL))
