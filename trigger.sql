@@ -576,6 +576,21 @@ BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
 
+/* 29 */
+CREATE OR REPLACE FUNCTION session_start_time_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
+        WHERE S.sid = OLD.sid AND S.course_id = OLD.course_id AND S.launch_date = OLD.launch_date) THEN
+		RAISE EXCEPTION 'Cancelling a session after its start time is not allowed.';
+	END IF;
+	RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_start_time_trigger
+BEFORE DELETE ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION session_start_time_func();
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
