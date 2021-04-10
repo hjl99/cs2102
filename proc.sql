@@ -762,7 +762,7 @@ $$ LANGUAGE plpgsql;
 
 
 /* Routine 25 */
-/* */
+/* Uses trigger 20 to check for violations */
 CREATE OR REPLACE FUNCTION pay_salary()
 RETURNS TABLE(eid INTEGER, name TEXT, status TEXT, num_work_days INTEGER, 
 	num_work_hours INTEGER, hourly_rate FLOAT, monthly_salary FLOAT, amount FLOAT) AS $$
@@ -835,7 +835,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 26 */
+
+/* Routine 26 */
 CREATE OR REPLACE FUNCTION promote_courses()
 RETURNS TABLE(customer_id INTEGER, customer_name TEXT, ca_of_interest TEXT, course_title TEXT, 
 			  launch_date DATE, reg_deadline DATE, fees FLOAT)
@@ -905,7 +906,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 27 */
+/* Routine 27 */
 CREATE OR REPLACE FUNCTION top_packages(top_limit_num INTEGER)
 RETURNS TABLE (package_id INTEGER, num_free_registrations INTEGER, price FLOAT, sale_start_date DATE,
     sale_end_date DATE, num_package_sold INTEGER) AS $$
@@ -937,7 +938,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 28 */
+
+/* Routine 28 */
 CREATE OR REPLACE FUNCTION popular_courses() 
 RETURNS TABLE (course_id INTEGER, course_title TEXT, course_area TEXT, 
     num_offerings_this_year INTEGER, num_reg_of_latest_offering_this_year INTEGER) AS $$
@@ -973,7 +975,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 29 */
+/* Routine 29 */
 CREATE OR REPLACE FUNCTION view_summary_report(num_month INTEGER) 
 RETURNS TABLE (month_year TEXT, total_salary FLOAT, total_packages_sales_amt FLOAT, 
     total_reg_fees_card FLOAT, total_amt_refunded_fees FLOAT, total_num_reg_redeem INTEGER) AS $$
@@ -1033,7 +1035,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 30 */
+/* Routine 30 */
 CREATE OR REPLACE FUNCTION view_manager_report()
 RETURNS TABLE (manager_name TEXT, num_course_areas INTEGER, num_co_ending_this_year INTEGER,
     net_reg_fees_co_ending_this_year FLOAT, co_title_highest_net_reg_fees TEXT[]) AS $$
