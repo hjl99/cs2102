@@ -538,16 +538,15 @@ EXECUTE FUNCTION add_sess_func();
 /* 28 */
 CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF (num_work_hours=null) THEN
-		IF (amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
+	RAISE NOTICE '%', NEW.num_work_hours;
+	IF (NEW.num_work_hours is null) THEN
+		IF (NEW.amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
-	ELSIF (num_work_hours<>null) THEN
-		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*NEW.num_work_hours) then
+	ELSIF (NEW.num_work_hours IS NOT NULL) THEN
+		IF (NEW.amt<>(SELECT hourly_rate FROM Part_time_emp F WHERE F.eid=NEW.eid)*NEW.num_work_hours) then
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
-	ELSE
-		RAISE EXCEPTION 'No work hours and work days!';
 	END IF;
 	RETURN NEW;
 END;
