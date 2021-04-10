@@ -486,8 +486,7 @@ BEGIN
 	 		   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   and is_ongoing=true) THEN
+			   and NEW.launch_date = R.launch_date) THEN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
