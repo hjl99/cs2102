@@ -567,7 +567,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER payslip_validation_trigger
-BEFORE DELETE ON Sessions
+BEFORE INSERT ON Pay_slips
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
 
