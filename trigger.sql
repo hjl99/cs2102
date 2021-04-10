@@ -75,7 +75,7 @@ BEGIN
 	END IF;
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
 				and S.eid=NEW.eid) THEN
-	RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
+	RAISE EXCEPTION 'An instructor cannot teach more than 1 session at the same date and time!';	 
 	END IF;
 	RETURN NEW;
 END;
