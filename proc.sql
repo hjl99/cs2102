@@ -411,7 +411,7 @@ BEGIN
         ORDER BY session_date ASC, start_time ASC;
         RETURN (SELECT row_to_json(t)
         FROM (
-            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date,
+            SELECT package_name, price, num_free_registrations, num_remaining_redemptions, b_date::date,
             (
                 SELECT json_agg(d)
                 FROM (
