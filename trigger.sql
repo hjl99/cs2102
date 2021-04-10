@@ -108,11 +108,7 @@ EXECUTE FUNCTION co_date_func();
 /* 8 */
 CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF EXISTS (SELECT * FROM Registers R WHERE R.launch_date=NEW.launch_date and
-		R.course_id=NEW.course_id and R.number in 
-			   (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
-		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
-	ELSIF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
+	IF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
 		O.course_id=NEW.course_id)) THEN
 		RAISE EXCEPTION 'You cannot register after the deadline!';
 	END IF;
@@ -191,32 +187,6 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 12 */
-CREATE OR REPLACE FUNCTION one_payment_only_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-			   FROM Registers R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is already paid!';
-		RETURN NULL;
-	END IF;
-    NEW.r_date = CURRENT_DATE;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER course_fee_payment_insert_trigger
-BEFORE INSERT OR UPDATE ON Registers
-FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
 
 CREATE OR REPLACE FUNCTION registration_check()
 RETURNS TRIGGER AS $$
@@ -484,7 +454,7 @@ BEGIN
 	 		   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date THEN
+			   and NEW.launch_date = R.launch_date) THEN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
@@ -493,12 +463,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER one_registration_trigger
-BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION one_registration_check();
-
-CREATE TRIGGER one_registration_trigger
 BEFORE INSERT ON Registers 
 FOR EACH ROW EXECUTE FUNCTION one_registration_check();
+
 
 /* 23 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
@@ -523,57 +490,6 @@ AFTER INSERT ON Cancels
 FOR EACH ROW
 EXECUTE FUNCTION refund_redemption_func();
 
-/* 26 */
-CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
-DECLARE
-	c_and_co RECORD;
-BEGIN
-    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = NEW.course_id and launch_date=NEW.launch_date;
-    IF (c_and_co is NULL) THEN 
-		RAISE EXCEPTION 'Offering not found';
-    ELSIF (NEW.s_date < c_and_co.reg_deadline) THEN
-        RAISE EXCEPTION 'The registration should close before commencing';
-    ELSIF (NOW() > c_and_co.reg_deadline) THEN
-        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
-    END IF;
-	IF (SELECT EXTRACT(ISODOW FROM NEW.s_date) not in (1,2,3,4,5)) THEN 
-		RAISE EXCEPTION 'Instructor can only conduct sessions on weekdays!';
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER add_sess_trigger
-BEFORE INSERT ON Sessions
-FOR EACH ROW
-EXECUTE FUNCTION add_sess_func();
-
-/* 27 */
-
-
-
-/* 28 */
-CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
-BEGIN
-	IF (num_work_hours=null) THEN
-		IF (amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
-			RAISE EXCEPTION 'Invalid salary!';
-		END IF;
-	ELSIF (num_work_hours<>null) THEN
-		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*num_work_hours) then
-			RAISE EXCEPTION 'Invalid salary!';
-		END IF;
-	ELSE
-		RAISE EXCEPTION 'No work hours and work days!';
-	END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER payslip_validation_trigger
-BEFORE INSERT ON Sessions
-FOR EACH ROW
-EXECUTE FUNCTION payslip_validation_func();
 
 /* 24 */
 CREATE OR REPLACE FUNCTION remove_reg_sess() RETURNS TRIGGER AS $$
@@ -595,6 +511,60 @@ FOR EACH ROW
 EXECUTE FUNCTION remove_reg_sess();
 
 
+/* 26 */
+CREATE OR REPLACE FUNCTION add_sess_func() RETURNS TRIGGER AS $$
+DECLARE
+	c_and_co RECORD;
+BEGIN
+    SELECT * into c_and_co FROM Offerings NATURAL JOIN Courses WHERE course_id = NEW.course_id and launch_date=NEW.launch_date;
+    IF (c_and_co is NULL) THEN 
+		RAISE EXCEPTION 'Offering not found';
+    ELSIF (NEW.s_date < c_and_co.reg_deadline) THEN
+        RAISE EXCEPTION 'The registration should close before commencing';
+    ELSIF (NOW() > c_and_co.reg_deadline) THEN
+        RAISE EXCEPTION 'Course offering’s registration deadline has passed';
+    END IF;
+	IF (SELECT EXTRACT(ISODOW FROM NEW.s_date) not in (1,2,3,4,5)) THEN 
+		RAISE EXCEPTION 'Instructor can only conduct sessions on weekdays!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE CONSTRAINT TRIGGER add_sess_trigger
+AFTER INSERT ON Sessions
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION add_sess_func();
+
+/* 27 */
+
+
+
+/* 28 */
+CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
+BEGIN
+	RAISE NOTICE '%', NEW.num_work_hours;
+	IF (NEW.num_work_hours is null) THEN
+		IF (NEW.amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	ELSIF (NEW.num_work_hours IS NOT NULL) THEN
+		IF (NEW.amt<>(SELECT hourly_rate FROM Part_time_emp F WHERE F.eid=NEW.eid)*NEW.num_work_hours) then
+			RAISE EXCEPTION 'Invalid salary!';
+		END IF;
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER payslip_validation_trigger
+BEFORE INSERT ON Pay_slips
+FOR EACH ROW
+EXECUTE FUNCTION payslip_validation_func();
+
+
+
+
 /* 29 */
 CREATE OR REPLACE FUNCTION session_start_time_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -610,6 +580,23 @@ CREATE TRIGGER session_start_time_trigger
 BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
+
+/* 30 */
+CREATE OR REPLACE FUNCTION update_session_start_time_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
+        WHERE S.sid = OLD.sid AND S.course_id = OLD.course_id AND S.launch_date = OLD.launch_date) THEN
+		RAISE EXCEPTION 'Updating a session after its start time is not allowed.';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_session_start_time_trigger
+BEFORE UPDATE ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION update_session_start_time_func();
+
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
