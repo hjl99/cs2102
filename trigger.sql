@@ -690,7 +690,7 @@ CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
 DECLARE
 rec RECORD;
 BEGIN
-    SELECT * INTO FROM Cancels 
+    SELECT * INTO rec FROM Cancels 
     WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = OLD.number) 
             and 
             c_date = CURRENT_DATE
