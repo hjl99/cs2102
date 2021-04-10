@@ -491,32 +491,23 @@ drop function if exists get_my_registrations;
 CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
 RETURNS TABLE (course_name TEXT, course_fees FLOAT, sess_date DATE, sess_start_hour TIME, 
     sess_duration INTEGER, instr_name TEXT) AS $$
-DECLARE
-    curs CURSOR FOR (
-        SELECT DISTINCT course_id, launch_date, sid, fees, s_date, start_time, end_time, eid
-        FROM Registers NATURAL JOIN Sessions NATURAL JOIN
-            (SELECT course_id, launch_date, reg_deadline, fees FROM Offerings) Off
-        WHERE number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
-            AND CURRENT_DATE <= reg_deadline
-        ORDER BY s_date, start_time);
-    r RECORD;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Customers WHERE cust_id = in_cust_id) THEN
         RAISE EXCEPTION 'Customer specified does not exist';
     END IF;
-    OPEN curs;
-    LOOP
-        FETCH curs INTO r;
-        EXIT WHEN NOT FOUND;
-        course_name := (SELECT title FROM Courses C WHERE course_id = r.course_id);
-        course_fees := r.fees;
-        sess_date := r.s_date;
-        sess_start_hour := r.start_time;
-        sess_duration := (SELECT EXTRACT(HOUR FROM (r.end_time - r.start_time)));
-        instr_name := (SELECT name FROM Employees WHERE eid = r.eid);
-        RETURN NEXT;
-    END LOOP;
-    CLOSE curs;
+    RETURN QUERY
+    WITH
+    Active_reg AS (
+        SELECT *
+        FROM Registers NATURAL JOIN Sessions NATURAL JOIN Courses NATURAL JOIN
+            (SELECT course_id, launch_date, reg_deadline, fees FROM Offerings) Off
+        WHERE number IN (SELECT number FROM Credit_cards WHERE cust_id = in_cust_id)
+            AND CURRENT_DATE <= reg_deadline
+        ORDER BY s_date, start_time
+    )
+    SELECT title AS course_name, fees AS course_fees, s_date AS sess_date, start_time AS sess_start_hour,
+        duration AS sess_duration, (SELECT name FROM Employees WHERE eid = AR.eid) AS instr_name
+    FROM Active_reg AR;
 END;
 $$ LANGUAGE plpgsql;
 
