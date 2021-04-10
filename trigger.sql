@@ -68,9 +68,14 @@ BEGIN
 	IF EXISTS (SELECT * FROM Sessions S WHERE S.launch_date=NEW.launch_date and
 			   S.course_id=NEW.course_id and S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session per offering at the same date and time!';
-	ELSIF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+	END IF;
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
 				 and S.rid=NEW.rid) THEN
 		RAISE EXCEPTION 'You cannot have more than 1 session in the same room at the same date and time!';	 
+	END IF;
+	IF EXISTS (SELECT * FROM Sessions S WHERE S.s_date=NEW.s_date and S.start_time=NEW.start_time and is_ongoing=true
+				and S.eid=NEW.eid) THEN
+	RAISE EXCEPTION 'An instructor cannot teach more than 1 session at the same date and time!';	 
 	END IF;
 	RETURN NEW;
 END;
@@ -561,10 +566,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER remove_reg_sess_trigger
-BEFORE DELETE ON Sessions
+CREATE TRIGGER payslip_validation_trigger
+BEFORE INSERT ON Pay_slips
 FOR EACH ROW
-EXECUTE FUNCTION remove_reg_sess();
+EXECUTE FUNCTION payslip_validation_func();
 
 
 /* 21 */
