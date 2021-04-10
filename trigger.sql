@@ -657,5 +657,18 @@ EXECUTE FUNCTION emp_del_func();
 
 /* 33 */
 
+CREATE OR REPLACE FUNCTION instructor_spec_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF NOT EXISTS (SELECT * FROM Specializes S WHERE S.eid=NEW.eid) THEN
+		RAISE EXCEPTION 'Each Instructor must specialize in at least 1 area!';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER instructor_spec_trigger
+
+CREATE CONSTRAINT TRIGGER instructor_spec_trigger
+AFTER INSERT ON Instructors
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW
+EXECUTE FUNCTION instructor_spec_func();
