@@ -108,11 +108,7 @@ EXECUTE FUNCTION co_date_func();
 /* 8 */
 CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF EXISTS (SELECT * FROM Registers R WHERE R.launch_date=NEW.launch_date and
-		R.course_id=NEW.course_id and R.number in 
-			   (SELECT number FROM Credit_cards WHERE cust_id=(SELECT cust_id FROM Credit_cards WHERE number = NEW.number))) THEN
-		RAISE EXCEPTION 'You cannot register for more than 1 session per offering!';
-	ELSIF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
+	IF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
 		O.course_id=NEW.course_id)) THEN
 		RAISE EXCEPTION 'You cannot register after the deadline!';
 	END IF;
@@ -191,32 +187,6 @@ FOR EACH ROW
 EXECUTE FUNCTION active_package_func();
 
 /* 12 */
-CREATE OR REPLACE FUNCTION one_payment_only_check()
-RETURNS TRIGGER AS $$
-DECLARE
-	customer_id INTEGER;
-BEGIN
-	SELECT C.cust_id INTO customer_id
-	FROM Credit_cards C
-	WHERE NEW.number = C.number;
-	
-	IF EXISTS (SELECT 1
-			   FROM Registers R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.sid = R.sid
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
-	 	RAISE EXCEPTION 'Course fee is already paid!';
-		RETURN NULL;
-	END IF;
-    NEW.r_date = CURRENT_DATE;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER course_fee_payment_insert_trigger
-BEFORE INSERT OR UPDATE ON Registers
-FOR EACH ROW EXECUTE FUNCTION one_payment_only_check();
 
 CREATE OR REPLACE FUNCTION registration_check()
 RETURNS TRIGGER AS $$
@@ -255,7 +225,7 @@ BEGIN
     
 	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    END
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
@@ -339,7 +309,7 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    END IF
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
@@ -484,12 +454,6 @@ BEGIN
 	 		   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   UNION
-			   SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.course_id = R.course_id
 			   and NEW.launch_date = R.launch_date) THEN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
@@ -497,10 +461,6 @@ BEGIN
 	RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE TRIGGER one_registration_trigger
-BEFORE INSERT OR UPDATE ON Redeems
-FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 
 CREATE TRIGGER one_registration_trigger
 BEFORE INSERT ON Registers 
@@ -561,7 +521,7 @@ BEGIN
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
 	ELSIF (num_work_hours<>null) THEN
-		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*num_work_hours) then
+		IF (amt<>(SELECT hourly_rate FROM Full_time_emp F WHERE F.eid=NEW.eid)*NEW.num_work_hours) then
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
 	ELSE
@@ -572,7 +532,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER payslip_validation_trigger
-BEFORE INSERT ON Sessions
+BEFORE INSERT ON Pay_slips
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
 
