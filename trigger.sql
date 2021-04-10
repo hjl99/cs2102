@@ -34,7 +34,7 @@ EXECUTE FUNCTION customer_total_participation_func2();
 CREATE OR REPLACE FUNCTION session_non_zero_func1() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=NEW.course_id and launch_date=NEW.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering1 must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;
@@ -49,7 +49,7 @@ EXECUTE FUNCTION session_non_zero_func1();
 CREATE OR REPLACE FUNCTION session_non_zero_func2() RETURNS TRIGGER AS $$
 BEGIN
 	IF ((SELECT count(*) FROM Sessions WHERE course_id=OLD.course_id and launch_date=OLD.launch_date and is_ongoing=true)=0) THEN
-		RAISE EXCEPTION 'Each course offering2 must have one or more sessions!';
+		RAISE EXCEPTION 'Each course offering must have one or more sessions!';
 	END IF;
 	RETURN NEW;
 END;
@@ -254,15 +254,15 @@ BEGIN
     
 	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    END
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
 
-    IF (num = 0) THEN
+    IF num = 0 THEN
         RAISE EXCEPTION 'Every employee must be either a part time or full time employee!';
         RETURN NULL;
-    ELSIF (num = 2) THEN
+    ELSIF num = 2 THEN
         RAISE EXCEPTION 'Employee cannot be both part time and full time employee!';
         RETURN NULL;
     END IF;
@@ -338,7 +338,7 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    END IF
+    END IF;
     IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
@@ -549,3 +549,22 @@ CREATE TRIGGER add_sess_trigger
 BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION add_sess_func();
+
+/* 24 */
+CREATE OR REPLACE FUNCTION remove_reg_sess() RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM Registers R 
+        WHERE R.sid = OLD.sid and R.course_id = OLD.course_id 
+        and R.launch_date = OLD.launch_date)
+    THEN
+        RAISE EXCEPTION 'Cannot delete. There is at least one registration for the session!';
+        RETURN NULL;
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER remove_reg_sess_trigger
+BEFORE DELETE ON Sessions
+FOR EACH ROW
+EXECUTE FUNCTION remove_reg_sess();

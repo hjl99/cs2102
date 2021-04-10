@@ -226,11 +226,11 @@ COMMIT;
 -- CALL remove_session(2, '2021-03-01', 11);
 
 /* function 7 */
-SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
+-- SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
 
 /* ------- function 10 Test case -----------*/
-CALL add_course_offering(4, 1.0,'2021-03-02','2021-04-01', 2, 13, 
-('2021-04-11', '09:00:00', 2), ('2021-04-11', '10:00:00', 1), ('2021-04-11', '11:00:00', 2)); 
+-- CALL add_course_offering(4, 1.0,'2021-03-02','2021-04-01', 2, 13, 
+-- ('2021-04-11', '09:00:00', 2), ('2021-04-11', '10:00:00', 1), ('2021-04-11', '11:00:00', 2)); 
 -- CALL add_course_offering0(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
 -- ('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
 -- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 

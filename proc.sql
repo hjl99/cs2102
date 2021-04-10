@@ -486,7 +486,7 @@ $$ LANGUAGE plpgsql;
 
 /* 18 */
 CREATE OR REPLACE FUNCTION get_my_registrations(in_cust_id INTEGER)
-RETURNS TABLE (course_name TEXT, course_fees INTEGER, sess_date DATE, sess_start_hour TIME, 
+RETURNS TABLE (course_name TEXT, course_fees FLOAT, sess_date DATE, sess_start_hour TIME, 
     sess_duration INTEGER, instr_name TEXT) AS $$
 DECLARE
     curs CURSOR FOR (
