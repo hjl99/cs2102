@@ -106,21 +106,20 @@ FOR EACH ROW
 EXECUTE FUNCTION co_date_func();
 
 /* 8 */
-CREATE OR REPLACE FUNCTION registration_func() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION registration_ddl_check_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF (NEW.r_date>(SELECT reg_deadline FROM Offerings O WHERE O.launch_date=NEW.launch_date and
-		O.course_id=NEW.course_id)) THEN
-		RAISE EXCEPTION 'You cannot register after the deadline!';
+	IF (NEW.r_date > (SELECT reg_deadline FROM Offerings O WHERE O.launch_date = NEW.launch_date and
+		O.course_id = NEW.course_id)) THEN
+		RAISE EXCEPTION 'You cannot register for or update sessions after the deadline!';
 	END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-
-CREATE TRIGGER registration_trigger
-BEFORE INSERT ON Registers
+CREATE TRIGGER registration_ddl_check_trigger
+BEFORE INSERT OR UPDATE ON Registers
 FOR EACH ROW
-EXECUTE FUNCTION registration_func();
+EXECUTE FUNCTION registration_ddl_check_func();
 
 /* 9 */
 CREATE OR REPLACE FUNCTION sum_capacity_func() RETURNS TRIGGER AS $$
@@ -590,22 +589,6 @@ CREATE TRIGGER session_start_time_trigger
 BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
-
-/* 30 */
-CREATE OR REPLACE FUNCTION update_session_reg_ddl_check_func() RETURNS TRIGGER AS $$
-BEGIN
-	IF CURRENT_DATE > (SELECT reg_deadline FROM Offerings 
-        WHERE course_id = OLD.course_id AND launch_date = OLD.launch_date) THEN 
-		RAISE EXCEPTION 'Updating sessions after the registration deadline is not allowed.';
-    END IF;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER update_session_reg_ddl_check_trigger
-BEFORE UPDATE ON Registers
-FOR EACH ROW
-EXECUTE FUNCTION update_session_reg_ddl_check_func();
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
