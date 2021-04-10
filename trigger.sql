@@ -484,13 +484,7 @@ BEGIN
 	 		   FROM Registers R NATURAL JOIN Credit_cards C
 			   WHERE C.cust_id = customer_id
 			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date
-			   UNION
-			   SELECT 1
-			   FROM Redeems R NATURAL JOIN Credit_cards C
-			   WHERE C.cust_id = customer_id
-			   and NEW.course_id = R.course_id
-			   and NEW.launch_date = R.launch_date) THEN
+			   and NEW.launch_date = R.launch_date THEN
 		RAISE EXCEPTION 'For each course offered by the company, a customer can register for at most one of its sessions!';
 		RETURN NULL;
 	END IF;
@@ -509,11 +503,16 @@ FOR EACH ROW EXECUTE FUNCTION one_registration_check();
 /* 23 */
 CREATE OR REPLACE FUNCTION refund_redemption_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF (NEW.package_credit=1) THEN
-		UPDATE Buys B
-		SET B.num_remaining_redemptions=num_remaining_redemptions + 1
-		WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
-		ORDER BY B.b_date DESC LIMIT 1); 
+	IF (NEW.package_credit IS NOT NULL) THEN
+		DELETE FROM Redeems R
+		WHERE R.course_id = NEW.course_id AND R.launch_date = NEW.launch_date AND R.sid = NEW.sid
+            AND R.number IN (SELECT number FROM Credit_cards WHERE cust_id = NEW.cust_id);
+		IF (NEW.package_credit = 1) THEN
+			UPDATE Buys B
+			SET B.num_remaining_redemptions=num_remaining_redemptions + 1
+			WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+			ORDER BY B.b_date DESC LIMIT 1); 
+		END IF;
 	END IF;
 	RETURN NEW;
 END;
