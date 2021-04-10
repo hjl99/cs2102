@@ -537,13 +537,43 @@ EXECUTE FUNCTION add_sess_func();
 
 /* 28 */
 CREATE OR REPLACE FUNCTION payslip_validation_func() RETURNS TRIGGER AS $$
+DECLARE
+	jd DATE;
+	dd DATE;
+	depart_this_month BOOLEAN;
+    join_this_month BOOLEAN;
+    first_work_day DATE;
+    last_work_day DATE;
+	num_work_days INTEGER;
+	days_in_month INTEGER;
+	monthly_salary FLOAT;
+	amount FLOAT;
 BEGIN
-	RAISE NOTICE '%', NEW.num_work_hours;
-	IF (NEW.num_work_hours is null) THEN
-		IF (NEW.amt<>(SELECT monthly_salary FROM Full_time_emp F WHERE F.eid=NEW.eid)) then
+	IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
+		jd := (SELECT E.join_date FROM Employees E WHERE E.eid=NEW.eid);
+		dd := (SELECT E.depart_date FROM Employees E WHERE E.eid=NEW.eid);
+        join_this_month := (SELECT DATE_TRUNC('MONTH', jd) = DATE_TRUNC('MONTH', CURRENT_DATE));
+        depart_this_month := (SELECT dd IS NOT NULL 
+            AND DATE_TRUNC('MONTH', dd) = DATE_TRUNC('MONTH', CURRENT_DATE));
+        first_work_day := 
+            CASE 
+                WHEN join_this_month THEN jd
+                ELSE DATE_TRUNC('MONTH', CURRENT_DATE) 
+            END;
+        last_work_day := 
+            CASE
+                WHEN depart_this_month THEN dd
+                ELSE DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' 
+            END;
+		num_work_days := (SELECT EXTRACT(DAY FROM last_work_day)::INTEGER - EXTRACT(DAY FROM first_work_day)::INTEGER + 1);
+		monthly_salary := (SELECT FTE.monthly_salary FROM Full_time_emp FTE WHERE FTE.eid = NEW.eid);
+		days_in_month := (SELECT EXTRACT('DAY' FROM DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '1 MONTH' - INTERVAL '1 DAY'));
+		amount := ROUND((monthly_salary * num_work_days / days_in_month)::NUMERIC, 2);
+		RAISE NOTICE '%', NUM_WORK_DAYS;
+		IF (NEW.amt<>amount) then
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
-	ELSIF (NEW.num_work_hours IS NOT NULL) THEN
+	ELSIF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		IF (NEW.amt<>(SELECT hourly_rate FROM Part_time_emp F WHERE F.eid=NEW.eid)*NEW.num_work_hours) then
 			RAISE EXCEPTION 'Invalid salary!';
 		END IF;
