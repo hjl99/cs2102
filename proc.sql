@@ -519,10 +519,7 @@ CREATE OR REPLACE PROCEDURE update_course_session(in_cust_id INTEGER, in_course_
     in_launch_date DATE, new_sess_id INTEGER) AS $$
 DECLARE
     prev_sess_id INTEGER;
-    prev_sess_rid INTEGER;
-    prev_sess_eid INTEGER;
     new_sess_rid INTEGER;
-    new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
     new_sess_valid_reg_count INTEGER;
     cust_card_number BIGINT;
@@ -687,7 +684,7 @@ DECLARE
 	session_start_time TIME;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Sessions WHERE i_course_id = course_id and i_launch_date = launch_date and i_sess_number = sid) THEN
-        RAISE EXCEPTION 'This sessionn does not exist!';
+        RAISE EXCEPTION 'This session does not exist!';
     END IF;
 
 	SELECT S.s_date INTO session_date

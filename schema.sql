@@ -155,7 +155,7 @@ CREATE TABLE Cancels (
     PRIMARY KEY (c_date, cust_id, course_id, launch_date, sid),
     CONSTRAINT cancellation_validity CHECK ((refund_amt >= 0.0 and package_credit = NULL) or (package_credit in (0, 1) and refund_amt = NULL))
 );
-/* Trav: considering making pri key number and cust*/
+
 /* Contains the owns relationship to enforce key and total participation on credit cards */
 CREATE TABLE Credit_cards (
     number BIGINT PRIMARY KEY,
@@ -175,14 +175,13 @@ CREATE TABLE Buys (
     CONSTRAINT num_remaining_redemptions_non_neg CHECK (num_remaining_redemptions >= 0)
 );
 
-/* Requires triggers to enforce that each customer can register for at most one sesion of a course offering (added)*/
 CREATE TABLE Registers (
     number BIGINT REFERENCES Credit_cards ON DELETE CASCADE,
     course_id INTEGER,
     launch_date DATE,
     sid INTEGER,
     r_date DATE,
-    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE NO ACTION, 
+    FOREIGN KEY (sid, course_id, launch_date) REFERENCES Sessions ON DELETE NO ACTION, /* Sessions cannot be deleted if the triggers are implemented*/
     PRIMARY KEY (course_id, launch_date, sid, number, r_date)
 );
 
