@@ -689,13 +689,26 @@ FOR EACH ROW
 EXECUTE FUNCTION protect_cancels_func1();
 
 CREATE OR REPLACE FUNCTION protect_refund_func1() RETURNS TRIGGER AS $$
+DECLARE
+rec RECORD;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Cancels 
+    rec := (SELECT * FROM Cancels 
                     WHERE cust_id = (SELECT cust_id FROM Credit_cards WHERE number = NEW.number) 
                     and 
-                    sid = NEW.sid and launch_date =  NEW.launch_date and course_id = NEW.course_id)
+                    c_date = CURRENT_DATE
+                    and 
+                    sid = NEW.sid and launch_date = NEW.launch_date and course_id = NEW.course_id);
+    IF rec IS NULL
     THEN
         RAISE EXCEPTION 'Withdraw from registration should result in cancellation';
+    END IF;
+    IF (CURRENT_DATE + INTERVAL '1 day'*7 >= (SELECT s_date FROM Sessions WHERE 
+        sid = NEW.sid and launch_date =  NEW.launch_date and course_id = NEW.course_id))
+    THEN
+        IF rec.refund_amt <> 0.9 * (SELECT fees FROM Offerings 
+                        WHERE launch_date =  NEW.launch_date and course_id = NEW.course_id) THEN
+            RAISE EXCEPTION 'Refund amount is off';
+        END IF;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
