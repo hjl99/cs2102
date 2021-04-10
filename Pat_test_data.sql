@@ -160,12 +160,12 @@ INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 40);
 CALL add_course_offering(1, 100, '2021-05-03', '2021-04-20', 10, 31, VARIADIC ARRAY[('2021-05-03', '09:00', 1), ('2021-05-06', '14:00', 1)]::Session[]);
 
 -- Course Packages
-CALL add_course_package('Package 1', 3, '2021-04-05', '2021-04-30', 199);
-CALL add_course_package('Package 2', 2, '2021-03-18', '2021-04-30', 209);
-CALL add_course_package('Package 3', 5, '2020-09-05', '2020-11-30', 99.99);
-CALL add_course_package('Package 4', 10, '2020-07-24', '2020-08-31', 45.49);
-CALL add_course_package('Package 5', 4, '2021-04-01', '2021-04-30', 199);
-CALL add_course_package('Package 6', 1, '2021-04-01', '2021-04-30', 89);
+CALL add_course_packages('Package 1', 3, '2021-04-05', '2021-04-30', 199);
+CALL add_course_packages('Package 2', 2, '2021-03-18', '2021-04-30', 209);
+CALL add_course_packages('Package 3', 5, '2020-09-05', '2020-11-30', 99.99);
+CALL add_course_packages('Package 4', 10, '2020-07-24', '2020-08-31', 45.49);
+CALL add_course_packages('Package 5', 4, '2021-04-01', '2021-04-30', 199);
+CALL add_course_packages('Package 6', 1, '2021-04-01', '2021-04-30', 89);
 CALL add_course_packages('Home Ing', 1, '2021-04-04', '2021-04-29', 61.61);
 CALL add_course_packages('Greenlam', 2, '2021-04-02', '2021-04-27', 82.97);
 CALL add_course_packages('Namfix', 3, '2021-04-03', '2021-04-24', 7.08);
