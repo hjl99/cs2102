@@ -1,4 +1,4 @@
-/* 1  TESTED*/
+/* Routine 1 */ 
 CREATE OR REPLACE PROCEDURE
 add_employee(name TEXT, address TEXT, phone INTEGER, email TEXT, 
              salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
@@ -61,7 +61,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 2 TESTED*/
+
+/* Routine 2 */
 DROP PROCEDURE IF EXISTS remove_employee;
 CREATE OR REPLACE PROCEDURE remove_employee(reid INTEGER, in_depart_date DATE) AS $$
 BEGIN
@@ -77,7 +78,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 3 TESTED*/
+
+/* Routine 3 */
 CREATE OR REPLACE PROCEDURE add_customer(cname TEXT, caddress TEXT, cphone BIGINT,
                         cemail TEXT, cnumber BIGINT, cexpiry_date DATE, ccvv INTEGER)
 AS $$
@@ -91,7 +93,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 4 TESTED*/
+
+/* Routine 4 */
 DROP PROCEDURE IF EXISTS update_credit_card;
 CREATE OR REPLACE PROCEDURE update_credit_card(cid INTEGER, cnumber BIGINT, 
                         cexpiry_date DATE, cvv INTEGER)
@@ -102,7 +105,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-/* 5 TESTED*/
+
+/* Routine 5 */
 CREATE OR REPLACE PROCEDURE add_course(title TEXT, description TEXT, area TEXT, 
                                         duration INTEGER) AS $$
 DECLARE
@@ -117,8 +121,9 @@ BEGIN
     VALUES (title, description, duration, area);
 END;
 $$ LANGUAGE plpgsql;
--- DROP FUNCTION IF EXISTS find_instructors(in_course_id INTEGER, sess_date DATE, sess_start_hour TIME);
-/* 6 */
+
+
+/* Routine 6 */
 CREATE OR REPLACE FUNCTION find_instructors(in_course_id INTEGER, sess_date DATE, sess_start_hour TIME)
 RETURNS TABLE(out_eid INTEGER, name TEXT) AS $$
 DECLARE
