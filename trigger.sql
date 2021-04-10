@@ -255,7 +255,7 @@ BEGIN
     
 	IF (NEW.eid IN (SELECT eid FROM Part_time_emp)) THEN
 		num := num + 1;
-    END IF;
+    END
     IF (NEW.eid IN (SELECT eid FROM Full_time_emp)) THEN
         num := num + 1;
 	END IF;
@@ -339,7 +339,7 @@ BEGIN
     num := 0;
 	IF (NEW.eid IN (SELECT eid FROM Full_time_instructors)) THEN
 		num := num + 1;
-    END IF;
+    END IF
     IF (NEW.eid IN (SELECT eid FROM Part_time_instructors)) THEN
         num := num + 1;
 	END IF;
@@ -576,6 +576,7 @@ BEFORE INSERT ON Sessions
 FOR EACH ROW
 EXECUTE FUNCTION payslip_validation_func();
 
+
 /* 29 */
 CREATE OR REPLACE FUNCTION session_start_time_func() RETURNS TRIGGER AS $$
 BEGIN
@@ -591,6 +592,23 @@ CREATE TRIGGER session_start_time_trigger
 BEFORE DELETE ON Registers
 FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
+
+/* 30 */
+CREATE OR REPLACE FUNCTION update_session_start_time_func() RETURNS TRIGGER AS $$
+BEGIN
+	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
+        WHERE S.sid = OLD.sid AND S.course_id = OLD.course_id AND S.launch_date = OLD.launch_date) THEN
+		RAISE EXCEPTION 'Updating a session after its start time is not allowed.';
+	END IF;
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_session_start_time_trigger
+BEFORE UPDATE ON Registers
+FOR EACH ROW
+EXECUTE FUNCTION update_session_start_time_func();
+
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$
