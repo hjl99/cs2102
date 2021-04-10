@@ -492,10 +492,10 @@ BEGIN
 		WHERE R.course_id = NEW.course_id AND R.launch_date = NEW.launch_date AND R.sid = NEW.sid
             AND R.number IN (SELECT number FROM Credit_cards WHERE cust_id = NEW.cust_id);
 		IF (NEW.package_credit = 1) THEN
-			UPDATE Buys B
-			SET B.num_remaining_redemptions=num_remaining_redemptions + 1
-			WHERE B.number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
-			ORDER BY B.b_date DESC LIMIT 1); 
+			UPDATE Buys 
+			SET num_remaining_redemptions=num_remaining_redemptions + 1
+			WHERE number IN (SELECT B.number FROM Buys B WHERE B.number IN (SELECT number FROM Credit_cards C WHERE C.cust_id=NEW.Cust_id)
+			ORDER BY b_date DESC LIMIT 1); 
 		END IF;
 	END IF;
 	RETURN NEW;
