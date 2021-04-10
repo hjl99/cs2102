@@ -144,17 +144,17 @@ CALL add_course('EC2000', 'Econ level 2', 'Economics', 2);
 CALL add_course('EC3000', 'Econ level 3', 'Economics', 3);
 
 -- Rooms
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 10);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 20);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 20);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 50);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 30);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 80);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 30);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 60);
-INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 40);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('SOC', 5);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 10);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 7);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('MD', 4);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 10);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('BIZ', 6);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
+INSERT INTO Rooms(location, seating_capacity) VALUES ('ENGIN', 4);
 
 -- Course Offerings and Sessions
 CALL add_course_offering(1, 100, '2020-09-03', '2020-08-20', 10, 31, VARIADIC ARRAY[('2020-09-03', '09:00', 1), ('2020-09-04', '15:00', 1)]::Session[]);
