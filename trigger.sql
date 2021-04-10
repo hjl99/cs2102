@@ -582,21 +582,20 @@ FOR EACH ROW
 EXECUTE FUNCTION session_start_time_func();
 
 /* 30 */
-CREATE OR REPLACE FUNCTION update_session_start_time_func() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION update_session_reg_ddl_check_func() RETURNS TRIGGER AS $$
 BEGIN
-	IF CURRENT_TIMESTAMP >= (SELECT s_date + start_time FROM Sessions S
-        WHERE S.sid = OLD.sid AND S.course_id = OLD.course_id AND S.launch_date = OLD.launch_date) THEN
-		RAISE EXCEPTION 'Updating a session after its start time is not allowed.';
-	END IF;
+	IF CURRENT_DATE > (SELECT reg_deadline FROM Offerings 
+        WHERE course_id = OLD.course_id AND launch_date = OLD.launch_date) THEN 
+		RAISE EXCEPTION 'Updating sessions after the registration deadline is not allowed.';
+    END IF;
 	RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_session_start_time_trigger
+CREATE TRIGGER update_session_reg_ddl_check_trigger
 BEFORE UPDATE ON Registers
 FOR EACH ROW
-EXECUTE FUNCTION update_session_start_time_func();
-
+EXECUTE FUNCTION update_session_reg_ddl_check_func();
 
 /* 32 */
 CREATE OR REPLACE FUNCTION emp_del_func() RETURNS TRIGGER AS $$

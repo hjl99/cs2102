@@ -518,7 +518,6 @@ DECLARE
     prev_sess_id INTEGER;
     prev_sess_rid INTEGER;
     prev_sess_eid INTEGER;
-    sess_reg_ddl DATE;
     new_sess_rid INTEGER;
     new_sess_eid INTEGER;
     new_sess_seating_capacity INTEGER;
@@ -541,13 +540,6 @@ BEGIN
         RAISE EXCEPTION 'Customer has not registered for the course specified.';
     ELSIF new_sess_rid IS NULL THEN 
         RAISE EXCEPTION 'The new session specified does not exist.';
-    END IF;
-
-    sess_reg_ddl := 
-        (SELECT reg_deadline FROM Offerings 
-        WHERE course_id = in_course_id AND launch_date = in_launch_date);
-    IF CURRENT_DATE > sess_reg_ddl 
-        THEN RAISE EXCEPTION 'No update on course sessions allowed after the registration deadline';
     END IF;
 
     new_sess_seating_capacity := (SELECT seating_capacity FROM Rooms WHERE rid = new_sess_rid);
