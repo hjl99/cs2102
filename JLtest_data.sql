@@ -184,5 +184,14 @@ INSERT INTO Redeems (package_id, number, b_date, r_date, course_id, launch_date,
 	-- Customer 4, Course 2 Offering 1 Session 1
 	(5, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
 
-CALL get_my_registrations();
+/* 18 */
+SELECT get_my_registrations(1);
+
+/* 19 */
 CALL update_course_session(1, 1, '2021-03-01', 8000);
+
+/* 20 */
+
+/* 21 */
+
+/* 22 */
