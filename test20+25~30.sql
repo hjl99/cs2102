@@ -21,7 +21,6 @@ SELECT * FROM Pay_slips;
 
 /* routine 26 */
 SELECT * FROM promote_courses();
-/* part-time instructor 2 did not conduct any session this month, so the instructor is omitted from the output */
 
 
 /* routine 27 */
@@ -38,7 +37,7 @@ SELECT * FROM popular_courses();
 
 
 /* routine 29 */
-SELECT * FROM view_summary_report();
+SELECT * FROM view_summary_report(5);
 
 
 /* routine 30 */

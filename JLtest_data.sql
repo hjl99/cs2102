@@ -120,9 +120,6 @@ INSERT INTO Courses (duration, description, title, course_area_name) VALUES
 
 INSERT INTO Course_packages (sale_start_date, num_free_registrations, sale_end_date, package_name, price) VALUES
 	(DATE'2021-01-01', 1, DATE'2021-05-01', '0101-0501-1', 100),
-	(DATE'2021-01-01', 2, DATE'2021-05-01', '0101-0501-2', 200),
-	(DATE'2021-01-01', 3, DATE'2021-05-01', '0101-0501-3', 300),
-	(DATE'2021-01-01', 4, DATE'2021-05-01', '0101-0501-4', 400),
 	(DATE'2021-01-01', 5, DATE'2021-05-01', '0101-0501-5', 500);
 
 INSERT INTO Offerings (course_id, launch_date, start_date, end_date, reg_deadline, num_target_reg, seating_capacity, fees, eid) VALUES
@@ -170,17 +167,17 @@ INSERT INTO Registers (number, course_id, launch_date, sid, r_date) VALUES
 
 INSERT INTO Buys (package_id, number, b_date, num_remaining_redemptions) VALUES
 	(1, 11111113, DATE'2021-01-01', 0), -- After 1 redemption
-	(5, 21111111, DATE'2021-01-01', 5), -- No redemption
-	(5, 41111111, DATE'2021-01-01', 4), -- After 1 redemption
-	(5, 51111111, DATE'2021-01-01', 4), -- After 1 redemption
-	(5, 71111111, DATE'2021-01-01', 4); -- After 1 redemption
+	(2, 21111111, DATE'2021-01-01', 5), -- No redemption
+	(2, 41111111, DATE'2021-01-01', 4), -- After 1 redemption
+	(2, 51111111, DATE'2021-01-01', 4), -- After 1 redemption
+	(2, 71111111, DATE'2021-01-01', 4); -- After 1 redemption
 
 INSERT INTO Redeems (package_id, number, b_date, r_date, course_id, launch_date, sid) VALUES
 	-- Customer 1, Course 1 Offering 1 Session 1
 	(1, 11111113, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 1),
 	-- Customer 5, Course 1 Offering 1 Session 3
-	(5, 51111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 3),
+	(2, 51111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 3),
 	-- Customer 7, Course 1 Offering 1 Session 4
-	(5, 71111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 4),
+	(2, 71111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 4),
 	-- Customer 4, Course 2 Offering 2 Session 1
-	(5, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
+	(2, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
