@@ -24,6 +24,7 @@ SELECT * FROM Registers;
 SELECT * FROM Buys;
 SELECT * FROM Course_packages;
 
+/* 20 */
 /*
 cancel reg by credit card no refund - co launched, session starting tmr, no redeems 
 cancel reg by credit card has refund - co launched, session starting after 7 days, no redeems 
@@ -36,3 +37,5 @@ CALL cancel_registration(6, 1, DATE'2021-03-01');
 CALL cancel_registration(7, 1, DATE'2021-03-01');
 
 SELECT * FROM Cancels;
+
+

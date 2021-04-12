@@ -1,6 +1,6 @@
 /* Routine 1 */ 
 CREATE OR REPLACE PROCEDURE
-add_employee(name TEXT, address TEXT, phone INTEGER, email TEXT, 
+add_employee(name TEXT, address TEXT, phone BIGINT, email TEXT, 
              salary_or_hourly_rate FLOAT, join_date DATE, category TEXT, 
              course_areas TEXT[] DEFAULT ARRAY[]::TEXT[])
 AS $$
@@ -458,8 +458,10 @@ $$ LANGUAGE plpgsql;
 
 /* Routine 16 */
 CREATE OR REPLACE FUNCTION get_available_course_sessions(in_cid INTEGER, in_launch_date DATE) 
-RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEGER) AS $$
-    SELECT s_date, start_time, sid, seating_capacity - 
+RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining BIGINT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT s_date, start_time, Employees.name, seating_capacity - 
     (SELECT count(*) FROM Registers R 
     WHERE course_id= in_cid and launch_date = in_launch_date and R.sid = 1) as avail_seats
     FROM Sessions S NATURAL JOIN Instructors NATURAL JOIN Employees
@@ -470,7 +472,8 @@ RETURNS TABLE(sess_date DATE, start_hour TIME, i_name TEXT, seat_remaining INTEG
     )
     GROUP BY s_date, start_time, name, seating_capacity, sid
     ORDER BY s_date ASC, start_time ASC;
-$$ LANGUAGE sql;
+END;
+$$ LANGUAGE plpgsql;
 
 
 /* Routine 17 */
