@@ -15,6 +15,7 @@ select * from buys;
 /* routine 14 */
 select * from redeems;
 select get_my_course_package(1);
+select get_my_course_package(2);
 select get_my_course_package(4);
 
 /* routine 15 */
@@ -29,6 +30,6 @@ select get_available_course_sessions(1, '2021-03-15');
 
 /* routine 17 */
 select * from registers;
-select register_session(1, 5,  '2021-05-12', 1, 'redemption');
+call register_session(2, 5,  '2021-05-12', 1, 'redemption');
 
-select get_my_course_package(1);
+select get_my_course_package(2);
