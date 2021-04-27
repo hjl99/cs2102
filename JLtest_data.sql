@@ -33,16 +33,19 @@ TRUNCATE Rooms RESTART IDENTITY CASCADE;
 
 INSERT INTO Employees (name, phone, email, join_date, address, depart_date) VALUES 
 	('Part_time_instr_01', 01010101, 'employee01@gmail.com', DATE'2020-01-01', 'address_employee_01', NULL),
-	('Full_time_instr_01', 02020202, 'employee02@gmail.com', DATE'2020-12-31', 'address_employee_02', DATE'2021-04-11'),
-	('Manager_01', 03030303, 'employee03@gmail.com', DATE'2020-01-01', 'address_employee_03', NULL),
-	('Manager_02', 04040404, 'employee04@gmail.com', DATE'2020-01-01', 'address_employee_04', NULL),
-	('Administrator_01', 05050505, 'employee05@gmail.com', DATE'2020-01-01', 'address_employee_05', NULL),
-	('Administrator_02', 06060606, 'employee06@gmail.com', DATE'2020-01-01', 'address_employee_06', NULL),
-	('Administrator_03', 07070707, 'employee07@gmail.com', CURRENT_DATE, 'address_employee_07', NULL),
-	('Administrator_04', 08080808, 'employee08@gmail.com', DATE'2020-01-01', 'address_employee_08', CURRENT_DATE);
+	('Part_time_instr_02', 02020202, 'employee02@gmail.com', DATE'2020-01-01', 'address_employee_02', NULL),
+	('Full_time_instr_01', 03030303, 'employee03@gmail.com', DATE'2020-12-31', 'address_employee_03', DATE'2021-04-11'),
+	('Manager_01', 04040404, 'employee04@gmail.com', DATE'2020-01-01', 'address_employee_04', NULL),
+	('Manager_02', 05050505, 'employee05@gmail.com', DATE'2020-01-01', 'address_employee_05', NULL),
+	('Administrator_01', 06060606, 'employee06@gmail.com', DATE'2020-01-01', 'address_employee_06', NULL),
+	('Administrator_02', 07070707, 'employee07@gmail.com', DATE'2020-01-01', 'address_employee_07', NULL),
+	('Administrator_03', 08080808, 'employee08@gmail.com', CURRENT_DATE, 'address_employee_08', NULL),
+	('Administrator_04', 09090909, 'employee09@gmail.com', DATE'2020-01-01', 'address_employee_09', CURRENT_DATE);
 
 INSERT INTO Part_time_emp (eid, hourly_rate) VALUES 
-	(1, 100.01);
+	(1, 100.01)
+	,(2, 100.01)
+	;
 	
 INSERT INTO Full_time_emp (eid, monthly_salary) VALUES
 	(2, 20000.01),
@@ -55,10 +58,13 @@ INSERT INTO Full_time_emp (eid, monthly_salary) VALUES
 
 INSERT INTO Instructors (eid) VALUES 
 	(1),
-	(2);
+	(2),
+	(3);
 
 INSERT INTO Part_time_instructors (eid) VALUES 
-	(1);
+	(1)
+	,(2)
+	;
 
 INSERT INTO Full_time_instructors (eid) VALUES 
 	(2);
@@ -180,4 +186,19 @@ INSERT INTO Redeems (package_id, number, b_date, r_date, course_id, launch_date,
 	-- Customer 7, Course 1 Offering 1 Session 4
 	(2, 71111111, DATE'2021-01-01', DATE'2021-03-01', 1, DATE'2021-03-01', 4),
 	-- Customer 4, Course 2 Offering 2 Session 1
-	(2, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
+	(5, 41111111, DATE'2021-01-01', DATE'2021-04-02', 2, DATE'2021-04-02', 1);
+
+/* 18 */
+SELECT get_my_registrations(1);
+
+/* 19 */
+CALL update_course_session(2, 1, '2021-03-01', 1);
+
+/* 20 */
+CALL cancel_registration(1, 2, DATE'2021-04-02');
+/* 21 */
+CALL update_instructor(1, DATE'2022-03-03', 2, 2);
+/* 22 */
+CALL update_room(1, DATE'2022-03-03', 1, 1);
+/* 23 */
+CALL remove_session(1, DATE'2022-03-03', 1);

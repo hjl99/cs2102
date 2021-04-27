@@ -353,7 +353,7 @@ BEGIN
     (cid, in_launch_date, start_date, end_date, reg_deadline, target_no, cap, fees, aid);
 END;
 $$ LANGUAGE plpgsql;
-
+    
 
 /* Routine 11 */
 CREATE OR REPLACE PROCEDURE add_course_packages(p_name TEXT, num_free INTEGER,
@@ -395,7 +395,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_my_course_package(cid INTEGER)
 RETURNS json AS $$
 DECLARE
-	cust_num INTEGER;
+	cust_num BIGINT;
 	package_info RECORD;
 	buy_info RECORD;
 BEGIN

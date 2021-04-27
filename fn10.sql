@@ -216,55 +216,17 @@ INSERT INTO Sessions VALUES
 '18:00:00', 3, '2021-03-01', 1, 8);
 COMMIT;
 
-/* ---------------------fn 8--------------------------*/
--- SELECT * FROM find_rooms('2021-04-08', '17:00:00', 1); -- no room 2
--- SELECT * FROM find_rooms('2021-04-08', '10:00:00', 1); -- every room
--- INSERT INTO Sessions VALUES
--- (11, '2021-04-11', '10:00:00', 
--- '11:00:00', 2, '2021-03-01', 2, 8);
--- SELECT * FROM find_rooms('2021-04-11', '09:00:00', 3); -- no room 2
--- CALL remove_session(2, '2021-03-01', 11);
-
-/* function 7 */
--- SELECT * FROM get_available_instructors(3, '2021-04-02', '2021-04-03');
-
 /* ------- function 10 Test case -----------*/
 CALL add_course_offering(4, 1.0,'2021-03-02','2021-04-01', 2, 13, 
 ('2021-04-11', '09:00:00', 2), ('2021-04-11', '10:00:00', 1), ('2021-04-11', '11:00:00', 2)); 
 -- CALL add_course_offering0(3, 1.0,'2021-03-02','2021-04-15', 2, 13, 
 -- ('2021-05-02', '09:00:00', 2), ('2021-05-02', '10:00:00', 1), ('2021-05-02', '11:00:00', 2)); 
 -- expected result instructor 9 assigned to session at 9 am and 11am while 8 assigned to 10 am 
+/* 11 */
 
 
 
-/* function 7 */
 
-
-
-/* function 2 */
--- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
-
--- CALL remove_employee(17, '2021-05-01');
--- CALL add_employee('a_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'administrator', '{}');
--- CALL add_employee('fti_A', 'addr_A', 10000000, 'A@A.com', 100, '2021-04-01', 'full time instructor', '{"course_area_A"}');
--- CALL add_employee('fn2', 'fn2', 30000000, 'D@D.com', 300.0, '2021-04-03', 'manager', '{"course_area_qn10"}');
-
--- CALL add_session(3, 9, '2021-04-30', '14:00:00', 9, 2);
-
-/* function 15 */
--- SELECT * FROM get_available_course_offerings();
-
-/* function 17 */
--- CALL register_session(5, 2, '2021-03-01', 3, 'payment');
-
-/* function 16 */
--- CALL buy_course_package(5, 1);
--- CALL register_session(5, 2, '2021-03-01', 9, 'redemption');
--- SELECT * FROM get_available_course_sessions(2, '2021-03-01');
-/* function 18 */
--- SELECT * FROM get_my_registrations(5);
-
-/* function 19 */
 
 
 /* function 24 and function 23 */
